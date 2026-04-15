@@ -17,6 +17,7 @@ export default defineConfig({
         webcamBorder1: resolve(__dirname, "webcam-border-1.html"),
         titlePowerline: resolve(__dirname, "title-powerline.html"),
         logo: resolve(__dirname, "logo.html"),
+        background: resolve(__dirname, "background.html"),
       },
     },
   },
