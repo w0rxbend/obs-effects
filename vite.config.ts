@@ -1,3 +1,5 @@
+import { resolve } from "path";
+
 import { defineConfig } from "vite";
 
 import { assetpackPlugin } from "./scripts/assetpack-vite-plugin";
@@ -7,7 +9,16 @@ export default defineConfig({
   plugins: [assetpackPlugin()],
   server: {
     port: 8080,
-    open: true,
+    open: "/webcam-border-1.html",
+  },
+  build: {
+    rollupOptions: {
+      input: {
+        webcamBorder1: resolve(__dirname, "webcam-border-1.html"),
+        titlePowerline: resolve(__dirname, "title-powerline.html"),
+        logo: resolve(__dirname, "logo.html"),
+      },
+    },
   },
   define: {
     APP_VERSION: JSON.stringify(process.env.npm_package_version),

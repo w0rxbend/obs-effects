@@ -164,6 +164,16 @@ interface WaveConfig {
   breatheMode: "calm" | "bass" | "electric" | "fluid";
 }
 
+// wander=random, orbit=circular, bounce=elastic, pulse=scale-oscillate, beat=heartbeat-kick, float=slow-bob, spin=fast-rotate
+type AnimStyle =
+  | "wander"
+  | "orbit"
+  | "bounce"
+  | "pulse"
+  | "beat"
+  | "float"
+  | "spin";
+
 interface GraffitiOrbitSprite {
   sprite: Sprite;
   x: number;
@@ -181,6 +191,16 @@ interface GraffitiOrbitSprite {
   swapInterval: number; // seconds between swaps
   fadeAlpha: number; // 0..1
   fadingOut: boolean; // true = fading out to swap texture
+  animStyle: AnimStyle;
+  phase: number; // random phase for oscillations
+  pulseSpeed: number; // rad/s for pulse/float breathe
+  pulseAmp: number; // scale amplitude for pulse
+  beatTimer: number; // countdown to next heartbeat kick
+  beatInterval: number; // seconds between kicks
+  beatScale: number; // current kick multiplier, decays to 1.0
+  orbitAngle: number; // current angle for orbit style
+  orbitRadius: number; // orbit distance from centre
+  orbitSpeed: number; // rad/s, signed — CW or CCW
 }
 
 // ── Graffiti splat frame crops (source: 6000 × 2864 px sheet) ────────────────
@@ -584,7 +604,23 @@ export class CameraBorder extends Container {
     this.addChild(this.splatCont); // inserted below logo layers
     const usedIndices = new Set<number>();
 
-    for (let i = 0; i < 4; i++) {
+    // 10 sprites distributed across 7 animation personalities
+    const STYLES: AnimStyle[] = [
+      "orbit",
+      "bounce",
+      "pulse",
+      "beat",
+      "float",
+      "spin",
+      "orbit",
+      "bounce",
+      "pulse",
+      "wander",
+    ];
+    // Pixel sizes — variety keeps things visually interesting
+    const SIZES = [80, 55, 70, 45, 65, 90, 55, 60, 75, 40];
+
+    for (let i = 0; i < STYLES.length; i++) {
       let cellIdx: number;
       do {
         cellIdx = Math.floor(Math.random() * SPRITE_CELLS.length);
@@ -597,37 +633,60 @@ export class CameraBorder extends Container {
 
       const sprite = new Sprite(cropped);
       sprite.anchor.set(0.5);
-      const baseScale = 60 / CELL;
+      const baseScale = SIZES[i] / CELL;
       sprite.scale.set(baseScale);
       sprite.blendMode = "screen";
       sprite.alpha = 0;
 
-      const startAngle = (i / 4) * Math.PI * 2;
-      const startR = this.baseRadius * (0.65 + Math.random() * 0.7);
+      const style = STYLES[i];
+      const phase = Math.random() * Math.PI * 2;
+      const startAngle = (i / STYLES.length) * Math.PI * 2;
+      const startR = this.baseRadius * (0.55 + Math.random() * 0.8);
       sprite.x = Math.cos(startAngle) * startR;
       sprite.y = Math.sin(startAngle) * startR;
 
       this.splatCont.addChild(sprite);
 
-      const speed = 25 + Math.random() * 55;
+      const initSpeed =
+        style === "float"
+          ? 8 + Math.random() * 12
+          : style === "bounce"
+            ? 60 + Math.random() * 80
+            : 25 + Math.random() * 55;
       const ang = Math.random() * Math.PI * 2;
+      const beatInterval = 0.8 + Math.random() * 1.2;
+
       this.splatSprites.push({
         sprite,
         x: sprite.x,
         y: sprite.y,
-        vx: Math.cos(ang) * speed,
-        vy: Math.sin(ang) * speed,
-        targetVx: Math.cos(ang) * speed,
-        targetVy: Math.sin(ang) * speed,
+        vx: Math.cos(ang) * initSpeed,
+        vy: Math.sin(ang) * initSpeed,
+        targetVx: Math.cos(ang) * initSpeed,
+        targetVy: Math.sin(ang) * initSpeed,
         dirTimer: Math.random() * 2.0,
         dirInterval: 1.2 + Math.random() * 2.5,
-        rotSpeed: (Math.random() - 0.5) * 0.6,
+        rotSpeed:
+          style === "spin"
+            ? (1.8 + Math.random() * 2.2) * (Math.random() < 0.5 ? 1 : -1)
+            : (Math.random() - 0.5) * 0.6,
         baseScale,
         cellIdx,
-        swapTimer: 1.5 + i * 1.2 + Math.random() * 2.0,
+        swapTimer: 1.5 + i * 0.7 + Math.random() * 2.0,
         swapInterval: 3.5 + Math.random() * 4.5,
         fadeAlpha: 0,
         fadingOut: false,
+        animStyle: style,
+        phase,
+        pulseSpeed: 1.2 + Math.random() * 2.5,
+        pulseAmp: 0.25 + Math.random() * 0.35,
+        beatTimer: Math.random() * beatInterval,
+        beatInterval,
+        beatScale: 1.0,
+        orbitAngle: startAngle,
+        orbitRadius: startR,
+        orbitSpeed:
+          (0.25 + Math.random() * 0.45) * (Math.random() < 0.5 ? 1 : -1),
       });
     }
   }
@@ -635,31 +694,95 @@ export class CameraBorder extends Container {
   private animateSplatSprites(): void {
     const dt = 1 / 60;
     const maxDist = this.baseRadius * 1.45;
+    const t = this.time;
 
     for (const s of this.splatSprites) {
-      // ── Movement ───────────────────────────────────────────────────────────
-      s.dirTimer -= dt;
-      if (s.dirTimer <= 0) {
-        s.dirTimer = s.dirInterval;
-        const ang = Math.random() * Math.PI * 2;
-        const spd = 25 + Math.random() * 65;
-        s.targetVx = Math.cos(ang) * spd;
-        s.targetVy = Math.sin(ang) * spd;
+      // ── Position / movement — per style ───────────────────────────────────
+      if (s.animStyle === "orbit") {
+        // Steady circular orbit; radius breathes gently
+        s.orbitAngle += s.orbitSpeed * dt;
+        const orbitR = s.orbitRadius * (1 + 0.08 * Math.sin(t * 0.7 + s.phase));
+        s.x = Math.cos(s.orbitAngle) * orbitR;
+        s.y = Math.sin(s.orbitAngle) * orbitR;
+      } else if (s.animStyle === "bounce") {
+        // Direct velocity with elastic reflection off boundary
+        s.x += s.vx * dt;
+        s.y += s.vy * dt;
+        const dist = Math.sqrt(s.x * s.x + s.y * s.y);
+        if (dist > maxDist) {
+          const nx = s.x / dist;
+          const ny = s.y / dist;
+          const dot = s.vx * nx + s.vy * ny;
+          s.vx -= 2 * dot * nx;
+          s.vy -= 2 * dot * ny;
+          s.x = nx * maxDist * 0.98;
+          s.y = ny * maxDist * 0.98;
+        }
+      } else {
+        // Wander (used by wander, pulse, beat, float, spin)
+        s.dirTimer -= dt;
+        if (s.dirTimer <= 0) {
+          s.dirTimer = s.dirInterval;
+          const ang = Math.random() * Math.PI * 2;
+          const spd =
+            s.animStyle === "float"
+              ? 8 + Math.random() * 12
+              : 25 + Math.random() * 65;
+          s.targetVx = Math.cos(ang) * spd;
+          s.targetVy = Math.sin(ang) * spd;
+        }
+        s.vx += (s.targetVx - s.vx) * 0.04;
+        s.vy += (s.targetVy - s.vy) * 0.04;
+        s.x += s.vx * dt;
+        s.y += s.vy * dt;
+        const dist = Math.sqrt(s.x * s.x + s.y * s.y);
+        if (dist > maxDist) {
+          const pull = (dist - maxDist) * 0.18;
+          s.vx -= (s.x / dist) * pull;
+          s.vy -= (s.y / dist) * pull;
+        }
       }
-      s.vx += (s.targetVx - s.vx) * 0.04;
-      s.vy += (s.targetVy - s.vy) * 0.04;
-      s.x += s.vx * dt;
-      s.y += s.vy * dt;
-      const dist = Math.sqrt(s.x * s.x + s.y * s.y);
-      if (dist > maxDist) {
-        const pull = (dist - maxDist) * 0.18;
-        s.vx -= (s.x / dist) * pull;
-        s.vy -= (s.y / dist) * pull;
+
+      // ── Visual effects — per style ─────────────────────────────────────────
+      let scaleF = 1.0;
+      let spriteY = s.y;
+
+      switch (s.animStyle) {
+        case "pulse":
+          scaleF = 1 + s.pulseAmp * Math.sin(t * s.pulseSpeed + s.phase);
+          break;
+
+        case "beat":
+          s.beatTimer -= dt;
+          if (s.beatTimer <= 0) {
+            s.beatTimer = s.beatInterval;
+            s.beatScale = 2.4; // sharp kick
+          }
+          s.beatScale = Math.max(1.0, s.beatScale - 6.0 * dt); // fast decay
+          scaleF = s.beatScale;
+          break;
+
+        case "float":
+          // Vertical sinusoidal bob + gentle scale breathe
+          spriteY = s.y + Math.sin(t * 0.85 + s.phase) * 24;
+          scaleF = 1 + 0.14 * Math.sin(t * 0.55 + s.phase + 1.2);
+          break;
+
+        case "orbit":
+          // Gentle scale breathe synced with orbit
+          scaleF = 1 + 0.12 * Math.sin(t * 1.1 + s.phase);
+          break;
+
+        case "bounce":
+          // Tremor tied to current speed magnitude
+          scaleF = 1 + 0.08 * Math.abs(Math.sin(t * 3.5 + s.phase));
+          break;
       }
+
       s.sprite.x = s.x;
-      s.sprite.y = s.y;
+      s.sprite.y = spriteY;
       s.sprite.rotation += s.rotSpeed * dt;
-      s.sprite.scale.set(s.baseScale);
+      s.sprite.scale.set(s.baseScale * scaleF);
 
       // ── Swap lifecycle ─────────────────────────────────────────────────────
       if (s.fadingOut) {
@@ -667,7 +790,6 @@ export class CameraBorder extends Container {
         if (s.fadeAlpha <= 0) {
           s.fadeAlpha = 0;
           s.fadingOut = false;
-          // Pick a new cell, avoiding the current one
           let newIdx: number;
           do {
             newIdx = Math.floor(Math.random() * SPRITE_CELLS.length);

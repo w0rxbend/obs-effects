@@ -46,3 +46,27 @@ Specify the module or component affected (e.g., `canvas`, `loader`, `physics`).
 ## Body (Optional)
 
 Provide detailed explanation of changes and motivation.
+
+## Scope Notes
+
+- Never analyze or traverse `node_modules` directory
+- Always ignore and skip `node_modules` when gathering context
+- Exclude `node_modules` from all file scanning operations
+
+## PixiJS Best Practices
+
+- Use **typed containers** for better performance and maintainability
+- Leverage **display lists** efficiently; batch similar objects together
+- Implement **object pooling** for frequently created/destroyed entities
+- Use **masks and filters** sparingly; they impact performance
+- Optimize **texture atlases** to reduce draw calls
+- Enable **antialiasing** only when necessary
+- Use **PIXI.Container** for grouping related sprites
+- Cache **static graphics** as textures to improve rendering speed
+- Profile with DevTools to identify bottlenecks
+
+## TypeScript Guidelines
+
+- Define types for custom sprites and containers
+- Use strict mode (`"strict": true` in `tsconfig.json`)
+- Leverage generics for reusable component patterns
