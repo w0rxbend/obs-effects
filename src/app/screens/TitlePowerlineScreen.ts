@@ -29,10 +29,11 @@ const NEWS = [
 ];
 
 const TICKER_STYLE = new TextStyle({
-  fontFamily: "'Rock Salt', 'Permanent Marker', monospace",
+  fontFamily: "'Bangers', cursive",
   fontSize: FONT_SIZE,
   fill: TICKER_TEXT,
   padding: 6,
+  letterSpacing: 3,
 });
 
 interface TickerEntry {
