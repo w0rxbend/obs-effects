@@ -176,18 +176,44 @@ interface OrbitDot {
 }
 
 interface FluidStain {
-  angle: number; // current angular position (radians)
-  speed: number; // radians per second for orbit
-  radiusOffset: number; // pixels offset from baseRadius
-  rotation: number; // current rotation angle for stain shape
-  rotSpeed: number; // rotation speed (rad/s)
-  size: number; // blob radius in px
-  color: CattColor;
-  alpha: number; // current alpha
-  baseAlpha: number; // base alpha before pulse
-  floatAmplitude: number; // drift in/out from radius
-  floatSpeed: number; // drift oscillation speed
-  floatPhase: number; // phase offset for drift
+  // Orbital position
+  angle:       number;  // current angular position around the ring (radians)
+  speed:       number;  // orbital speed rad/s, signed (CW / CCW)
+  orbitRadius: number;  // distance from origin — near the ring edge
+  // Blob self-rotation
+  rotation:    number;  // shape rotation angle (radians)
+  rotSpeed:    number;  // shape rotation speed rad/s
+  // Radial drift (float in/out from orbitRadius)
+  floatAmp:    number;  // amplitude px
+  floatSpeed:  number;  // oscillation frequency Hz
+  floatPhase:  number;  // per-stain phase offset
+  // Blob geometry
+  baseRadius:  number;  // nominal blob size px
+  color:       CattColor;
+  baseAlpha:   number;  // 0.05..0.12 — super transparent
+  // Smooth Fourier deformation — modes 1, 2, 3 only (no spikes)
+  modes: Array<{ amp: number; phase: number; speed: number }>;
+}
+
+/**
+ * A floating Nerd Font / Unicode symbol that orbits the camera ring,
+ * vibrates in scale, and pulses its alpha for a glowing effect.
+ */
+interface FloatingSymbol {
+  node:        Text;
+  angle:       number;   // current orbital position (rad)
+  orbitSpeed:  number;   // rad/s, signed (CW / CCW)
+  orbitRadius: number;   // px from centre — always outside the ring
+  vibeAmp:     number;   // scale oscillation amplitude (0.1 = ±10 %)
+  vibeSpeed:   number;   // rad/s
+  vibePhase:   number;
+  alphaBase:   number;   // centre alpha value
+  alphaAmp:    number;   // alpha pulse depth
+  alphaSpeed:  number;
+  alphaPhase:  number;
+  jitterAmp:   number;   // positional jitter radius px
+  jitterPhase: number;
+  baseScale:   number;
 }
 
 interface GlitchBand {
@@ -522,7 +548,8 @@ export class CameraBorder extends Container {
   private readonly glitchGfx: Graphics; // pixel-glitch chromatic split — above waves
   private readonly splatCont: Container; // orbiting graffiti splat sprites
   private readonly orbitDotGfx: Graphics; // catppuccin dots orbiting the ring
-  private readonly stainGfx: Graphics; // catppuccin fluid stains orbiting the ring
+  private readonly stainGfx: Graphics;    // catppuccin fluid stains orbiting the ring
+  private readonly symbolCont: Container; // floating Nerd Font / Unicode symbols
 
   // ── Logo ───────────────────────────────────────────────────────────────────
   private logoSprite: Sprite | null = null;
@@ -548,6 +575,7 @@ export class CameraBorder extends Container {
   private lightningBolts: LightningBolt[] = [];
   private readonly orbitDots: OrbitDot[] = [];
   private readonly fluidStains: FluidStain[] = [];
+  private readonly floatingSymbols: FloatingSymbol[] = [];
 
   private time = 0;
   private glitchActive = false;
@@ -596,6 +624,7 @@ export class CameraBorder extends Container {
     this.particleGfx = new Graphics();
     this.orbitDotGfx = new Graphics();
     this.stainGfx = new Graphics();
+    this.symbolCont = new Container();
     this.splatCont = new Container();
 
     this.graffCont.addChild(this.graffGfx);
@@ -608,8 +637,9 @@ export class CameraBorder extends Container {
     this.addChild(this.surfaceGfx);
     this.addChild(this.effectGfx);
     this.addChild(this.particleGfx);
-    this.addChild(this.stainGfx); // fluid stains — above particles, below orbit dots
-    this.addChild(this.orbitDotGfx); // catppuccin dots — above stains
+    this.addChild(this.stainGfx);    // fluid stains — above particles, below orbit dots
+    this.addChild(this.orbitDotGfx); // catppuccin orbit dots
+    this.addChild(this.symbolCont);  // floating symbols — topmost non-logo layer
     // splatCont and logo layers are added on attach* calls (topmost)
 
     // Per-ring independent drift — random starting phases so no two rings are in sync
@@ -620,6 +650,7 @@ export class CameraBorder extends Container {
     this.initParticles();
     this.initOrbitDots();
     this.initFluidStains();
+    this.initFloatingSymbols();
     this.initSurfaceLines();
     this.initGraffitiTags();
   }
@@ -930,33 +961,40 @@ export class CameraBorder extends Container {
   }
 
   private initFluidStains(): void {
-    // 12 fluid stains spread around the ring — Catppuccin palette only
-    // They slowly orbit with gentle rotation and floating motion
-    const count = 12;
+    const count = 10;
+    const colors: CattColor[] = [
+      CATT_PINK, CATT_PEACH, CATT_MAUVE, CATT_TEAL_CAT,
+      CATT_SKY, CATT_LAVENDER, CATT_YELLOW, CATT_SAPPHIRE,
+    ];
+
     for (let i = 0; i < count; i++) {
-      const startAngle =
-        (i / count) * Math.PI * 2 + (Math.random() - 0.5) * 0.3;
-      // Slower, smoother orbit speeds than dots
-      const dir = i % 2 === 0 ? -1 : 1;
-      const speed = dir * (0.12 + Math.random() * 0.24);
-      // Stains hover around the ring edge
-      const radiusOffset = (Math.random() - 0.5) * 28;
-      // Larger sizes for better visibility
-      const size = 18 + Math.random() * 24;
+      const dir   = i % 2 === 0 ? 1 : -1;
+      const speed = dir * (0.06 + Math.random() * 0.14); // slower than dots
+
+      // Fourier modes 1–3 only → smooth large bumps, never spiky
+      const baseR = 14 + Math.random() * 10; // 14–24 px — small accent blobs
+      const modes = [
+        { amp: baseR * (0.28 + Math.random() * 0.18), phase: Math.random() * Math.PI * 2, speed: 0.07 + Math.random() * 0.09 },
+        { amp: baseR * (0.14 + Math.random() * 0.12), phase: Math.random() * Math.PI * 2, speed: 0.12 + Math.random() * 0.12 },
+        { amp: baseR * (0.07 + Math.random() * 0.07), phase: Math.random() * Math.PI * 2, speed: 0.18 + Math.random() * 0.16 },
+      ];
+
+      // strictly outside the ring: baseRadius + 18..58 px beyond
+      const orbitRadius = this.baseRadius + 18 + Math.random() * 40;
 
       this.fluidStains.push({
-        angle: startAngle,
+        angle:       (i / count) * Math.PI * 2 + Math.random() * 0.4,
         speed,
-        radiusOffset,
-        rotation: Math.random() * Math.PI * 2,
-        rotSpeed: (Math.random() - 0.5) * 0.8, // rotation speed rad/s
-        size,
-        color: randomCatt(),
-        alpha: 0.6 + Math.random() * 0.3,
-        baseAlpha: 0.6 + Math.random() * 0.3,
-        floatAmplitude: 8 + Math.random() * 12,
-        floatSpeed: 0.3 + Math.random() * 0.5,
-        floatPhase: Math.random() * Math.PI * 2,
+        orbitRadius,
+        rotation:    Math.random() * Math.PI * 2,
+        rotSpeed:    (Math.random() - 0.5) * 0.35,
+        floatAmp:    4 + Math.random() * 8,   // smaller radial drift
+        floatSpeed:  0.22 + Math.random() * 0.28,
+        floatPhase:  Math.random() * Math.PI * 2,
+        baseRadius:  baseR,
+        color:       colors[i % colors.length],
+        baseAlpha:   0.20 + Math.random() * 0.18,
+        modes,
       });
     }
   }
@@ -1104,10 +1142,19 @@ export class CameraBorder extends Container {
       p.angle += p.orbitSpeed;
     }
 
-    // Fluid stains
+    // Fluid stains — advance orbit + self-rotation + Fourier mode phases
     for (const stain of this.fluidStains) {
-      stain.angle += stain.speed * dt;
+      stain.angle    += stain.speed   * dt;
       stain.rotation += stain.rotSpeed * dt;
+      for (const m of stain.modes) m.phase += m.speed * dt;
+    }
+
+    // Floating symbols — orbital + vibration phases advance each frame
+    for (const s of this.floatingSymbols) {
+      s.angle      += s.orbitSpeed * dt;
+      s.vibePhase  += s.vibeSpeed  * dt;
+      s.alphaPhase += s.alphaSpeed * dt;
+      s.jitterPhase += 1.7 * dt; // irrational multiple so x/y jitter are out of sync
     }
 
     this.drawFrame(dt);
@@ -1307,6 +1354,9 @@ export class CameraBorder extends Container {
     // ── Brush strokes ────────────────────────────────────────────────────────
     this.brushGfx.clear();
     for (const s of this.brushStrokes) this.drawBrushStroke(s, breathe);
+
+    // ── Floating symbols ──────────────────────────────────────────────────────
+    this.updateFloatingSymbols(breathe);
 
     // ── TrapNation wave rings ─────────────────────────────────────────────────
     this.waveGfx.clear();
@@ -1828,75 +1878,172 @@ export class CameraBorder extends Container {
     }
   }
 
+  // ── Floating symbols ─────────────────────────────────────────────────────
+
+  private initFloatingSymbols(): void {
+    // Nerd Font tech/dev/IT codepoints only (SymbolsNF font required)
+    const ALL_SYMS = [
+      '\uF121', // </>  code
+      '\uF126', // git-branch
+      '\uF09B', // github octocat
+      '\uF120', // terminal / bash prompt
+      '\uF013', // cog / settings
+      '\uF135', // rocket deploy
+      '\uF0E7', // bolt / lightning
+      '\uF259', // atom (React)
+      '\uF292', // shield / security
+      '\uF188', // bug
+      '\uF1C0', // database
+      '\uF233', // server
+      '\uF109', // laptop
+      '\uF11C', // keyboard
+      '\uF17C', // linux tux
+      '\uF179', // apple
+      '\uF17A', // windows flag
+      '\uF0AD', // wrench / tool
+      '\uF0C3', // flask / science
+      '\uF1EB', // wifi
+      '\uF108', // desktop monitor
+      '\uF200', // pie-chart
+      '\uF201', // line-chart / analytics
+      '\uF11B', // gamepad / controller
+      '\uF1B2', // cube / package
+      '\uF1C9', // code file
+      '\uF023', // lock
+      '\uF09C', // lock-open
+      '\uF0DB', // columns / layout
+      '\uF304', // pen / edit
+      '\uE0B0', // powerline solid arrow
+      '\uE0B2', // powerline solid arrow left
+      '\uF296', // percent
+      '\uF0C9', // hamburger menu / bars
+      '\uF1D0', // circle-o-notch / spinner
+      '\uF245', // mouse pointer
+      '\uF0E4', // dashboard / speedometer
+      '\uF07C', // folder open
+      '\uF07B', // folder
+      '\uF015', // home
+    ];
+
+    // All symbols use SymbolsNF; same style factory for every glyph
+    const makeStyle = (color: number): TextStyle =>
+      new TextStyle({
+        fontFamily: "'SymbolsNF', monospace",
+        fontSize:   20 + Math.floor(Math.random() * 14),   // 20–34 px
+        fill:       color,
+        padding:    20,  // prevents drop-shadow glow from being cropped on all sides
+        dropShadow: { color, blur: 14, distance: 0, alpha: 0.9, angle: 0 },
+      });
+
+    const count = ALL_SYMS.length;
+    for (let i = 0; i < count; i++) {
+      const sym   = ALL_SYMS[i];
+      const color = CATT_PALETTE[i % CATT_PALETTE.length];
+      const dir    = i % 2 === 0 ? 1 : -1;
+
+      const node = new Text({ text: sym, style: makeStyle(color) });
+      node.anchor.set(0.5);
+      node.alpha = 0;
+      this.symbolCont.addChild(node);
+
+      this.floatingSymbols.push({
+        node,
+        angle:       (i / count) * Math.PI * 2 + Math.random() * 0.3,
+        orbitSpeed:  dir * (0.08 + Math.random() * 0.22),
+        orbitRadius: this.baseRadius + 22 + Math.random() * 65, // strictly outside ring
+        vibeAmp:     0.12 + Math.random() * 0.22,  // ±12–34 % scale oscillation
+        vibeSpeed:   8  + Math.random() * 18,       // 8–26 rad/s → 1.3–4 Hz
+        vibePhase:   Math.random() * Math.PI * 2,
+        alphaBase:   0.55 + Math.random() * 0.35,
+        alphaAmp:    0.30 + Math.random() * 0.25,
+        alphaSpeed:  0.8 + Math.random() * 1.8,
+        alphaPhase:  Math.random() * Math.PI * 2,
+        jitterAmp:   2 + Math.random() * 5,
+        jitterPhase: Math.random() * Math.PI * 2,
+        baseScale:   1.0,
+      });
+    }
+  }
+
+  private updateFloatingSymbols(breathe: number): void {
+    const beatBoost = 1 + (this.beatAmplitude - 1) * 0.40;
+
+    for (const s of this.floatingSymbols) {
+      const r  = s.orbitRadius * breathe;
+      const jx = Math.sin(s.jitterPhase * 1.3) * s.jitterAmp;
+      const jy = Math.cos(s.jitterPhase * 0.9) * s.jitterAmp;
+
+      s.node.x = Math.cos(s.angle) * r + jx;
+      s.node.y = Math.sin(s.angle) * r + jy;
+
+      // Scale vibrates rapidly — multiplied by beat boost on kicks
+      const vibeScale = 1 + s.vibeAmp * Math.sin(s.vibePhase) * beatBoost;
+      s.node.scale.set(s.baseScale * vibeScale);
+
+      // Alpha breathes slowly, flares on beat
+      const baseA  = s.alphaBase + s.alphaAmp * Math.sin(s.alphaPhase);
+      const beatA  = Math.min(1.0, baseA + (this.beatAmplitude - 1) * 0.25);
+      s.node.alpha = Math.max(0, beatA);
+    }
+  }
+
   // ── Fluid stains ──────────────────────────────────────────────────────────
 
+  /**
+   * Catppuccin fluid blobs that orbit the camera ring.
+   *
+   * Each blob shape is defined by Fourier modes 1–3 applied to a base circle,
+   * so the boundary is always smooth (large organic bumps, no spikes).
+   * Three concentric fill passes (wide dim → mid → bright core) give watercolour
+   * depth without any blur filter.
+   * A secondary smaller offset blob adds paint-splash asymmetry.
+   * Everything is super-transparent (5–12 %) so it never obscures the camera.
+   */
   private drawFluidStains(breathe: number): void {
     this.stainGfx.clear();
 
+    const VERTS = 64; // enough for silky smooth outline
+
     for (const stain of this.fluidStains) {
-      // Floating motion — drift in/out from radius
-      const float =
-        Math.sin(this.time * stain.floatSpeed + stain.floatPhase) *
-        stain.floatAmplitude;
-      const r = (this.baseRadius + stain.radiusOffset + float) * breathe;
-      const cx = Math.cos(stain.angle) * r;
-      const cy = Math.sin(stain.angle) * r;
+      // ── Orbital position ─────────────────────────────────────────────────
+      const float = Math.sin(this.time * stain.floatSpeed + stain.floatPhase) * stain.floatAmp;
+      const r     = (stain.orbitRadius + float) * breathe;
+      const cx    = Math.cos(stain.angle) * r;
+      const cy    = Math.sin(stain.angle) * r;
 
-      // Gentle alpha pulse
-      const alphaPulse =
-        0.45 + 0.45 * Math.sin(this.time * 0.6 + stain.floatPhase);
-      const alpha = Math.max(0.05, stain.baseAlpha * alphaPulse);
+      // ── Alpha pulse — gentle, slightly faster than orbit ─────────────────
+      const alphaPulse = 0.50 + 0.50 * Math.sin(this.time * 0.55 + stain.floatPhase);
+      const beatSwell  = 1 + (this.beatAmplitude - 1) * 0.08;
+      const alpha      = stain.baseAlpha * alphaPulse;
 
-      // Organic perimeter via radial sampling (smoothed polygon)
-      const segs = 28;
-      const pts: number[] = [];
-      const baseR = stain.size;
-      for (let i = 0; i < segs; i++) {
-        const theta = (i / segs) * Math.PI * 2;
-        // time-varying wobble for fluid motion
-        const wobble1 =
-          Math.sin(theta * 2 + this.time * 0.9 + stain.floatPhase) *
-          (baseR * 0.18);
-        const wobble2 =
-          Math.cos(theta * 3 - this.time * 0.7 + stain.rotation) *
-          (baseR * 0.12);
-        const squash = 1 + 0.08 * Math.sin(theta * 4 + this.time * 0.6);
-        const rad =
-          baseR * (0.72 + 0.32 * Math.sin(theta * 1.7 + stain.rotation)) +
-          wobble1 +
-          wobble2;
-        const px = cx + Math.cos(theta + stain.rotation) * rad * squash;
-        const py =
-          cy +
-          Math.sin(theta + stain.rotation) *
-            rad *
-            (squash * (0.9 + 0.1 * Math.cos(theta + this.time * 0.4)));
-        pts.push(px, py);
-      }
+      // ── Build smooth Fourier polygon at (bx, by) with radius scale ────────
+      const buildPts = (bx: number, by: number, rScale: number): number[] => {
+        const pts: number[] = [];
+        for (let i = 0; i <= VERTS; i++) {
+          const theta = (i / VERTS) * Math.PI * 2;
+          let rad = stain.baseRadius * rScale * beatSwell;
+          for (let mi = 0; mi < stain.modes.length; mi++) {
+            rad += stain.modes[mi].amp * rScale *
+                   Math.sin((mi + 1) * theta + stain.modes[mi].phase);
+          }
+          pts.push(
+            bx + Math.cos(theta + stain.rotation) * rad,
+            by + Math.sin(theta + stain.rotation) * rad,
+          );
+        }
+        return pts;
+      };
 
-      // Fill the main blob
-      this.stainGfx.beginFill(stain.color, alpha * 0.95);
-      this.stainGfx.drawPolygon(pts);
-      this.stainGfx.endFill();
+      // ── Primary blob — 3 concentric passes: wide dim → mid → core ────────
+      this.stainGfx.poly(buildPts(cx, cy, 1.55)).fill({ color: stain.color, alpha: alpha * 0.45 });
+      this.stainGfx.poly(buildPts(cx, cy, 1.00)).fill({ color: stain.color, alpha: alpha * 0.70 });
+      this.stainGfx.poly(buildPts(cx, cy, 0.58)).fill({ color: stain.color, alpha: alpha * 1.00 });
 
-      // Subtle outer glow
-      this.stainGfx.beginFill(stain.color, alpha * 0.12);
-      this.stainGfx.drawCircle(cx, cy, baseR * 1.6);
-      this.stainGfx.endFill();
-
-      // Bright specular highlight
-      const hx = cx + Math.cos(stain.rotation * 0.9) * baseR * 0.35;
-      const hy = cy + Math.sin(stain.rotation * 1.1) * baseR * 0.35;
-      this.stainGfx.beginFill(0xffffff, Math.min(0.22, alpha * 0.28));
-      this.stainGfx.drawCircle(hx, hy, baseR * 0.18);
-      this.stainGfx.endFill();
-
-      // Small trailing smear oriented along rotation
-      const sx = cx - Math.cos(stain.angle) * baseR * 0.6;
-      const sy = cy - Math.sin(stain.angle) * baseR * 0.6;
-      this.stainGfx.beginFill(stain.color, alpha * 0.14);
-      this.stainGfx.drawEllipse(sx, sy, baseR * 0.6, baseR * 0.22);
-      this.stainGfx.endFill();
+      // ── Secondary offset blob — paint-splash asymmetry ────────────────────
+      const ox = cx + Math.cos(stain.rotation + 0.9) * stain.baseRadius * 0.45;
+      const oy = cy + Math.sin(stain.rotation + 0.9) * stain.baseRadius * 0.45;
+      this.stainGfx.poly(buildPts(ox, oy, 0.72)).fill({ color: stain.color, alpha: alpha * 0.45 });
+      this.stainGfx.poly(buildPts(ox, oy, 0.42)).fill({ color: stain.color, alpha: alpha * 0.65 });
     }
   }
 
