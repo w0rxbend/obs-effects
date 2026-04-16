@@ -6,6 +6,11 @@ const engine = new CreationEngine();
 setEngine(engine);
 
 (async () => {
+  // Block until all declared fonts are downloaded and ready.
+  // This prevents OBS from rendering the first frame with a fallback font
+  // before the Google Fonts stylesheet has finished loading.
+  await document.fonts.ready;
+
   await engine.init({
     background: "transparent",
     backgroundAlpha: 0,

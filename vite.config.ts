@@ -19,6 +19,7 @@ export default defineConfig({
         logo: resolve(__dirname, "logo.html"),
         background: resolve(__dirname, "background.html"),
         placeholder1: resolve(__dirname, "placeholder-1.html"),
+        musicBreak: resolve(__dirname, "music-break.html"),
       },
     },
   },

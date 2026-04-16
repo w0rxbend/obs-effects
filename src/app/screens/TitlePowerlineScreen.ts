@@ -1,6 +1,7 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics, Rectangle, Sprite, Text, TextStyle, Texture } from "pixi.js";
 
+
 // ── Palette ──────────────────────────────────────────────────────────────────
 const TICKER_BG    = 0x00cc44;  // green band
 const TICKER_TEXT  = 0x000000;  // black text
@@ -20,19 +21,11 @@ const SCROLL_PX_PER_MS = 0.2;  // ~200 px/s
 // ── News items ────────────────────────────────────────────────────────────────
 const NEWS = [
   "WORXBEND GOES LIVE",
-  "BREAKING: LOCAL MAN REFUSES TO STOP GAMING",
-  "SOURCES CONFIRM: THIS SESSION IS ABSOLUTELY FIRE",
-  "EXCLUSIVE: STREAMER CARRIES ENTIRE TEAM ON BACK",
-  "ALERT: CRITICAL LEVELS OF FUN DETECTED IN AREA",
-  "UPDATE: CHAT DEVOLVES INTO ABSOLUTE CHAOS",
-  "DEVELOPING: OPPONENT TEAM CURRENTLY IN SHAMBLES",
-  "WEATHER: CLEAR SKIES — HIGH CHANCE OF W TODAY",
-  "EXPERT PANEL: YES, THAT WAS INDEED A SKILL",
-  "CONFIRMED: DIFFICULTY SET TO EASY... BY STREAMER",
-  "FLASH: WORXBEND ACHIEVES IMPOSSIBLE FEAT AGAIN",
-  "LATE BREAKING: NOBODY KNEW THIS WAS POSSIBLE",
-  "REPORT: LOCAL VIEWER FORGETS TO EAT WHILE WATCHING",
-  "SCIENTISTS BAFFLED BY STREAMER'S INHUMAN REFLEXES",
+  "BREAKING: LOCAL DEVELOPER DESCRIBES CODEBASE AS 'LEGACY' — WROTE IT LAST WEEK",
+  "EXCLUSIVE: STARTUP PIVOTS FOR NINTH TIME; NOW SELLS ARTISANAL BLOCKCHAIN WATER",
+  "ALERT: ENGINEER FIXES BUG BY DELETING TEST; TESTS NOW PASSING; CHAMPAGNE OPENED",
+  "REPORT: MAN WHO SAID 'IT WORKS ON MY MACHINE' SHIPS MACHINE TO PRODUCTION",
+  "CONFIRMED: STANDUP MEETING COULD HAVE BEEN AN EMAIL; EMAIL COULD HAVE BEEN NOTHING",
 ];
 
 const TICKER_STYLE = new TextStyle({
@@ -50,15 +43,17 @@ interface TickerEntry {
 export class TitlePowerlineScreen extends Container {
   public static assetBundles = ["main"];
 
-  private readonly band       = new Graphics();
-  private readonly scrollMask = new Graphics();
-  private readonly scrollCont = new Container();
+  private readonly band         = new Graphics();
+  private readonly scrollMask   = new Graphics();
+  private readonly scrollCont   = new Container();
+  private readonly fluidBorderGfx = new Graphics();
 
   private items:      TickerEntry[] = [];
   private textIdx     = 0;
   private nextIsIcon  = false;
   private screenW = 0;
   private ready   = false;
+  private fluidTime = 0;
 
   constructor() {
     super();
@@ -66,6 +61,7 @@ export class TitlePowerlineScreen extends Container {
     this.addChild(this.scrollMask);
     this.addChild(this.scrollCont);
     this.scrollCont.mask = this.scrollMask;
+    this.addChild(this.fluidBorderGfx); // drawn on top of the static border
   }
 
   // ── Lifecycle ─────────────────────────────────────────────────────────────
@@ -77,6 +73,9 @@ export class TitlePowerlineScreen extends Container {
 
   public update(time: Ticker): void {
     if (!this.ready || this.screenW === 0) return;
+
+    this.fluidTime += time.deltaMS * 0.001; // seconds
+    this.drawFluidBorder();
 
     this.scrollCont.x -= SCROLL_PX_PER_MS * time.deltaMS;
 
@@ -108,8 +107,8 @@ export class TitlePowerlineScreen extends Container {
     this.y = height - TOTAL_H;
 
     this.band.clear();
-    this.band.rect(0, 0, width, BORDER_H).fill(TOXIC_VIOLET);
-    this.band.rect(0, BORDER_H, width, BAND_H).fill(TICKER_BG);
+    // Fill from y=0 so the green band sits flush under the wave
+    this.band.rect(0, 0, width, BAND_H + BORDER_H).fill(TICKER_BG);
     this.band.rect(0, BORDER_H + BAND_H, width, BORDER_H).fill(TOXIC_VIOLET);
 
     this.scrollMask.clear();
@@ -161,6 +160,73 @@ export class TitlePowerlineScreen extends Container {
     const t = new Text({ text: label, style: TICKER_STYLE });
     t.y = BORDER_H + (BAND_H - t.height) * 0.5;
     return { obj: t, width: t.width };
+  }
+
+  // ── Fluid border ──────────────────────────────────────────────────────────
+
+  /**
+   * Draws the top border as actual undulating fluid waves.
+   *
+   * Each wave layer is rendered as a series of thin vertical trapezoid slices
+   * (SEG_W px wide). The bottom edge of every slice follows a sum of layered
+   * sine waves, so the shape has a real wavy silhouette — not just a coloured
+   * rectangle. Three wave layers are stacked:
+   *
+   *   Layer A (back)  — tallest, slowest, most transparent  → wide swell
+   *   Layer B (mid)   — medium height, medium speed          → main body
+   *   Layer C (front) — shortest, fastest, most opaque      → bright crest
+   *
+   * The colour of each slice scrolls through the Catppuccin palette based on
+   * its x position + time, giving a flowing rainbow plasma look.
+   * A 1px near-white highlight is drawn at y=0 for a crisp top edge.
+   */
+  private drawFluidBorder(): void {
+    this.fluidBorderGfx.clear();
+    if (this.screenW === 0) return;
+
+    const t     = this.fluidTime;
+    const SEG_W = 6; // px per slice — fine enough for smooth curves
+
+    // Wave crests rise upward (negative y) from y=0.
+    // The trough floor is at y=0 (band top edge); crests poke above it.
+    // A flat TICKER_BG fill below ensures seamless green from y=0 downward.
+    const WAVE_H = BORDER_H * 2.8; // max crest height above y=0
+
+    /** Returns how far ABOVE y=0 the wave surface sits at this x (positive = upward). */
+    const crestY = (x: number, amp: number, f1: number, s1: number,
+                                            f2: number, s2: number,
+                                            f3: number, s3: number): number => {
+      const raw =
+          amp * 1.00 * Math.sin(x * f1 - t * s1)
+        + amp * 0.50 * Math.sin(x * f2 + t * s2 + 1.2)
+        + amp * 0.25 * Math.sin(x * f3 - t * s3 + 2.5);
+      // Shift so the minimum is 0 (wave never dips below band edge)
+      return Math.max(0, raw + amp * 1.75);
+    };
+
+    // Layer definitions — [amplitude, f1, s1, f2, s2, f3, s3, alpha]
+    const layers: [number, number, number, number, number, number, number, number][] = [
+      // back swell — tallest, slowest, most transparent
+      [WAVE_H * 0.55, 0.008, 1.1, 0.018, 1.7, 0.038, 3.2, 0.20],
+      // mid body
+      [WAVE_H * 0.38, 0.012, 1.8, 0.028, 2.6, 0.055, 4.8, 0.50],
+      // bright crest — shortest, fastest, most opaque
+      [WAVE_H * 0.22, 0.018, 2.8, 0.042, 4.1, 0.080, 7.0, 0.90],
+    ];
+
+    for (const [amp, f1, s1, f2, s2, f3, s3, layerAlpha] of layers) {
+      for (let x = 0; x < this.screenW; x += SEG_W) {
+        // How high above y=0 this slice rises
+        const rise0 = crestY(x,          amp, f1, s1, f2, s2, f3, s3);
+        const rise1 = crestY(x + SEG_W,  amp, f1, s1, f2, s2, f3, s3);
+
+        // Trapezoid: wavy top (negative y = above band edge), flat bottom at y=0
+        // so the green band shows through below the wave silhouette
+        this.fluidBorderGfx
+          .poly([x, -rise0,  x + SEG_W, -rise1,  x + SEG_W, 0,  x, 0])
+          .fill({ color: TICKER_BG, alpha: layerAlpha });
+      }
+    }
   }
 
   private spawnIcon(): TickerEntry {

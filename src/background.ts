@@ -8,6 +8,8 @@ const engine = new CreationEngine();
 setEngine(engine);
 
 (async () => {
+  await document.fonts.ready;
+
   await engine.init({
     background: CATPPUCCIN_CRUST,
     resizeOptions: { minWidth: 1920, minHeight: 1080, letterbox: false },

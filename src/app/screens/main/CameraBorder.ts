@@ -34,6 +34,24 @@ const CATT_TEAL_CAT = 0x94e2d5;
 const DARK_CRUST = 0x11111b; // Catppuccin Mocha — deepest near-black
 const INK_BLACK = 0x000000;
 
+// Catppuccin-only subset for orbit dots
+const CATT_PALETTE = [
+  CATT_MAUVE,
+  CATT_PINK,
+  CATT_PEACH,
+  CATT_YELLOW,
+  CATT_SKY,
+  CATT_SAPPHIRE,
+  CATT_LAVENDER,
+  CATT_TEAL_CAT,
+] as const;
+
+type CattColor = (typeof CATT_PALETTE)[number];
+
+function randomCatt(): CattColor {
+  return CATT_PALETTE[Math.floor(Math.random() * CATT_PALETTE.length)];
+}
+
 const PALETTE = [
   RAZER_GREEN,
   LIME_GREEN,
@@ -144,6 +162,17 @@ interface LightningBolt {
   decay: number;
   color: number;
   width: number;
+}
+
+interface OrbitDot {
+  angle: number;       // current angular position (radians)
+  speed: number;       // radians per second, signed (CW or CCW)
+  radiusOffset: number; // pixels offset from baseRadius
+  size: number;        // dot radius in px
+  color: CattColor;
+  alphaPhase: number;  // phase for alpha pulse
+  alphaSpeed: number;  // Hz of alpha pulse
+  glowAlpha: number;   // soft halo alpha multiplier (0..1)
 }
 
 interface GlitchBand {
@@ -477,6 +506,7 @@ export class CameraBorder extends Container {
   private readonly particleGfx: Graphics;
   private readonly glitchGfx: Graphics; // pixel-glitch chromatic split — above waves
   private readonly splatCont: Container; // orbiting graffiti splat sprites
+  private readonly orbitDotGfx: Graphics; // catppuccin dots orbiting the ring
 
   // ── Logo ───────────────────────────────────────────────────────────────────
   private logoSprite: Sprite | null = null;
@@ -500,6 +530,7 @@ export class CameraBorder extends Container {
   private sparkles: Sparkle[] = [];
   private sparks: Spark[] = [];
   private lightningBolts: LightningBolt[] = [];
+  private readonly orbitDots: OrbitDot[] = [];
 
   private time = 0;
   private glitchActive = false;
@@ -546,6 +577,7 @@ export class CameraBorder extends Container {
     this.surfaceGfx = new Graphics();
     this.effectGfx = new Graphics();
     this.particleGfx = new Graphics();
+    this.orbitDotGfx = new Graphics();
     this.splatCont = new Container();
 
     this.graffCont.addChild(this.graffGfx);
@@ -558,6 +590,7 @@ export class CameraBorder extends Container {
     this.addChild(this.surfaceGfx);
     this.addChild(this.effectGfx);
     this.addChild(this.particleGfx);
+    this.addChild(this.orbitDotGfx); // catppuccin dots — above particles
     // splatCont and logo layers are added on attach* calls (topmost)
 
     // Per-ring independent drift — random starting phases so no two rings are in sync
@@ -566,6 +599,7 @@ export class CameraBorder extends Container {
 
     this.drawBaseRing();
     this.initParticles();
+    this.initOrbitDots();
     this.initSurfaceLines();
     this.initGraffitiTags();
   }
@@ -840,6 +874,36 @@ export class CameraBorder extends Container {
         baseAlpha: 0.5 + Math.random() * 0.5,
         alphaSpeed: 0.5 + Math.random() * 2,
         color: randomPalette(),
+      });
+    }
+  }
+
+  private initOrbitDots(): void {
+    // 24 dots spread around the ring — Catppuccin palette only.
+    // Mix of sizes (small accent dots + a few larger beacons), CW and CCW speeds.
+    const count = 24;
+    for (let i = 0; i < count; i++) {
+      const startAngle = (i / count) * Math.PI * 2;
+      // Alternate direction — every third dot reverses
+      const dir = i % 3 === 0 ? -1 : 1;
+      // Speed band: slow pack (0.3–0.6 rad/s) and fast outliers (0.9–1.6 rad/s)
+      const fast = i % 7 === 0;
+      const speed = dir * (fast ? 0.9 + Math.random() * 0.7 : 0.25 + Math.random() * 0.35);
+      // Hug the ring: small random offset so they spread slightly around the border
+      const radiusOffset = (Math.random() - 0.5) * 18;
+      // Size variety: most are small dots, a few are medium beacons
+      const beacon = i % 5 === 0;
+      const size = beacon ? 5 + Math.random() * 3 : 2 + Math.random() * 2.5;
+
+      this.orbitDots.push({
+        angle: startAngle,
+        speed,
+        radiusOffset,
+        size,
+        color: randomCatt(),
+        alphaPhase: Math.random() * Math.PI * 2,
+        alphaSpeed: 0.4 + Math.random() * 1.2,
+        glowAlpha: beacon ? 0.22 : 0.1,
       });
     }
   }
@@ -1246,6 +1310,9 @@ export class CameraBorder extends Container {
         .fill({ color: p.color, alpha: a * 0.12 });
       this.particleGfx.circle(x, y, p.size).fill({ color: p.color, alpha: a });
     }
+
+    // ── Catppuccin orbit dots ─────────────────────────────────────────────────
+    this.drawOrbitDots(dt, breathe);
 
     // ── Logo badge ────────────────────────────────────────────────────────────
     if (this.logoSprite && this.logoGfx) this.animateLogo();
@@ -1656,6 +1723,43 @@ export class CameraBorder extends Container {
       this.glitchGfx
         .rect(bx, by, bw, bh)
         .fill({ color: col, alpha: 0.6 + Math.random() * 0.4 });
+    }
+  }
+
+  // ── Catppuccin orbit dots ─────────────────────────────────────────────────
+
+  private drawOrbitDots(dt: number, breathe: number): void {
+    this.orbitDotGfx.clear();
+
+    for (const dot of this.orbitDots) {
+      // Advance angle — beat makes fast dots surge slightly
+      const beatBoost = dot.speed > 0 ? this.beatAmplitude * 0.18 : 1.0;
+      dot.angle += dot.speed * dt * (1 + beatBoost * 0.15);
+
+      const r = (this.baseRadius + dot.radiusOffset) * breathe;
+      const x = Math.cos(dot.angle) * r;
+      const y = Math.sin(dot.angle) * r;
+
+      // Alpha pulses gently; beat gives a short brightness kick
+      const baseAlpha =
+        0.55 + 0.45 * Math.sin(this.time * dot.alphaSpeed + dot.alphaPhase);
+      const kickAlpha = Math.min(1.0, baseAlpha + (this.beatAmplitude - 1.0) * 0.35);
+      const size = dot.size * (1 + (this.beatAmplitude - 1) * 0.25);
+
+      // Soft glow halo
+      this.orbitDotGfx
+        .circle(x, y, size * 3.5)
+        .fill({ color: dot.color, alpha: dot.glowAlpha * kickAlpha });
+
+      // Mid bloom
+      this.orbitDotGfx
+        .circle(x, y, size * 1.8)
+        .fill({ color: dot.color, alpha: kickAlpha * 0.45 });
+
+      // Bright core
+      this.orbitDotGfx
+        .circle(x, y, size)
+        .fill({ color: dot.color, alpha: kickAlpha });
     }
   }
 

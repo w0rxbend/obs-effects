@@ -6,6 +6,8 @@ const engine = new CreationEngine();
 setEngine(engine);
 
 (async () => {
+  await document.fonts.ready;
+
   await engine.init({
     background: "transparent",
     backgroundAlpha: 0,
