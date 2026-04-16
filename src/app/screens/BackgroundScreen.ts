@@ -1,5 +1,5 @@
 import type { Ticker } from "pixi.js";
-import { Container, Graphics } from "pixi.js";
+import { Container, Graphics, Text, TextStyle } from "pixi.js";
 
 // ─── colours ──────────────────────────────────────────────────────────────────
 
@@ -18,7 +18,6 @@ const ACCENTS = [
   0xf5c2e7, // pink
 ];
 
-const BOID_COLOR = 0xcba6f7; // Catppuccin Mocha mauve — violet
 const BOID_GROUP_RADIUS = 140; // radius used to sense nearby boids for glow
 const BOID_GROUP_MAX = 8;      // neighbour count considered "fully grouped"
 
@@ -31,12 +30,13 @@ const PART_SPEED_MAX = 0.4;
 
 // ─── comet constants ──────────────────────────────────────────────────────────
 
-const COMET_TRAIL_LENGTH = 55;
+const COMET_TRAIL_LENGTH = 65;
 const COMET_SPEED_MIN = 5;
-const COMET_SPEED_MAX = 10;
-const COMET_SPAWN_MIN = 900;
-const COMET_SPAWN_MAX = 2800;
-const COMET_DOUBLE_CHANCE = 0.30; // probability of a second comet in the same burst
+const COMET_SPEED_MAX = 12;
+const COMET_SPAWN_MIN = 400;   // faster spawn cadence — more comets in view
+const COMET_SPAWN_MAX = 1400;
+const COMET_DOUBLE_CHANCE = 0.50; // 50 % chance of a second comet per burst
+const COMET_TRIPLE_CHANCE = 0.20; // bonus 20 % chance of a third (meteor shower)
 
 // comet ↔ boid interaction
 const COMET_BOID_RADIUS = 130;       // px — influence zone around comet head
@@ -45,13 +45,13 @@ const COMET_SCATTER_THRESHOLD = 5;   // boids hit in one frame → trigger scatt
 
 // ─── boid constants ───────────────────────────────────────────────────────────
 
-const BOID_COUNT = 30;
+const BOID_COUNT = 42;
 const BOID_SPEED_MIN = 0.8;
 const BOID_SPEED_MAX = 2.5;
 
-const SEP_RADIUS = 90;   // personal-space bubble
-const ALI_RADIUS = 160;
-const COH_RADIUS = 200;
+const SEP_RADIUS = 180;  // personal-space bubble — wider so symbols don't overlap
+const ALI_RADIUS = 280;
+const COH_RADIUS = 380;
 
 const SEP_FORCE = 0.22;  // per-pair spring — dominates cohesion at close range
 const ALI_FORCE = 0.03;
@@ -76,10 +76,26 @@ interface Comet {
   trail: TrailPoint[];
 }
 
+// Tech/dev Nerd Font codepoints (SymbolsNF)
+const BOID_SYMBOLS = [
+  '\uF121', '\uF126', '\uF09B', '\uF120', '\uF013',
+  '\uF135', '\uF0E7', '\uF259', '\uF292', '\uF188',
+  '\uF1C0', '\uF233', '\uF109', '\uF11C', '\uF17C',
+  '\uF179', '\uF0AD', '\uF0C3', '\uF1EB',
+  '\uF108', '\uF200', '\uF201', '\uF11B', '\uF1B2',
+  '\uF1C9', '\uF023', '\uF304', '\uF0E4', '\uF07B',
+];
+
+const BOID_PALETTE = [
+  0xcba6f7, 0xf38ba8, 0xfab387, 0xf9e2af,
+  0x94e2d5, 0x89dceb, 0x89b4fa, 0xb4befe, 0xf5c2e7,
+];
+
 interface Boid {
   x: number; y: number;
   vx: number; vy: number;
   density: number; // 0 = isolated, 1 = fully grouped
+  node: Text;      // the symbol Text object for this boid
 }
 
 // ─── screen ───────────────────────────────────────────────────────────────────
@@ -88,6 +104,7 @@ export class BackgroundScreen extends Container {
   public static assetBundles = ["default"];
 
   private gfx: Graphics;
+  private boidCont: Container; // Text symbol nodes for boids — drawn above gfx
   private screenWidth = 0;
   private screenHeight = 0;
 
@@ -107,7 +124,9 @@ export class BackgroundScreen extends Container {
   constructor() {
     super();
     this.gfx = new Graphics();
+    this.boidCont = new Container();
     this.addChild(this.gfx);
+    this.addChild(this.boidCont);
   }
 
   public show(): Promise<void> {
@@ -135,18 +154,41 @@ export class BackgroundScreen extends Container {
   }
 
   private spawnBoids(): void {
+    // destroy any previous nodes
+    for (const b of this.boids) b.node.destroy();
     this.boids = [];
+    this.boidCont.removeChildren();
+
     const cx = this.screenWidth * 0.5;
     const cy = this.screenHeight * 0.5;
+
     for (let i = 0; i < BOID_COUNT; i++) {
-      const angle = Math.random() * Math.PI * 2;
-      const speed = BOID_SPEED_MIN + Math.random() * (BOID_SPEED_MAX - BOID_SPEED_MIN);
+      const angle  = Math.random() * Math.PI * 2;
+      const speed  = BOID_SPEED_MIN + Math.random() * (BOID_SPEED_MAX - BOID_SPEED_MIN);
+      const sym    = BOID_SYMBOLS[i % BOID_SYMBOLS.length];
+      const color  = BOID_PALETTE[i % BOID_PALETTE.length];
+
+      const node = new Text({
+        text: sym,
+        style: new TextStyle({
+          fontFamily: "'SymbolsNF', monospace",
+          fontSize:   22,
+          fill:       color,
+          padding:    16,
+          dropShadow: { color, blur: 12, distance: 0, alpha: 0.85, angle: 0 },
+        }),
+      });
+      node.anchor.set(0.5);
+      node.x = cx + (Math.random() - 0.5) * 200;
+      node.y = cy + (Math.random() - 0.5) * 200;
+      this.boidCont.addChild(node);
+
       this.boids.push({
-        x: cx + (Math.random() - 0.5) * 200,
-        y: cy + (Math.random() - 0.5) * 200,
+        x: node.x, y: node.y,
         vx: Math.cos(angle) * speed,
         vy: Math.sin(angle) * speed,
         density: 0,
+        node,
       });
     }
   }
@@ -172,7 +214,8 @@ export class BackgroundScreen extends Container {
       vx = speed * (0.6 + Math.random() * 0.4); vy = (Math.random() - 0.5) * speed * 0.6;
     }
 
-    this.comets.push({ x, y, vx, vy, trail: [], color: ACCENTS[Math.floor(Math.random() * ACCENTS.length)] });
+    const color = ACCENTS[Math.floor(Math.random() * ACCENTS.length)];
+    this.comets.push({ x, y, vx, vy, trail: [], color });
   }
 
   // ─── update ─────────────────────────────────────────────────────────────────
@@ -194,7 +237,8 @@ export class BackgroundScreen extends Container {
     this.cometTimer += time.deltaMS;
     if (this.cometTimer >= this.nextCometIn) {
       this.spawnComet();
-      if (Math.random() < COMET_DOUBLE_CHANCE) this.spawnComet(); // meteor burst
+      if (Math.random() < COMET_DOUBLE_CHANCE)  this.spawnComet(); // double burst
+      if (Math.random() < COMET_TRIPLE_CHANCE)  this.spawnComet(); // meteor shower
       this.cometTimer = 0;
       this.nextCometIn = COMET_SPAWN_MIN + Math.random() * (COMET_SPAWN_MAX - COMET_SPAWN_MIN);
     }
@@ -385,15 +429,16 @@ export class BackgroundScreen extends Container {
       g.circle(head.x, head.y, 5).fill({ color: c.color, alpha: 0.25 });
     }
 
-    // boid dots — violet, glow scales with group density
+    // boid symbols — position Text nodes; scale and alpha driven by density
     for (const b of this.boids) {
       const d = b.density;
-      // outer soft halo: barely visible alone, blooms in a group
-      g.circle(b.x, b.y, 18 + d * 14).fill({ color: BOID_COLOR, alpha: 0.03 + d * 0.08 });
-      // inner glow ring
-      g.circle(b.x, b.y, 7 + d * 6).fill({ color: BOID_COLOR, alpha: 0.08 + d * 0.20 });
-      // solid core
-      g.circle(b.x, b.y, 2.5).fill({ color: BOID_COLOR, alpha: 0.85 + d * 0.15 });
+      b.node.x = b.x;
+      b.node.y = b.y;
+      // face the direction of travel
+      b.node.rotation = Math.atan2(b.vy, b.vx) + Math.PI * 0.5;
+      // grow slightly and brighten when grouped
+      b.node.scale.set(0.75 + d * 0.50);
+      b.node.alpha = 0.45 + d * 0.50;
     }
   }
 

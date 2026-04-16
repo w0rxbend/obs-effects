@@ -1899,7 +1899,6 @@ export class CameraBorder extends Container {
       '\uF11C', // keyboard
       '\uF17C', // linux tux
       '\uF179', // apple
-      '\uF17A', // windows flag
       '\uF0AD', // wrench / tool
       '\uF0C3', // flask / science
       '\uF1EB', // wifi
