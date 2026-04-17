@@ -21,6 +21,7 @@ export default defineConfig({
         placeholder1: resolve(__dirname, "placeholder-1.html"),
         musicBreak: resolve(__dirname, "music-break.html"),
         planet: resolve(__dirname, "planet.html"),
+        aquarium: resolve(__dirname, "aquarium.html"),
       },
     },
   },
