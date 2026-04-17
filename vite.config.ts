@@ -23,6 +23,7 @@ export default defineConfig({
         planet: resolve(__dirname, "planet.html"),
         aquarium: resolve(__dirname, "aquarium.html"),
         atom: resolve(__dirname, "atom.html"),
+        webcamBorder2: resolve(__dirname, "webcam-border-2.html"),
       },
     },
   },
