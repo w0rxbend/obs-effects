@@ -1,5 +1,5 @@
 import type { Ticker } from "pixi.js";
-import { Container, Graphics, HTMLText, HTMLTextStyle } from "pixi.js";
+import { Container, Graphics, Text, TextStyle } from "pixi.js";
 
 // ── Palette ───────────────────────────────────────────────────────────────────
 const TAPE_YELLOW = 0xf9e2af; // Catppuccin Mocha Yellow
@@ -63,29 +63,7 @@ const MAIN_PHRASES = [
   "NOTHING HAPPENED. GO WATCH ADS.",
 ] as const;
 
-// ── Symbols Nerd Font separator icons (IT / tech theme) ──────────────────────
-const SEPARATOR_ICONS = [
-  "\uF121", // nf-fa-code  </>
-  "\uF126", // nf-fa-code_fork  git branch
-  "\uF09B", // nf-fa-github
-  "\uF233", // nf-fa-server
-  "\uF0C2", // nf-fa-cloud
-  "\uF1C0", // nf-fa-database
-  "\uF188", // nf-fa-bug
-  "\uF013", // nf-fa-cog  gear
-  "\uF085", // nf-fa-cogs
-  "\uF023", // nf-fa-lock
-  "\uF11C", // nf-fa-keyboard
-  "\uF108", // nf-fa-desktop
-  "\uF1EB", // nf-fa-wifi
-  "\uF132", // nf-fa-shield
-  "\uF0AE", // nf-fa-tasks
-  "\uF0C3", // nf-fa-flask  testing
-  "\uF1B2", // nf-fa-cube  package
-  "\uF0E4", // nf-fa-dashboard
-  "\uF017", // nf-fa-clock_o
-  "\uF074", // nf-fa-random  shuffle
-] as const;
+const SEPARATORS = [" ★ ", " // ", " >> ", " :: ", " ## ", " ** ", " -- "] as const;
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const NET_DOT_COUNT = 45;
@@ -108,8 +86,8 @@ const TAPE_HW = 1400;
 
 interface TapeObj {
   container: Container;
-  labelA: HTMLText;
-  labelB: HTMLText;
+  labelA: Text;
+  labelB: Text;
   labelWidth: number; // estimated px width of one label (2 chunk repeats)
   scrollSpeed: number; // px/s in tape-local x, negative = leftward
   baseCX: number;
@@ -122,6 +100,9 @@ interface TapeObj {
   wobbleFreq: number;
   wobblePhase: number;
   isMain: boolean;
+  // per-label fade state (0 = invisible, 1 = fully visible)
+  fadeA: number;
+  fadeB: number;
 }
 
 interface NetDot {
@@ -382,7 +363,7 @@ function buildTapeGraphics(hh: number): Graphics {
 }
 
 export class ConfidentialScreen extends Container {
-  public static assetBundles = ["main"];
+  public static assetBundles: string[] = [];
 
   // ── Layers ─────────────────────────────────────────────────────────────────
   private readonly bgGfx = new Graphics();
@@ -703,21 +684,18 @@ export class ConfidentialScreen extends Container {
     // the 4096px WebGL texture limit — two labels side-by-side give seamless infinite scroll.
     const charPx = fontSize * 0.62;
 
-    const symFont = `'SymbolsNF', 'Symbols Nerd Font Mono', monospace`;
     const txtFont = `'Silkscreen', monospace`;
-    const icon = randomFrom(SEPARATOR_ICONS);
-    const sym = `<span style="font-family:${symFont}; letter-spacing:0">  ${icon}  </span>`;
-    const phraseHtml = `<span style="font-family:${txtFont}">${phrase}</span>`;
-    const chunkHtml = phraseHtml + sym;
+    const sep = randomFrom(SEPARATORS);
+    const chunkHtml = phrase + sep;
 
-    // Estimate chunk width: phrase chars + ~3 chars for the icon + padding spaces
-    const chunkCharEstimate = phrase.length + 7;
+    // Estimate chunk width: phrase chars + separator chars
+    const chunkCharEstimate = phrase.length + sep.length;
     const labelWidth = chunkCharEstimate * charPx * 2;
 
-    const makeLabel = (): HTMLText => {
-      const t = new HTMLText({
+    const makeLabel = (): Text => {
+      const t = new Text({
         text: chunkHtml.repeat(2),
-        style: new HTMLTextStyle({
+        style: new TextStyle({
           fontFamily: txtFont,
           fontSize,
           fill: TAPE_BLACK,
@@ -727,7 +705,6 @@ export class ConfidentialScreen extends Container {
         }),
       });
       t.anchor.set(0, 0.5);
-      t.y = 0;
       return t;
     };
 
@@ -756,6 +733,8 @@ export class ConfidentialScreen extends Container {
       wobbleFreq,
       wobblePhase: Math.random() * Math.PI * 2,
       isMain,
+      fadeA: 1,
+      fadeB: 1,
     });
   }
 
@@ -794,11 +773,19 @@ export class ConfidentialScreen extends Container {
           tape.labelB.x = tape.labelA.x - tape.labelWidth;
       }
 
-      if (tape.isMain) {
-        const a = 0.85 + 0.15 * Math.sin(this.time * 2.1);
-        tape.labelA.alpha = a;
-        tape.labelB.alpha = a;
-      }
+      // Fade each label in/out based on proximity to the tape edges
+      const FADE_ZONE = 320;
+      const edgeFade = (lx: number) => {
+        const cx = lx + tape.labelWidth * 0.5;
+        const dist = TAPE_HW - Math.abs(cx);
+        return Math.max(0, Math.min(1, dist / FADE_ZONE));
+      };
+      tape.fadeA += (edgeFade(tape.labelA.x) - tape.fadeA) * Math.min(1, dt * 8);
+      tape.fadeB += (edgeFade(tape.labelB.x) - tape.fadeB) * Math.min(1, dt * 8);
+
+      const breathe = tape.isMain ? 0.85 + 0.15 * Math.sin(this.time * 2.1) : 1;
+      tape.labelA.alpha = tape.fadeA * breathe;
+      tape.labelB.alpha = tape.fadeB * breathe;
     }
   }
 
@@ -1297,7 +1284,7 @@ export class ConfidentialScreen extends Container {
       vy: -(140 + Math.random() * 260),
       life: randomY ? Math.random() * maxLife : 0,
       maxLife,
-      size: 8 + Math.random() * 22,
+      size: 4 + Math.random() * Math.random() * 60,
     };
   }
 

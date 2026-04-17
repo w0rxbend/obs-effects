@@ -6,6 +6,9 @@ const engine = new CreationEngine();
 setEngine(engine);
 
 (async () => {
+  await Promise.all([
+    document.fonts.load("1em 'Bangers'"),
+  ]);
   await document.fonts.ready;
 
   await engine.init({

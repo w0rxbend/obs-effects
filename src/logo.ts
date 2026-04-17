@@ -9,6 +9,10 @@ setEngine(engine);
   // Block until all declared fonts are downloaded and ready.
   // This prevents OBS from rendering the first frame with a fallback font
   // before the Google Fonts stylesheet has finished loading.
+  await Promise.all([
+    document.fonts.load("400 1em 'Silkscreen'"),
+    document.fonts.load("700 1em 'Silkscreen'"),
+  ]);
   await document.fonts.ready;
 
   await engine.init({

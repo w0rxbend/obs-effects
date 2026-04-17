@@ -8,6 +8,10 @@ const engine = new CreationEngine();
 setEngine(engine);
 
 (async () => {
+  await Promise.all([
+    document.fonts.load("1em 'SymbolsNF'"),
+    document.fonts.load("500 1em 'SymbolsNF'"),
+  ]);
   await document.fonts.ready;
 
   await engine.init({

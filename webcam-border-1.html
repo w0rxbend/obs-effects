@@ -5,16 +5,30 @@
     <link rel="icon" type="image/png" href="/favicon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="/style.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Rock+Salt&display=swap" rel="stylesheet">
+    <link rel="preload" href="/fonts/RockSalt-Regular.ttf" as="font" type="font/ttf" crossorigin="anonymous">
+    <link rel="preload" href="/fonts/SymbolsNerdFont-Regular.ttf" as="font" type="font/ttf" crossorigin="anonymous">
+    <link rel="preload" href="/fonts/SymbolsNerdFontMono-Regular.ttf" as="font" type="font/ttf" crossorigin="anonymous">
     <style>
-      /* Symbols-only Nerd Font — provides the tech/devicon glyph range */
       @font-face {
-        font-family: 'SymbolsNF';
-        src: url('https://cdn.jsdelivr.net/gh/ryanoasis/nerd-fonts@v3.2.1/patched-fonts/NerdFontsSymbolsOnly/SymbolsNerdFontMono-Regular.ttf') format('truetype');
+        font-family: 'Rock Salt';
+        src: url('/fonts/RockSalt-Regular.ttf') format('truetype');
         font-weight: normal;
         font-style: normal;
+        font-display: block;
+      }
+      @font-face {
+        font-family: 'SymbolsNF';
+        src: url('/fonts/SymbolsNerdFont-Regular.ttf') format('truetype');
+        font-weight: normal;
+        font-style: normal;
+        font-display: block;
+      }
+      @font-face {
+        font-family: 'SymbolsNF';
+        src: url('/fonts/SymbolsNerdFontMono-Regular.ttf') format('truetype');
+        font-weight: 500;
+        font-style: normal;
+        font-display: block;
       }
     </style>
     <title>Webcam Border — worxbend</title>
