@@ -24,7 +24,6 @@ const PALETTE = [
   CATT_SKY, CATT_SAPPHIRE, CATT_BLUE, CATT_LAVENDER,
 ] as const;
 
-function randColor(): number { return PALETTE[Math.floor(Math.random() * PALETTE.length)]; }
 function palColor(idx: number): number { return PALETTE[Math.abs(Math.floor(idx)) % PALETTE.length]; }
 
 // ── Geometry ──────────────────────────────────────────────────────────────────
@@ -35,6 +34,14 @@ const BLOB_OUTER = WEBCAM_R + 95;
 const BORDER_N   = 72;
 const BLOB_N     = 26;
 const REST_L     = 2 * BORDER_R * Math.sin(Math.PI / BORDER_N);
+
+// Orbit rings: [base radius, orb count, angular speed (rad/s), size range]
+const ORBIT_RINGS: Array<{ r: number; count: number; speed: number; sMin: number; sMax: number }> = [
+  { r: 248, count: 3, speed:  0.52, sMin: 7, sMax: 11 },
+  { r: 312, count: 4, speed: -0.36, sMin: 5, sMax:  9 },
+  { r: 372, count: 3, speed:  0.68, sMin: 4, sMax:  7 },
+];
+const TRAIL_LEN = 30;
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface BorderNode {
@@ -60,6 +67,29 @@ interface Shockwave {
   color: number;
 }
 
+interface Sparkle {
+  x: number; y: number;
+  vx: number; vy: number;
+  life: number;
+  decay: number;
+  color: number;
+  size: number;
+}
+
+interface OrbitalOrb {
+  angle: number;
+  speed: number;
+  orbitRBase: number;
+  orbitR: number;
+  colorIdx: number;
+  size: number;
+  phase: number;
+  trail: Array<{ x: number; y: number }>;
+  sparkles: Sparkle[];
+  sparkleTimer: number;
+  glowBoost: number;
+}
+
 // ── Screen ────────────────────────────────────────────────────────────────────
 export class TrapCamScreen extends Container {
   public static assetBundles: string[] = [];
@@ -69,10 +99,12 @@ export class TrapCamScreen extends Container {
   private readonly connectionGfx: Graphics;
   private readonly metaContainer: Container;
   private readonly shockGfx:      Graphics;
+  private readonly orbGfx:        Graphics;
 
-  private nodes:      BorderNode[] = [];
-  private blobs:      Blob[]       = [];
-  private shockwaves: Shockwave[]  = [];
+  private nodes:      BorderNode[]  = [];
+  private blobs:      Blob[]        = [];
+  private shockwaves: Shockwave[]   = [];
+  private orbs:       OrbitalOrb[]  = [];
 
   private time         = 0;
   private beatTimer    = 0;
@@ -103,8 +135,13 @@ export class TrapCamScreen extends Container {
     this.world.addChild(this.connectionGfx);
     this.world.addChild(this.borderGfx);
 
+    // Orbital orbs rendered above everything
+    this.orbGfx = new Graphics();
+    this.world.addChild(this.orbGfx);
+
     this._initBorder();
     this._initBlobs();
+    this._initOrbs();
   }
 
   // ── Init ──────────────────────────────────────────────────────────────────
@@ -115,6 +152,29 @@ export class TrapCamScreen extends Container {
       const hx = Math.cos(a) * BORDER_R;
       const hy = Math.sin(a) * BORDER_R;
       this.nodes.push({ x: hx, y: hy, vx: 0, vy: 0, homeX: hx, homeY: hy, homeAngle: a });
+    }
+  }
+
+  private _initOrbs(): void {
+    let colorOffset = 0;
+    for (const ring of ORBIT_RINGS) {
+      for (let i = 0; i < ring.count; i++) {
+        const angle = (i / ring.count) * Math.PI * 2 + Math.random() * 0.4;
+        this.orbs.push({
+          angle,
+          speed:      ring.speed * (0.82 + Math.random() * 0.36),
+          orbitRBase: ring.r,
+          orbitR:     ring.r,
+          colorIdx:   colorOffset,
+          size:       ring.sMin + Math.random() * (ring.sMax - ring.sMin),
+          phase:      Math.random() * Math.PI * 2,
+          trail:      [],
+          sparkles:   [],
+          sparkleTimer: Math.random() * 18,
+          glowBoost:  0,
+        });
+        colorOffset += 2;
+      }
     }
   }
 
@@ -167,6 +227,11 @@ export class TrapCamScreen extends Container {
       b.vy += (b.y / d) * mag2 * (Math.random() > 0.5 ? 1 : -1);
     }
 
+    // Boost orb glow on beat
+    for (const o of this.orbs) {
+      o.glowBoost = Math.min(1, o.glowBoost + 0.55 + Math.random() * 0.45);
+    }
+
     // Spawn expanding shockwave ring
     this.shockwaves.push({
       r:     BORDER_R,
@@ -190,9 +255,11 @@ export class TrapCamScreen extends Container {
 
     this._updateBorder(dt);
     this._updateBlobs(dt);
+    this._updateOrbs(dt);
     this._drawShockwaves(dt);
     this._drawBorder();
     this._drawConnections();
+    this._drawOrbs();
   }
 
   private _updateBorder(dt: number): void {
@@ -297,7 +364,110 @@ export class TrapCamScreen extends Container {
     }
   }
 
+  private _updateOrbs(dt: number): void {
+    for (const orb of this.orbs) {
+      // Advance angle
+      orb.angle += orb.speed * dt * 0.016;
+
+      // Breathe orbit radius
+      orb.orbitR = orb.orbitRBase + Math.sin(this.time * 1.6 + orb.phase) * 9;
+
+      const cx = Math.cos(orb.angle) * orb.orbitR;
+      const cy = Math.sin(orb.angle) * orb.orbitR;
+
+      // Record trail
+      orb.trail.unshift({ x: cx, y: cy });
+      if (orb.trail.length > TRAIL_LEN) orb.trail.pop();
+
+      // Sparkle spawning
+      orb.sparkleTimer -= dt;
+      if (orb.sparkleTimer <= 0) {
+        orb.sparkleTimer = 7 + Math.random() * 14;
+        if (orb.sparkles.length < 28) {
+          for (let s = 0; s < 2; s++) {
+            const sa  = Math.random() * Math.PI * 2;
+            const spd = 0.4 + Math.random() * 1.6;
+            orb.sparkles.push({
+              x: cx, y: cy,
+              vx: Math.cos(sa) * spd,
+              vy: Math.sin(sa) * spd,
+              life:  1,
+              decay: 0.018 + Math.random() * 0.028,
+              color: palColor(orb.colorIdx + Math.floor(Math.random() * 3)),
+              size:  1.2 + Math.random() * 2.6,
+            });
+          }
+        }
+      }
+
+      // Advance sparkles
+      for (let i = orb.sparkles.length - 1; i >= 0; i--) {
+        const sp = orb.sparkles[i];
+        sp.x    += sp.vx * dt * 0.5;
+        sp.y    += sp.vy * dt * 0.5;
+        sp.life -= sp.decay * dt;
+        if (sp.life <= 0) orb.sparkles.splice(i, 1);
+      }
+
+      // Fade glow boost
+      orb.glowBoost = Math.max(0, orb.glowBoost - dt * 0.032);
+    }
+  }
+
   // ── Draw ──────────────────────────────────────────────────────────────────
+
+  private _drawOrbs(): void {
+    const g = this.orbGfx;
+    g.clear();
+
+    for (const orb of this.orbs) {
+      if (orb.trail.length === 0) continue;
+
+      const cx    = orb.trail[0].x;
+      const cy    = orb.trail[0].y;
+      const col   = palColor(orb.colorIdx + Math.floor(this.time * 0.28));
+      const boost = orb.glowBoost;
+      const sz    = orb.size * (1 + Math.sin(this.time * 2.1 + orb.phase) * 0.18);
+
+      // Fading trail
+      for (let i = 1; i < orb.trail.length; i++) {
+        const t  = orb.trail[i];
+        const p  = 1 - i / orb.trail.length;   // 1 near head → 0 at tail
+        const tr = sz * p * 1.3;
+        if (tr < 0.4) continue;
+        g.circle(t.x, t.y, tr);
+        g.fill({ color: col, alpha: p * 0.38 });
+      }
+
+      // Wide outer glow — expands on beat
+      g.circle(cx, cy, sz * 4.0 + boost * 14);
+      g.fill({ color: col, alpha: 0.04 + boost * 0.10 });
+
+      // Mid glow ring
+      g.circle(cx, cy, sz * 2.4 + boost * 7);
+      g.fill({ color: col, alpha: 0.14 + boost * 0.18 });
+
+      // Inner corona
+      g.circle(cx, cy, sz * 1.3 + boost * 2);
+      g.fill({ color: col, alpha: 0.65 + boost * 0.28 });
+
+      // Bright white core
+      g.circle(cx, cy, sz * 0.45);
+      g.fill({ color: 0xffffff, alpha: 0.90 });
+
+      // Sparkle particles
+      for (const sp of orb.sparkles) {
+        const a  = sp.life * 0.88;
+        const sr = sp.size * sp.life;
+        g.circle(sp.x, sp.y, sr);
+        g.fill({ color: sp.color, alpha: a });
+        if (sr > 0.8) {
+          g.circle(sp.x, sp.y, sr * 0.38);
+          g.fill({ color: 0xffffff, alpha: a * 0.65 });
+        }
+      }
+    }
+  }
 
   private _drawShockwaves(dt: number): void {
     const g = this.shockGfx;

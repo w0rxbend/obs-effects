@@ -34,6 +34,7 @@ export default defineConfig({
         hexLayerCam: resolve(__dirname, "hexlayercam.html"),
         triangulation: resolve(__dirname, "triangulation.html"),
         rain: resolve(__dirname, "rain.html"),
+        flightSimulation: resolve(__dirname, "flight-simulation.html"),
       },
     },
   },

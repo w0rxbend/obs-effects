@@ -1,6 +1,6 @@
 {
-  "name": "pixijs-payground",
-  "version": "0.0.0",
+  "name": "obs-effects",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "scripts": {
