@@ -31,6 +31,7 @@ export default defineConfig({
         hexCam: resolve(__dirname, "hexcam.html"),
         hexGridCam: resolve(__dirname, "hexgridcam.html"),
         hexLayerCam: resolve(__dirname, "hexlayercam.html"),
+        triangulation: resolve(__dirname, "triangulation.html"),
       },
     },
   },
