@@ -10,6 +10,7 @@ setEngine(engine);
     document.fonts.load("1em 'Silkscreen'"),
     document.fonts.load("1em 'Rock Salt'"),
     document.fonts.load("1em 'SymbolsNF'"),
+    document.fonts.load("500 1em 'SymbolsNF'"),
   ]);
 
   await document.fonts.ready;
