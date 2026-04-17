@@ -24,6 +24,7 @@ export default defineConfig({
         aquarium: resolve(__dirname, "aquarium.html"),
         atom: resolve(__dirname, "atom.html"),
         webcamBorder2: resolve(__dirname, "webcam-border-2.html"),
+        matrixDots: resolve(__dirname, "matrix-dots.html"),
       },
     },
   },
