@@ -4,7 +4,19 @@
       "Bash(npx tsc *)",
       "Bash(rm -rf /home/worxbend/Workspace/pixijs-payground/public/assets/main/sounds /home/worxbend/Workspace/pixijs-payground/public/assets/preload '/home/worxbend/Workspace/pixijs-payground/raw-assets/main{m}/sounds' '/home/worxbend/Workspace/pixijs-payground/raw-assets/main{m}/ui{tps}' '/home/worxbend/Workspace/pixijs-payground/raw-assets/preload{m}')",
       "Bash(rm -f /home/worxbend/Workspace/pixijs-payground/public/assets/main/logo-white.svg /home/worxbend/Workspace/pixijs-payground/public/assets/main/ui@0.5x.png /home/worxbend/Workspace/pixijs-payground/public/assets/main/ui@0.5x.png.json /home/worxbend/Workspace/pixijs-payground/public/assets/main/ui@0.5x.webp /home/worxbend/Workspace/pixijs-payground/public/assets/main/ui@0.5x.webp.json /home/worxbend/Workspace/pixijs-payground/public/assets/main/ui.png /home/worxbend/Workspace/pixijs-payground/public/assets/main/ui.png.json /home/worxbend/Workspace/pixijs-payground/public/assets/main/ui.webp /home/worxbend/Workspace/pixijs-payground/public/assets/main/ui.webp.json '/home/worxbend/Workspace/pixijs-payground/raw-assets/main{m}/logo-white.svg')",
-      "Bash(npx prettier *)"
+      "Bash(npx prettier *)",
+      "Bash(mkdir -p /home/worxbend/Worxpace/pixijs-payground/public/fonts)",
+      "Bash(curl -sL \"https://fonts.gstatic.com/s/silkscreen/v4/m8JXjfVPf62XiF7kO-i9ULRvamBKKw.woff2\" -o Silkscreen-Regular.woff2)",
+      "Bash(curl -sL \"https://fonts.gstatic.com/s/silkscreen/v4/m8JUjfVPf62XiF7kO-i9WB4BVNzGFQ.woff2\" -o Silkscreen-Bold.woff2)",
+      "Bash(curl -sL \"https://cdn.jsdelivr.net/gh/ryanoasis/nerd-fonts@v3.2.1/patched-fonts/NerdFontsSymbolsOnly/SymbolsNerdFontMono-Regular.ttf\" -o SymbolsNerdFontMono-Regular.ttf)",
+      "Bash(xxd)",
+      "Bash(curl -sL \"https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700\")",
+      "Bash(curl -sL \"https://fonts.gstatic.com/s/silkscreen/v6/m8JXjfVPf62XiF7kO-i9ULQ.ttf\" -o Silkscreen-Regular.ttf)",
+      "Bash(curl -sL \"https://fonts.gstatic.com/s/silkscreen/v6/m8JUjfVPf62XiF7kO-i9aAhATms.ttf\" -o Silkscreen-Bold.ttf)",
+      "Bash(curl -sL \"https://fonts.googleapis.com/css2?family=Rock+Salt&display=swap\")",
+      "Bash(curl -sL \"https://fonts.googleapis.com/css2?family=Bangers&display=swap\")",
+      "Bash(curl -sL \"https://fonts.gstatic.com/s/rocksalt/v24/MwQ0bhv11fWD6QsAVOZbsA.ttf\" -o RockSalt-Regular.ttf)",
+      "Bash(curl -sL \"https://fonts.gstatic.com/s/bangers/v25/FeVQS0BTqb0h60ACL5k.ttf\" -o Bangers-Regular.ttf)"
     ]
   }
 }
