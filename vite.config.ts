@@ -35,6 +35,7 @@ export default defineConfig({
         triangulation: resolve(__dirname, "triangulation.html"),
         rain: resolve(__dirname, "rain.html"),
         flightSimulation: resolve(__dirname, "flight-simulation.html"),
+        grass: resolve(__dirname, "grass.html"),
       },
     },
   },
