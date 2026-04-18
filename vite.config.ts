@@ -37,6 +37,7 @@ export default defineConfig({
         rain: resolve(__dirname, "rain.html"),
         flightSimulation: resolve(__dirname, "flight-simulation.html"),
         grass: resolve(__dirname, "grass.html"),
+        graphBg: resolve(__dirname, "graph-bg.html"),
       },
     },
   },
