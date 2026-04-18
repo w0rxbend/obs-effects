@@ -64,6 +64,9 @@ const BLOB_COLORS: [number, number, number][] = [
   [0xa6, 0xe3, 0xa1], // Green
   [0x89, 0xdc, 0xeb], // Sky
   [0xf3, 0x8b, 0xa8], // Red
+  [0x18, 0x18, 0x25], // Mantle
+  [0x11, 0x11, 0x1b], // Crust
+  [0x00, 0x00, 0x00], // Black
 ];
 
 // ── Fluid grid (16:9) ─────────────────────────────────────────────────────────
@@ -323,17 +326,19 @@ export class PerlinBlobsScreen extends Container {
 
   private _render(): void {
     const px = this.imgData.data;
+    // Brightness cycles dark → bright → dark on its own 20 s period, looping forever
+    const breath = 0.5 - 0.5 * Math.cos((this.time / 20) * Math.PI * 2);
+    const cap = 18 + 82 * breath * breath;
     for (let j = 1; j <= GH; j++) {
       for (let i = 1; i <= GW; i++) {
         const idx = IX(i, j);
-        // sqrt tonemap for luminous feel
-        const pr = Math.sqrt(Math.min(1, this.dr[idx]));
-        const pg = Math.sqrt(Math.min(1, this.dg[idx]));
-        const pb = Math.sqrt(Math.min(1, this.db[idx]));
+        const pr = Math.min(1, this.dr[idx]);
+        const pg = Math.min(1, this.dg[idx]);
+        const pb = Math.min(1, this.db[idx]);
         const p4 = ((j - 1) * GW + (i - 1)) * 4;
-        px[p4]     = (CRUST[0] + (255 - CRUST[0]) * pr + 0.5) | 0;
-        px[p4 + 1] = (CRUST[1] + (255 - CRUST[1]) * pg + 0.5) | 0;
-        px[p4 + 2] = (CRUST[2] + (255 - CRUST[2]) * pb + 0.5) | 0;
+        px[p4]     = (CRUST[0] + cap * pr + 0.5) | 0;
+        px[p4 + 1] = (CRUST[1] + cap * pg + 0.5) | 0;
+        px[p4 + 2] = (CRUST[2] + cap * pb + 0.5) | 0;
       }
     }
     this.ctx.putImageData(this.imgData, 0, 0);
