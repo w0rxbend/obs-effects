@@ -76,6 +76,7 @@ export default defineConfig({
         smokeRingCam: resolve(__dirname, "smoke-ring-cam.html"),
         elasticRings: resolve(__dirname, "elastic-rings.html"),
         galaxyBg: resolve(__dirname, "galaxy-bg.html"),
+        pcbBg: resolve(__dirname, "pcb-bg.html"),
       },
     },
   },

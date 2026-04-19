@@ -23,7 +23,11 @@
       "Bash(node -e \"const p = require\\('./node_modules/pixi.js'\\); console.log\\(Object.keys\\(p\\).filter\\(k => k.includes\\('Buffer'\\) || k.includes\\('Source'\\)\\).join\\('\\\\n'\\)\\)\")",
       "Bash(node -e ' *)",
       "Bash(grep \"\\\\.ts$\")",
-      "Bash(grep -v \"^main$\")"
+      "Bash(grep -v \"^main$\")",
+      "Bash(npm run *)",
+      "Bash(curl -s http://localhost:8081/pcb-bg.html)",
+      "Bash(kill %1)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8082/pcb-bg.html)"
     ]
   }
 }
