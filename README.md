@@ -20,6 +20,8 @@ npm run dev
 
 The dev server starts at **http://localhost:8080**
 
+Go to **http://localhost:8080/map.html** to see an index of all available screens. Click any screen to view it, or navigate directly to its URL (see below).
+
 Each screen has its own URL — navigate to one directly:
 
 ```
