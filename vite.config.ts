@@ -51,7 +51,6 @@ export default defineConfig({
         flowField: resolve(__dirname, "flow-field.html"),
         gravitySphere: resolve(__dirname, "gravity-sphere.html"),
         magneticField: resolve(__dirname, "magnetic-field.html"),
-        voronoi: resolve(__dirname, "voronoi.html"),
       },
     },
   },

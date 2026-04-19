@@ -18,7 +18,9 @@
       "Bash(curl -sL \"https://fonts.gstatic.com/s/rocksalt/v24/MwQ0bhv11fWD6QsAVOZbsA.ttf\" -o RockSalt-Regular.ttf)",
       "Bash(curl -sL \"https://fonts.gstatic.com/s/bangers/v25/FeVQS0BTqb0h60ACL5k.ttf\" -o Bangers-Regular.ttf)",
       "Bash(xdg-open http://localhost:8080/atom.html)",
-      "Bash(python3 -c ' *)"
+      "Bash(python3 -c ' *)",
+      "Bash(grep -E \"\\\\.\\(glsl|shader|frag|vert\\)$\")",
+      "Bash(node -e \"const p = require\\('./node_modules/pixi.js'\\); console.log\\(Object.keys\\(p\\).filter\\(k => k.includes\\('Buffer'\\) || k.includes\\('Source'\\)\\).join\\('\\\\n'\\)\\)\")"
     ]
   }
 }
