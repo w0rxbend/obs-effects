@@ -21,7 +21,8 @@
       "Bash(python3 -c ' *)",
       "Bash(grep -E \"\\\\.\\(glsl|shader|frag|vert\\)$\")",
       "Bash(node -e \"const p = require\\('./node_modules/pixi.js'\\); console.log\\(Object.keys\\(p\\).filter\\(k => k.includes\\('Buffer'\\) || k.includes\\('Source'\\)\\).join\\('\\\\n'\\)\\)\")",
-      "Bash(node -e ' *)"
+      "Bash(node -e ' *)",
+      "Bash(grep \"\\\\.ts$\")"
     ]
   }
 }
