@@ -75,6 +75,7 @@ export default defineConfig({
         camFrameOverlay: resolve(__dirname, "cam-frame-overlay.html"),
         smokeRingCam: resolve(__dirname, "smoke-ring-cam.html"),
         elasticRings: resolve(__dirname, "elastic-rings.html"),
+        galaxyBg: resolve(__dirname, "galaxy-bg.html"),
       },
     },
   },
