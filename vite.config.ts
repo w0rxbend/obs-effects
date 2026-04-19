@@ -52,6 +52,7 @@ export default defineConfig({
         gravitySphere: resolve(__dirname, "gravity-sphere.html"),
         magneticField: resolve(__dirname, "magnetic-field.html"),
         life: resolve(__dirname, "life.html"),
+        particleGlobe: resolve(__dirname, "particle-globe.html"),
       },
     },
   },
