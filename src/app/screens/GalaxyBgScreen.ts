@@ -1,5 +1,5 @@
 import type { Ticker } from "pixi.js";
-import { BLEND_MODES, Container, Graphics, Sprite, Texture } from "pixi.js";
+import { Container, Graphics, Sprite, Texture } from "pixi.js";
 
 const W = 1920;
 const H = 1080;
@@ -341,7 +341,8 @@ export class GalaxyBgScreen extends Container {
       const ny = CY + Math.sin(off + theta) * r_arm;
 
       const nb = new Container();
-      nb.blendMode = BLEND_MODES.ADD;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (nb as any).blendMode = "add";
       const g = new Graphics();
       const [c1, c2] = pairs[n];
       for (let i = 0; i < Math.floor(rnd(80, 120)); i++) {
@@ -363,7 +364,8 @@ export class GalaxyBgScreen extends Container {
 
   private buildCoreGlow(): void {
     const g = this.coreGlowG;
-    g.blendMode = BLEND_MODES.ADD;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (g as any).blendMode = "add";
     const radii = [20, 50, 90, 140, 190];
     const alphas = [0.09, 0.07, 0.05, 0.04, 0.03];
     for (let i = 0; i < 5; i++) {
