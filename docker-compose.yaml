@@ -1,0 +1,6 @@
+services:
+  obs-effects:
+    image: worxbend/obs-effects:latest
+    ports:
+      - "8080:80"
+    restart: unless-stopped
