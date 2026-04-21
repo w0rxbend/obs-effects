@@ -1,5 +1,5 @@
 import type { Ticker } from "pixi.js";
-import { Container, Graphics } from "pixi.js";
+import { Container, Graphics, Sprite, Texture } from "pixi.js";
 
 const W = 1920;
 const H = 1080;
@@ -7,87 +7,90 @@ const TAU = Math.PI * 2;
 
 // Catppuccin Mocha
 const CRUST = 0x11111b;
+const MANTLE = 0x181825;
+const BASE = 0x1e1e2e;
 const SURFACE0 = 0x313244;
 const SURFACE1 = 0x45475a;
 const LAVENDER = 0xb4befe;
-const BLUE = 0x89b4fa;
 const SAPPHIRE = 0x74c7ec;
 const TEAL = 0x94e2d5;
-const GREEN = 0xa6e3a1;
 const MAUVE = 0xcba6f7;
 const PINK = 0xf38ba8;
 const YELLOW = 0xf9e2af;
 
-// Grid dimensions and world scale
-const NX = 62;
-const NY = 38;
-const CELL = 27;
+// ── Layout ────────────────────────────────────────────────────────────────────
+const HORIZON_Y = 405; // screen Y of the horizon line
+const VPX = W / 2; // vanishing-point X (dead centre)
 
-// Camera
-const PITCH = 0.84; // radians — tilt down
-const YAW = Math.PI / 10; // radians — slight left rotation
-const SCALE = 1.0;
-const SCX = W / 2;
-const SCY = 595; // vertical centre of terrain (slightly below canvas centre)
+// ── Perspective grid ──────────────────────────────────────────────────────────
+// NH rows (0 = nearest / bottom, NH-1 = farthest / near horizon)
+// NV columns spread evenly, converging to the vanishing point
+const NH = 22;
+const NV = 25;
 
-// Terrain
-const HEIGHT_SCALE = 148; // world units for max elevation
-const TERRAIN_SPEED = 0.00042; // time param advance per ms
+// Row screen-Y: equal spacing from near bottom → near horizon
+const ROW_BOT_Y = H - 16;
+const ROW_TOP_Y = HORIZON_Y + 10;
 
-// Scan
-const SCAN_PERIOD = 7200; // ms per full ping-pong
-const SCAN_GLOW_W = 0.11; // normalised height band for outer glow
-const SCAN_CORE_W = 0.038; // normalised height band for bright core
+// Column bottom-edge X positions — slightly wider than screen for dramatic spread
+const COL_SPREAD = W + 200;
+const colBotX = Array.from(
+  { length: NV },
+  (_, j) => (W - COL_SPREAD) / 2 + (j / (NV - 1)) * COL_SPREAD,
+);
 
-const cosPitch = Math.cos(PITCH);
-const sinPitch = Math.sin(PITCH);
-const cosYaw = Math.cos(YAW);
-const sinYaw = Math.sin(YAW);
+// Base row screen-Y positions (before terrain deformation)
+const rowY = Array.from(
+  { length: NH },
+  (_, i) => ROW_BOT_Y - (i / (NH - 1)) * (ROW_BOT_Y - ROW_TOP_Y),
+);
 
-function rnd(lo: number, hi: number): number {
-  return lo + Math.random() * (hi - lo);
+// Perspective X of column j at screen-Y sy
+function perspX(j: number, sy: number): number {
+  const t = (sy - HORIZON_Y) / (H - HORIZON_Y); // 0 at horizon, 1 at screen bottom
+  return VPX + (colBotX[j] - VPX) * t;
 }
 
-// Sum-of-sines animated terrain — returns [0, 1]
-function tHeight(ix: number, iy: number, t: number): number {
-  const nx = (ix / (NX - 1)) * TAU;
-  const ny = (iy / (NY - 1)) * TAU;
+// ── Terrain ───────────────────────────────────────────────────────────────────
+// Terrain is screen-space: each row/col intersection lifts UP by `offset` pixels.
+// Max lift scales with distance (mountains only appear far away).
+const MAX_LIFT_FAR = 105; // px at far horizon rows
+const TERRAIN_POWER = 2.0; // how steeply lift grows with distance
+
+function maxLift(i: number): number {
+  return MAX_LIFT_FAR * Math.pow(i / (NH - 1), TERRAIN_POWER);
+}
+
+// Animated height noise [0, 1]
+function noise(nj: number, ni: number, t: number): number {
+  const x = nj * TAU;
+  const z = ni * TAU;
   let h = 0;
-  h += 0.48 * Math.sin(nx * 1.4 + t * 0.22) * Math.cos(ny * 1.1 + t * 0.17);
-  h +=
-    0.26 * Math.sin(nx * 3.2 + t * 0.38 + 1.3) * Math.cos(ny * 2.9 + t * 0.29);
-  h +=
-    0.16 * Math.sin(nx * 6.1 + t * 0.57 + 0.8) * Math.cos(ny * 5.7 + t * 0.46);
-  h +=
-    0.1 * Math.sin(nx * 11.8 + t * 0.85 + 2.0) * Math.cos(ny * 10.4 + t * 0.7);
+  h += 0.48 * Math.sin(x * 1.3 + t * 0.24) * Math.cos(z * 1.1 + t * 0.18);
+  h += 0.27 * Math.sin(x * 2.9 + t * 0.41 + 1.2) * Math.cos(z * 2.6 + t * 0.31);
+  h += 0.15 * Math.sin(x * 5.8 + t * 0.63 + 0.8) * Math.cos(z * 5.1 + t * 0.49);
+  h += 0.1 * Math.sin(x * 11.2 + t * 0.88 + 2.1) * Math.cos(z * 9.7 + t * 0.72);
   return (h + 1) * 0.5;
 }
 
-// Orthographic projection with yaw + pitch
-function project(wx: number, wy: number, wz: number): [number, number] {
-  const rx = (wx * cosYaw + wz * sinYaw) * SCALE;
-  const ry = wy;
-  const rz = (-wx * sinYaw + wz * cosYaw) * SCALE;
-  const ty = ry * cosPitch - rz * sinPitch;
-  return [SCX + rx, SCY - ty];
-}
-
-type E4 = [number, number, number, number]; // x1 y1 x2 y2
+// ── Scan ──────────────────────────────────────────────────────────────────────
+// Sweeps row-by-row from NH-1 (farthest/top) toward 0 (nearest/bottom)
+const SCAN_PERIOD = 4800; // ms per full far→near sweep
+const SCAN_GLOW_R = 1.7; // rows of outer glow halo
+const SCAN_CORE_R = 0.55; // rows of bright core
 
 export class TopoLandscapeScreen extends Container {
   public static assetBundles: string[] = [];
 
-  private readonly bgG = new Graphics();
-  private readonly baseG = new Graphics(); // normal blend — terrain lines
-  private readonly scanG = new Graphics(); // additive blend — scan glow
-  private readonly horizG = new Graphics(); // additive blend — horizon + scan band
+  private readonly bgG = new Graphics(); // sky gradient + stars (static)
+  private readonly sunLayer = new Container(); // sun (static)
+  private readonly mtnG = new Graphics(); // mountains silhouette (static)
+  private readonly gridG = new Graphics(); // base grid lines (per-frame)
+  private readonly glowG = new Graphics(); // scan glow, additive (per-frame)
 
-  // Pre-allocated per-vertex arrays
-  private readonly vx: Float32Array;
-  private readonly vz: Float32Array;
-  private readonly ht: Float32Array; // current heights [0,1]
-  private readonly sx: Float32Array; // projected screen x
-  private readonly sy: Float32Array; // projected screen y
+  // Per-vertex screen positions (NH rows × NV cols)
+  private readonly ptX: Float32Array;
+  private readonly ptY: Float32Array;
 
   private elapsed = 0;
   private tParam = 0;
@@ -95,35 +98,34 @@ export class TopoLandscapeScreen extends Container {
 
   constructor() {
     super();
-    const N = NX * NY;
-    this.vx = new Float32Array(N);
-    this.vz = new Float32Array(N);
-    this.ht = new Float32Array(N);
-    this.sx = new Float32Array(N);
-    this.sy = new Float32Array(N);
+    const N = NH * NV;
+    this.ptX = new Float32Array(N);
+    this.ptY = new Float32Array(N);
 
-    this.addChild(this.bgG);
-    this.addChild(this.baseG);
-    this.addChild(this.horizG);
-    this.addChild(this.scanG);
+    for (const l of [
+      this.bgG,
+      this.sunLayer,
+      this.mtnG,
+      this.gridG,
+      this.glowG,
+    ]) {
+      this.addChild(l);
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (this.glowG as any).blendMode = "add";
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (this.scanG as any).blendMode = "add";
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (this.horizG as any).blendMode = "add";
+    // Pre-compute static X positions (only Y changes with terrain)
+    for (let i = 0; i < NH; i++) {
+      for (let j = 0; j < NV; j++) {
+        this.ptX[i * NV + j] = perspX(j, rowY[i]);
+      }
+    }
   }
 
   public async show(): Promise<void> {
-    // Pre-compute static world XZ positions (Y is dynamic per-frame)
-    for (let iy = 0; iy < NY; iy++) {
-      for (let ix = 0; ix < NX; ix++) {
-        const idx = iy * NX + ix;
-        this.vx[idx] = (ix - (NX - 1) * 0.5) * CELL;
-        // iy=0 → far (top of screen), iy=NY-1 → near (bottom of screen)
-        this.vz[idx] = (iy - (NY - 1) * 0.5) * CELL;
-      }
-    }
-    this.buildBg();
+    this.buildSky();
+    this.buildSun();
+    this.buildMountains();
     this.ready = true;
   }
 
@@ -131,21 +133,19 @@ export class TopoLandscapeScreen extends Container {
     if (!this.ready) return;
     const dt = time.deltaMS;
     this.elapsed += dt;
-    this.tParam += dt * TERRAIN_SPEED;
+    this.tParam += dt * 0.00038;
 
-    // Recompute heights and screen positions every frame
-    for (let iy = 0; iy < NY; iy++) {
-      for (let ix = 0; ix < NX; ix++) {
-        const idx = iy * NX + ix;
-        const h = tHeight(ix, iy, this.tParam);
-        this.ht[idx] = h;
-        const [sx, sy] = project(this.vx[idx], h * HEIGHT_SCALE, this.vz[idx]);
-        this.sx[idx] = sx;
-        this.sy[idx] = sy;
+    // Update terrain-deformed Y positions
+    for (let i = 0; i < NH; i++) {
+      const ml = maxLift(i);
+      const ni = i / (NH - 1);
+      for (let j = 0; j < NV; j++) {
+        const lift = noise(j / (NV - 1), ni, this.tParam) * ml;
+        this.ptY[i * NV + j] = rowY[i] - lift;
       }
     }
 
-    this.drawTerrain();
+    this.drawGrid();
   }
 
   public resize(width: number, height: number): void {
@@ -153,178 +153,265 @@ export class TopoLandscapeScreen extends Container {
     this.y = Math.round((height - H) / 2);
   }
 
-  // ── Background (static, drawn once) ─────────────────────────────────────────
+  // ── Static builders ──────────────────────────────────────────────────────────
 
-  private buildBg(): void {
+  private buildSky(): void {
     const g = this.bgG;
     g.rect(0, 0, W, H).fill({ color: CRUST });
 
-    // Very subtle top-of-sky lightening
-    for (let i = 1; i <= 4; i++) {
-      g.rect(0, 0, W, H * (i / 5)).fill({ color: SURFACE0, alpha: 0.012 * i });
+    // Purple-tinted sky gradient fading from base to surface near horizon
+    const skyBands: [number, number, number, number, number][] = [
+      // y,  height,  color,     alpha
+      [0, H * 0.45, BASE, 0.3, 0],
+      [H * 0.25, H * 0.4, SURFACE0, 0.18, 0],
+      [H * 0.55, H * 0.25, MAUVE, 0.1, 0],
+    ];
+    for (const [y, h, col, a] of skyBands) {
+      g.rect(0, y, W, h).fill({ color: col, alpha: a });
     }
 
-    // Dim background stars
-    for (let i = 0; i < 1500; i++) {
+    // Stars — only in the sky portion (above horizon)
+    for (let i = 0; i < 650; i++) {
       const hue = Math.random();
-      const col = hue < 0.65 ? SURFACE1 : hue < 0.85 ? LAVENDER : BLUE;
-      g.circle(rnd(0, W), rnd(0, H), rnd(0.3, 1.0)).fill({
-        color: col,
-        alpha: rnd(0.04, 0.25),
+      const col = hue < 0.6 ? SURFACE1 : hue < 0.84 ? LAVENDER : MAUVE;
+      g.circle(
+        Math.random() * W,
+        Math.random() * (HORIZON_Y * 0.95),
+        Math.random() * 0.85 + 0.2,
+      ).fill({ color: col, alpha: Math.random() * 0.22 + 0.04 });
+    }
+
+    // Horizon bloom: pink + mauve horizontal glows centred on the horizon
+    for (let i = 8; i >= 1; i--) {
+      g.rect(0, HORIZON_Y - i * 20, W, i * 40).fill({
+        color: PINK,
+        alpha: 0.008 * i,
       });
     }
-
-    // Bright diffraction-spike stars — confined to upper "sky" region
-    for (let i = 0; i < 20; i++) {
-      const x = rnd(30, W - 30);
-      const y = rnd(15, 430);
-      const cols = [LAVENDER, BLUE, YELLOW, PINK, TEAL] as const;
-      const col = cols[i % cols.length];
-      const al = rnd(0.5, 0.9);
-      g.circle(x, y, rnd(0.7, 1.4)).fill({ color: col, alpha: al });
-      const len = rnd(6, 22);
-      for (let k = 0; k < 4; k++) {
-        const ang = (k / 4) * Math.PI;
-        for (const d of [-1, 1] as const) {
-          g.moveTo(x, y)
-            .lineTo(x + Math.cos(ang) * d * len, y + Math.sin(ang) * d * len)
-            .stroke({ color: col, width: 0.4, alpha: al * 0.42 });
-        }
-      }
+    for (let i = 5; i >= 1; i--) {
+      g.rect(0, HORIZON_Y - i * 10, W, i * 20).fill({
+        color: MAUVE,
+        alpha: 0.014 * i,
+      });
     }
   }
 
-  // ── Per-frame terrain draw ───────────────────────────────────────────────────
+  private buildSun(): void {
+    const r = 168;
+    const size = r * 2 + 4;
+    const mid = r + 2;
 
-  private drawTerrain(): void {
-    this.baseG.clear();
-    this.scanG.clear();
-    this.horizG.clear();
+    // ── Canvas-rendered sun gradient + scanlines ──────────────────────────────
+    const cv = document.createElement("canvas");
+    cv.width = size;
+    cv.height = size;
+    const ctx = cv.getContext("2d")!;
 
-    // Smooth ping-pong scan position 0..1
-    const scanPos = (Math.sin((TAU * this.elapsed) / SCAN_PERIOD) + 1) * 0.5;
+    // Radial gradient: yellow centre → peach → pink → mauve edge
+    const grad = ctx.createRadialGradient(mid, mid, 0, mid, mid, r);
+    grad.addColorStop(0.0, "#f9e2af"); // YELLOW
+    grad.addColorStop(0.3, "#fab387"); // PEACH
+    grad.addColorStop(0.58, "#f38ba8"); // PINK
+    grad.addColorStop(0.85, "#cba6f7"); // MAUVE
+    grad.addColorStop(1.0, "rgba(203,166,247,0)");
 
-    // Six edge buckets: 0=far-dim | 1=elev-low | 2=elev-mid | 3=elev-high
-    //                   4=scan-glow | 5=scan-contour
-    const B0: E4[] = [],
-      B1: E4[] = [],
-      B2: E4[] = [],
-      B3: E4[] = [],
-      B4: E4[] = [],
-      B5: E4[] = [];
+    // Clip to upper half so the grid floor masks the rest naturally
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(0, 0, size, mid);
+    ctx.clip();
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(mid, mid, r, 0, TAU);
+    ctx.fill();
 
-    const classify = (i1: number, i2: number, farness: number) => {
-      const h1 = this.ht[i1],
-        h2 = this.ht[i2];
-      const hA = (h1 + h2) * 0.5;
-      const dist = Math.abs(hA - scanPos);
-      const crosses = h1 < scanPos !== h2 < scanPos;
-      const e: E4 = [this.sx[i1], this.sy[i1], this.sx[i2], this.sy[i2]];
-
-      if (crosses || dist < SCAN_CORE_W) {
-        B5.push(e);
-      } else if (dist < SCAN_GLOW_W) {
-        B4.push(e);
-      } else if (farness > 0.82) {
-        B0.push(e);
-      } else if (hA > 0.66) {
-        B3.push(e);
-      } else if (hA > 0.33) {
-        B2.push(e);
-      } else {
-        B1.push(e);
-      }
-    };
-
-    // Horizontal edges (along X axis)
-    for (let iy = 0; iy < NY; iy++) {
-      // farness: iy=0 → far (1.0), iy=NY-1 → near (0.0)
-      const farness = 1 - iy / (NY - 1);
-      for (let ix = 0; ix < NX - 1; ix++) {
-        classify(iy * NX + ix, iy * NX + ix + 1, farness);
-      }
+    // Horizontal scanlines punched out with destination-out
+    ctx.globalCompositeOperation = "destination-out";
+    for (let y = 2; y < mid; y += 10) {
+      ctx.fillStyle = "rgba(0,0,0,0.50)";
+      ctx.fillRect(0, y, size, 5);
     }
+    ctx.restore();
 
-    // Vertical edges (along Z axis)
-    for (let iy = 0; iy < NY - 1; iy++) {
-      const farness = 1 - (iy + 0.5) / (NY - 1);
-      for (let ix = 0; ix < NX; ix++) {
-        classify(iy * NX + ix, (iy + 1) * NX + ix, farness);
-      }
+    const sprite = new Sprite(Texture.from(cv));
+    sprite.anchor.set(0.5);
+    sprite.x = VPX;
+    sprite.y = HORIZON_Y;
+    this.sunLayer.addChild(sprite);
+
+    // Soft outer glow rings (additive)
+    const glowG = new Graphics();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (glowG as any).blendMode = "add";
+    for (let i = 7; i >= 1; i--) {
+      glowG
+        .circle(VPX, HORIZON_Y, r + i * 24)
+        .fill({ color: PINK, alpha: 0.009 * i });
     }
-
-    // Draw base buckets (normal blend)
-    const baseCfg = [
-      { col: SURFACE1, w: 0.35, a: 0.1 }, // 0 far-dim
-      { col: SAPPHIRE, w: 0.55, a: 0.2 }, // 1 elev-low
-      { col: TEAL, w: 0.65, a: 0.27 }, // 2 elev-mid
-      { col: LAVENDER, w: 0.75, a: 0.34 }, // 3 elev-high
-    ] as const;
-    const baseBuckets = [B0, B1, B2, B3];
-
-    for (let b = 0; b < 4; b++) {
-      const edges = baseBuckets[b];
-      if (edges.length === 0) continue;
-      for (const [x1, y1, x2, y2] of edges) {
-        this.baseG.moveTo(x1, y1).lineTo(x2, y2);
-      }
-      this.baseG.stroke({
-        color: baseCfg[b].col,
-        width: baseCfg[b].w,
-        alpha: baseCfg[b].a,
-      });
+    for (let i = 4; i >= 1; i--) {
+      glowG
+        .circle(VPX, HORIZON_Y, r + i * 14)
+        .fill({ color: MAUVE, alpha: 0.015 * i });
     }
-
-    // Scan glow (additive) — outer band
-    if (B4.length > 0) {
-      for (const [x1, y1, x2, y2] of B4) {
-        this.scanG.moveTo(x1, y1).lineTo(x2, y2);
-      }
-      this.scanG.stroke({ color: GREEN, width: 2.8, alpha: 0.22 });
-
-      for (const [x1, y1, x2, y2] of B4) {
-        this.scanG.moveTo(x1, y1).lineTo(x2, y2);
-      }
-      this.scanG.stroke({ color: TEAL, width: 1.2, alpha: 0.38 });
-    }
-
-    // Scan contour (additive) — core bright line
-    if (B5.length > 0) {
-      for (const [x1, y1, x2, y2] of B5) {
-        this.scanG.moveTo(x1, y1).lineTo(x2, y2);
-      }
-      this.scanG.stroke({ color: MAUVE, width: 3.5, alpha: 0.45 });
-
-      for (const [x1, y1, x2, y2] of B5) {
-        this.scanG.moveTo(x1, y1).lineTo(x2, y2);
-      }
-      this.scanG.stroke({ color: LAVENDER, width: 1.8, alpha: 0.72 });
-
-      for (const [x1, y1, x2, y2] of B5) {
-        this.scanG.moveTo(x1, y1).lineTo(x2, y2);
-      }
-      this.scanG.stroke({ color: 0xffffff, width: 0.8, alpha: 0.5 });
-    }
-
-    // Horizon atmospheric glow + scan band overlay
-    const scanWorldY = scanPos * HEIGHT_SCALE;
-    const [, scanSY] = project(0, scanWorldY, 0);
-    const pulse = 0.55 + 0.45 * Math.sin((TAU * this.elapsed) / SCAN_PERIOD);
-
-    // Scan plane screen band
-    const bandH = 6;
-    this.horizG.rect(0, scanSY - bandH, W, bandH * 2).fill({
-      color: TEAL,
-      alpha: 0.04 * pulse,
+    // Thin bright rim at top of sun
+    glowG.arc(VPX, HORIZON_Y, r - 2, Math.PI, 0).stroke({
+      color: YELLOW,
+      width: 1.5,
+      alpha: 0.5,
     });
+    this.sunLayer.addChild(glowG);
+  }
 
-    // Horizon atmospheric strip (static position, varies with far edge of terrain)
-    const [, horizSY] = project(0, 0, -(NY - 1) * 0.5 * CELL);
-    for (let i = 5; i >= 1; i--) {
-      this.horizG.rect(0, horizSY - i * 14, W, i * 28).fill({
-        color: SAPPHIRE,
-        alpha: 0.007 * i,
+  private buildMountains(): void {
+    const g = this.mtnG;
+
+    // Three silhouette layers, darkest farthest back
+    const layers = [
+      {
+        maxH: 125,
+        freq1: 0.0042,
+        freq2: 0.0078,
+        phase: 0.0,
+        col: SURFACE0,
+        alpha: 0.92,
+      },
+      {
+        maxH: 88,
+        freq1: 0.0058,
+        freq2: 0.011,
+        phase: 1.7,
+        col: MANTLE,
+        alpha: 0.96,
+      },
+      {
+        maxH: 55,
+        freq1: 0.0071,
+        freq2: 0.0155,
+        phase: 3.4,
+        col: CRUST,
+        alpha: 1.0,
+      },
+    ] as const;
+
+    for (const layer of layers) {
+      const step = 4; // x step in pixels
+      const yBase = HORIZON_Y + 3;
+
+      g.moveTo(-step, yBase + 8);
+      for (let x = 0; x <= W + step; x += step) {
+        const h =
+          layer.maxH *
+          Math.max(
+            0,
+            0.5 *
+              (1 + Math.sin(x * layer.freq1 + layer.phase)) *
+              (0.5 + 0.5 * Math.sin(x * layer.freq2 + layer.phase * 1.6)),
+          );
+        g.lineTo(x, yBase - h);
+      }
+      g.lineTo(W + step, yBase + 8)
+        .lineTo(-step, yBase + 8)
+        .fill({ color: layer.col, alpha: layer.alpha });
+    }
+
+    // Thin bright horizon line sitting on top of everything
+    g.moveTo(0, HORIZON_Y).lineTo(W, HORIZON_Y).stroke({
+      color: PINK,
+      width: 1.2,
+      alpha: 0.65,
+    });
+  }
+
+  // ── Per-frame grid draw ───────────────────────────────────────────────────────
+
+  private drawGrid(): void {
+    this.gridG.clear();
+    this.glowG.clear();
+
+    // Scan row: travels from NH-1 (far/top) toward 0 (near/bottom) each period
+    const phase = (this.elapsed % SCAN_PERIOD) / SCAN_PERIOD;
+    const scanRowFloat = (NH - 1) * (1 - phase);
+
+    // ── Horizontal lines (the "contour" lines that pulse) ─────────────────────
+    for (let i = 0; i < NH; i++) {
+      const dist = Math.abs(i - scanRowFloat);
+      const inCore = dist < SCAN_CORE_R;
+      const inGlow = dist < SCAN_GLOW_R;
+
+      if (inCore) {
+        // Bright scan contour — three stacked additive passes
+        for (const [col, w, a] of [
+          [MAUVE, 7.0, 0.2] as const,
+          [PINK, 3.5, 0.55] as const,
+          [LAVENDER, 1.6, 0.8] as const,
+          [0xffffff, 0.8, 0.45] as const,
+        ]) {
+          for (let j = 0; j < NV - 1; j++) {
+            this.glowG
+              .moveTo(this.ptX[i * NV + j], this.ptY[i * NV + j])
+              .lineTo(this.ptX[i * NV + j + 1], this.ptY[i * NV + j + 1]);
+          }
+          this.glowG.stroke({ color: col, width: w, alpha: a });
+        }
+      } else if (inGlow) {
+        const f = 1 - dist / SCAN_GLOW_R;
+        for (let j = 0; j < NV - 1; j++) {
+          this.glowG
+            .moveTo(this.ptX[i * NV + j], this.ptY[i * NV + j])
+            .lineTo(this.ptX[i * NV + j + 1], this.ptY[i * NV + j + 1]);
+        }
+        this.glowG.stroke({ color: PINK, width: 5.0, alpha: 0.15 * f });
+        for (let j = 0; j < NV - 1; j++) {
+          this.glowG
+            .moveTo(this.ptX[i * NV + j], this.ptY[i * NV + j])
+            .lineTo(this.ptX[i * NV + j + 1], this.ptY[i * NV + j + 1]);
+        }
+        this.glowG.stroke({ color: TEAL, width: 1.8, alpha: 0.3 * f });
+      } else {
+        // Base dim line — slightly brighter closer to camera (low i)
+        const nearness = 1 - i / (NH - 1);
+        const baseAlpha = 0.06 + 0.12 * nearness;
+        const baseCol = i > NH * 0.65 ? SAPPHIRE : MAUVE;
+        for (let j = 0; j < NV - 1; j++) {
+          this.gridG
+            .moveTo(this.ptX[i * NV + j], this.ptY[i * NV + j])
+            .lineTo(this.ptX[i * NV + j + 1], this.ptY[i * NV + j + 1]);
+        }
+        this.gridG.stroke({ color: baseCol, width: 0.6, alpha: baseAlpha });
+      }
+    }
+
+    // ── Vertical lines (radiate from vanishing point) ─────────────────────────
+    for (let j = 0; j < NV; j++) {
+      const isEdge = j === 0 || j === NV - 1;
+      // Use the bottom row as the "near" point and NH-1 as "far"
+      for (let i = 0; i < NH - 1; i++) {
+        this.gridG
+          .moveTo(this.ptX[i * NV + j], this.ptY[i * NV + j])
+          .lineTo(this.ptX[(i + 1) * NV + j], this.ptY[(i + 1) * NV + j]);
+      }
+      this.gridG.stroke({
+        color: MAUVE,
+        width: isEdge ? 0.9 : 0.45,
+        alpha: isEdge ? 0.28 : 0.1,
       });
     }
+
+    // ── Scan intersection dots on vertical lines ──────────────────────────────
+    const si = Math.round(scanRowFloat);
+    if (si >= 0 && si < NH) {
+      for (let j = 0; j < NV; j++) {
+        this.glowG
+          .circle(this.ptX[si * NV + j], this.ptY[si * NV + j], 2.8)
+          .fill({ color: LAVENDER, alpha: 0.6 });
+      }
+    }
+
+    // ── Reflective floor gradient just below the grid ─────────────────────────
+    // A faint radial bloom at the very bottom — adds the retro "neon floor" feel
+    const scanSY = this.ptY[Math.max(0, si) * NV + Math.floor(NV / 2)];
+    this.glowG
+      .rect(VPX - 600, scanSY - 4, 1200, 8)
+      .fill({ color: PINK, alpha: 0.06 });
   }
 }

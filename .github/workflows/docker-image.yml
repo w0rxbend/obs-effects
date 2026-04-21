@@ -38,5 +38,15 @@ jobs:
         with:
           context: .
           push: true
-          # Adjust the image name if you want it to be named differently
           tags: ${{ secrets.DOCKER_USERNAME }}/obs-effects:latest
+
+      - name: Deploy to Oracle compute instance
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script: |
+            cd ~/obs-effects
+            docker compose pull
+            docker compose up -d

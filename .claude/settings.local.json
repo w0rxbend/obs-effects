@@ -28,7 +28,8 @@
       "Bash(curl -s http://localhost:8081/pcb-bg.html)",
       "Bash(kill %1)",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8082/pcb-bg.html)",
-      "Bash(npx vite *)"
+      "Bash(npx vite *)",
+      "Bash(xargs -n1 basename)"
     ]
   }
 }
