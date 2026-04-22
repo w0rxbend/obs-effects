@@ -9,9 +9,9 @@ const LAVENDER = 0xb4befe;
 const SAPPHIRE = 0x74c7ec;
 const SKY = 0x89dceb;
 const TEAL = 0x94e2d5;
-const FLAMINGO = 0xf2cdcd;
 
 type Vec3 = { x: number; y: number; z: number };
+type ProjectedVec3 = { px: number; py: number; pz: number };
 
 export class CrystalCamScreen extends Container {
   public static assetBundles: string[] = [];
@@ -253,7 +253,7 @@ export class CrystalCamScreen extends Container {
   private drawWireframe(
     g: Graphics,
     gg: Graphics,
-    proj: any[],
+    proj: ProjectedVec3[],
     edges: [number, number][],
     c1: number,
     c2: number,
@@ -287,8 +287,8 @@ export class CrystalCamScreen extends Container {
 
   private drawScaffolding(
     g: Graphics,
-    layerA: any[],
-    layerB: any[],
+    layerA: ProjectedVec3[],
+    layerB: ProjectedVec3[],
     color: number,
     alpha: number,
   ) {
@@ -307,7 +307,7 @@ export class CrystalCamScreen extends Container {
   private drawNodes(
     g: Graphics,
     gg: Graphics,
-    proj: any[],
+    proj: ProjectedVec3[],
     c: number,
     baseSize: number,
     glowT: number,

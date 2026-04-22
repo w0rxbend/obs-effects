@@ -7,6 +7,7 @@ const SAPPHIRE = 0x74c7ec; // Vertex nodes
 const LAVENDER = 0xb4befe; // Foreground lines
 
 type Vec3 = { x: number; y: number; z: number };
+type ProjectedVec3 = { px: number; py: number; pz: number };
 
 export class FigureEightTorusScreen extends Container {
   public static assetBundles: string[] = [];
@@ -93,17 +94,16 @@ export class FigureEightTorusScreen extends Container {
     }
 
     // 2. Project and Collect Edge/Vertex data for Z-sorting
-    const projected: { px: number; py: number; pz: number }[][] = vertices.map(
-      (ring) =>
-        ring.map((v) => {
-          const focalLength = 3.5;
-          const perspective = focalLength / (focalLength + v.z);
-          return {
-            px: centerX + v.x * baseSize * perspective,
-            py: centerY - v.y * baseSize * perspective,
-            pz: v.z,
-          };
-        }),
+    const projected: ProjectedVec3[][] = vertices.map((ring) =>
+      ring.map((v) => {
+        const focalLength = 3.5;
+        const perspective = focalLength / (focalLength + v.z);
+        return {
+          px: centerX + v.x * baseSize * perspective,
+          py: centerY - v.y * baseSize * perspective,
+          pz: v.z,
+        };
+      }),
     );
 
     // 3. Draw Wireframe with Depth Cues
@@ -127,7 +127,12 @@ export class FigureEightTorusScreen extends Container {
     }
   }
 
-  private drawEdge(g: Graphics, gg: Graphics, v1: any, v2: any) {
+  private drawEdge(
+    g: Graphics,
+    gg: Graphics,
+    v1: ProjectedVec3,
+    v2: ProjectedVec3,
+  ) {
     const avgZ = (v1.pz + v2.pz) / 2;
     const normZ = (avgZ + 1) / 2; // 0 (front, +Z) to 1 (back, -Z)
 
@@ -146,7 +151,7 @@ export class FigureEightTorusScreen extends Container {
     }
   }
 
-  private drawNode(g: Graphics, gg: Graphics, v: any) {
+  private drawNode(g: Graphics, gg: Graphics, v: ProjectedVec3) {
     const normZ = (v.pz + 1) / 2;
     if (normZ > 0.8) return; // Clarity: skip far nodes
 
