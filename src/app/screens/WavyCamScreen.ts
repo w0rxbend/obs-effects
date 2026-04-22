@@ -28,7 +28,6 @@ export class WavyCamScreen extends Container {
 
   private readonly world: Container;
   private readonly wavyGfx = new Graphics();
-  private readonly maskGfx = new Graphics();
 
   private time = 0;
 
