@@ -90,6 +90,7 @@ export default defineConfig({
         kineticGas: resolve(__dirname, "kinetic-gas.html"),
         crystalcam: resolve(__dirname, "crystalcam.html"),
         figureEightTorus: resolve(__dirname, "figure-eight-torus.html"),
+        wavyCam: resolve(__dirname, "wavy-cam.html"),
       },
     },
   },

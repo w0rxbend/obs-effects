@@ -25,8 +25,8 @@ export class FigureEightTorusScreen extends Container {
 
   // Geometry settings
   private readonly segmentsTheta = 40; // Resolution around the major ring
-  private readonly segmentsPhi = 16;   // Resolution around the minor tube
-  private readonly R = 1.0;            // Major radius
+  private readonly segmentsPhi = 16; // Resolution around the minor tube
+  private readonly R = 1.0; // Major radius
 
   constructor() {
     super();
@@ -93,16 +93,17 @@ export class FigureEightTorusScreen extends Container {
     }
 
     // 2. Project and Collect Edge/Vertex data for Z-sorting
-    const projected: { px: number; py: number; pz: number }[][] = vertices.map(ring => 
-      ring.map(v => {
-        const focalLength = 3.5;
-        const perspective = focalLength / (focalLength + v.z);
-        return {
-          px: centerX + v.x * baseSize * perspective,
-          py: centerY - v.y * baseSize * perspective,
-          pz: v.z
-        };
-      })
+    const projected: { px: number; py: number; pz: number }[][] = vertices.map(
+      (ring) =>
+        ring.map((v) => {
+          const focalLength = 3.5;
+          const perspective = focalLength / (focalLength + v.z);
+          return {
+            px: centerX + v.x * baseSize * perspective,
+            py: centerY - v.y * baseSize * perspective,
+            pz: v.z,
+          };
+        }),
     );
 
     // 3. Draw Wireframe with Depth Cues
@@ -129,7 +130,7 @@ export class FigureEightTorusScreen extends Container {
   private drawEdge(g: Graphics, gg: Graphics, v1: any, v2: any) {
     const avgZ = (v1.pz + v2.pz) / 2;
     const normZ = (avgZ + 1) / 2; // 0 (front, +Z) to 1 (back, -Z)
-    
+
     // Foreground: Lavender, thick; Background: Surface2, thin
     const color = this.lerpColor(LAVENDER, SURFACE2, normZ);
     const thickness = 2.2 * (1 - normZ) + 0.5 * normZ;
@@ -155,7 +156,10 @@ export class FigureEightTorusScreen extends Container {
     g.circle(v.px, v.py, size).fill({ color: SAPPHIRE, alpha });
 
     if (normZ < 0.5) {
-      gg.circle(v.px, v.py, size * 1.5).fill({ color: SAPPHIRE, alpha: alpha * 0.4 });
+      gg.circle(v.px, v.py, size * 1.5).fill({
+        color: SAPPHIRE,
+        alpha: alpha * 0.4,
+      });
     }
   }
 

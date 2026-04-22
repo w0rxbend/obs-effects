@@ -28,7 +28,7 @@ export class CrystalCamScreen extends Container {
   private rotX = 0;
   private rotY = 0;
   private rotZ = 0;
-  
+
   // Layer 2: Outer Shell (Level 1 Geodesic - 42 vertices)
   private readonly l2V: Vec3[];
   private readonly l2E: [number, number][];
@@ -58,22 +58,47 @@ export class CrystalCamScreen extends Container {
     this.addChild(this.glowContainer);
   }
 
-  private generateGeodesic(subdivisions: number): { verts: Vec3[], edges: [number, number][] } {
+  private generateGeodesic(subdivisions: number): {
+    verts: Vec3[];
+    edges: [number, number][];
+  } {
     const phi = (1 + Math.sqrt(5)) / 2;
-    let verts: Vec3[] = [
-      { x: -1, y: phi, z: 0 }, { x: 1, y: phi, z: 0 },
-      { x: -1, y: -phi, z: 0 }, { x: 1, y: -phi, z: 0 },
-      { x: 0, y: -1, z: phi }, { x: 0, y: 1, z: phi },
-      { x: 0, y: -1, z: -phi }, { x: 0, y: 1, z: -phi },
-      { x: phi, y: 0, z: -1 }, { x: phi, y: 0, z: 1 },
-      { x: -phi, y: 0, z: -1 }, { x: -phi, y: 0, z: 1 },
-    ].map(v => this.normalize(v));
+    const verts: Vec3[] = [
+      { x: -1, y: phi, z: 0 },
+      { x: 1, y: phi, z: 0 },
+      { x: -1, y: -phi, z: 0 },
+      { x: 1, y: -phi, z: 0 },
+      { x: 0, y: -1, z: phi },
+      { x: 0, y: 1, z: phi },
+      { x: 0, y: -1, z: -phi },
+      { x: 0, y: 1, z: -phi },
+      { x: phi, y: 0, z: -1 },
+      { x: phi, y: 0, z: 1 },
+      { x: -phi, y: 0, z: -1 },
+      { x: -phi, y: 0, z: 1 },
+    ].map((v) => this.normalize(v));
 
     let faces: [number, number, number][] = [
-      [0, 11, 5], [0, 5, 1], [0, 1, 7], [0, 7, 10], [0, 10, 11],
-      [1, 5, 9], [5, 11, 4], [11, 10, 2], [10, 7, 6], [7, 1, 8],
-      [3, 9, 4], [3, 4, 2], [3, 2, 6], [3, 6, 8], [3, 8, 9],
-      [4, 9, 5], [2, 4, 11], [6, 2, 10], [8, 6, 7], [9, 8, 1],
+      [0, 11, 5],
+      [0, 5, 1],
+      [0, 1, 7],
+      [0, 7, 10],
+      [0, 10, 11],
+      [1, 5, 9],
+      [5, 11, 4],
+      [11, 10, 2],
+      [10, 7, 6],
+      [7, 1, 8],
+      [3, 9, 4],
+      [3, 4, 2],
+      [3, 2, 6],
+      [3, 6, 8],
+      [3, 8, 9],
+      [4, 9, 5],
+      [2, 4, 11],
+      [6, 2, 10],
+      [8, 6, 7],
+      [9, 8, 1],
     ];
 
     for (let i = 0; i < subdivisions; i++) {
@@ -82,11 +107,13 @@ export class CrystalCamScreen extends Container {
         const key = a < b ? `${a}-${b}` : `${b}-${a}`;
         if (midpointCache.has(key)) return midpointCache.get(key)!;
         const index = verts.length;
-        verts.push(this.normalize({
-          x: (verts[a].x + verts[b].x) / 2,
-          y: (verts[a].y + verts[b].y) / 2,
-          z: (verts[a].z + verts[b].z) / 2,
-        }));
+        verts.push(
+          this.normalize({
+            x: (verts[a].x + verts[b].x) / 2,
+            y: (verts[a].y + verts[b].y) / 2,
+            z: (verts[a].z + verts[b].z) / 2,
+          }),
+        );
         midpointCache.set(key, index);
         return index;
       };
@@ -104,7 +131,11 @@ export class CrystalCamScreen extends Container {
     const edgeSet = new Set<string>();
     const uniqueEdges: [number, number][] = [];
     for (const [v1, v2, v3] of faces) {
-      [[v1, v2], [v2, v3], [v3, v1]].forEach(([a, b]) => {
+      [
+        [v1, v2],
+        [v2, v3],
+        [v3, v1],
+      ].forEach(([a, b]) => {
         const key = a < b ? `${a}-${b}` : `${b}-${a}`;
         if (!edgeSet.has(key)) {
           edgeSet.add(key);
@@ -146,7 +177,7 @@ export class CrystalCamScreen extends Container {
 
     const centerX = this.w / 2;
     const centerY = this.h / 2;
-    const baseSize = Math.min(this.w, this.h) * 0.40;
+    const baseSize = Math.min(this.w, this.h) * 0.4;
 
     // ── Nucleus ─────────────────────────────────────────────────────────────
     const pulse = Math.sin(this.time * 2.2) * 0.2 + 1;
@@ -154,11 +185,27 @@ export class CrystalCamScreen extends Container {
     gg.circle(centerX, centerY, 20 * pulse).fill({ color: TEAL, alpha: 0.4 });
 
     // ── Outer Shell (Level 1) ──────────────────────────────────────────────
-    const l2P = this.project(this.l2V, baseSize, this.rotX, this.rotY, this.rotZ, centerX, centerY);
+    const l2P = this.project(
+      this.l2V,
+      baseSize,
+      this.rotX,
+      this.rotY,
+      this.rotZ,
+      centerX,
+      centerY,
+    );
     this.drawWireframe(g, gg, l2P, this.l2E, LAVENDER, MAUVE, 1.4, 0.3, 0.7);
 
     // ── Inner Core (Level 0) ───────────────────────────────────────────────
-    const l1P = this.project(this.l1V, baseSize * 0.45, -this.rotX * 1.5, this.rotY * 1.2, -this.rotZ * 0.8, centerX, centerY);
+    const l1P = this.project(
+      this.l1V,
+      baseSize * 0.45,
+      -this.rotX * 1.5,
+      this.rotY * 1.2,
+      -this.rotZ * 0.8,
+      centerX,
+      centerY,
+    );
     this.drawWireframe(g, gg, l1P, this.l1E, SAPPHIRE, SKY, 1.8, 0.5, 0.85);
 
     // ── Energy Scaffolding ──────────────────────────────────────────────────
@@ -169,26 +216,51 @@ export class CrystalCamScreen extends Container {
     this.drawNodes(g, gg, l1P, SAPPHIRE, 4.5, 0.6);
   }
 
-  private project(verts: Vec3[], size: number, rx: number, ry: number, rz: number, cx: number, cy: number) {
-    return verts.map(v => {
+  private project(
+    verts: Vec3[],
+    size: number,
+    rx: number,
+    ry: number,
+    rz: number,
+    cx: number,
+    cy: number,
+  ) {
+    return verts.map((v) => {
       let { x, y, z } = v;
       const y1 = y * Math.cos(rx) - z * Math.sin(rx);
       const z1 = y * Math.sin(rx) + z * Math.cos(rx);
-      y = y1; z = z1;
+      y = y1;
+      z = z1;
       const x2 = x * Math.cos(ry) + z * Math.sin(ry);
       const z2 = -x * Math.sin(ry) + z * Math.cos(ry);
-      x = x2; z = z2;
+      x = x2;
+      z = z2;
       const x3 = x * Math.cos(rz) - y * Math.sin(rz);
       const y3 = x * Math.sin(rz) + y * Math.cos(rz);
-      x = x3; y = y3;
+      x = x3;
+      y = y3;
 
       const focalLength = 3.5;
       const perspective = focalLength / (focalLength + z);
-      return { px: cx + x * size * perspective, py: cy - y * size * perspective, pz: z };
+      return {
+        px: cx + x * size * perspective,
+        py: cy - y * size * perspective,
+        pz: z,
+      };
     });
   }
 
-  private drawWireframe(g: Graphics, gg: Graphics, proj: any[], edges: [number, number][], c1: number, c2: number, weight: number, glowT: number, baseAlpha: number) {
+  private drawWireframe(
+    g: Graphics,
+    gg: Graphics,
+    proj: any[],
+    edges: [number, number][],
+    c1: number,
+    c2: number,
+    weight: number,
+    glowT: number,
+    baseAlpha: number,
+  ) {
     edges.forEach(([i1, i2]) => {
       const v1 = proj[i1];
       const v2 = proj[i2];
@@ -204,13 +276,23 @@ export class CrystalCamScreen extends Container {
 
       if (normZ < glowT) {
         gg.moveTo(v1.px, v1.py).lineTo(v2.px, v2.py);
-        gg.stroke({ color: this.lerpColor(color, c2, 0.4), width: thickness * 2.5, alpha: alpha * 0.3 });
+        gg.stroke({
+          color: this.lerpColor(color, c2, 0.4),
+          width: thickness * 2.5,
+          alpha: alpha * 0.3,
+        });
       }
     });
   }
 
-  private drawScaffolding(g: Graphics, layerA: any[], layerB: any[], color: number, alpha: number) {
-    for (let i = 0; i < layerA.length; i++) { 
+  private drawScaffolding(
+    g: Graphics,
+    layerA: any[],
+    layerB: any[],
+    color: number,
+    alpha: number,
+  ) {
+    for (let i = 0; i < layerA.length; i++) {
       const v1 = layerA[i];
       const v2 = layerB[i % layerB.length];
       const avgZ = (v1.pz + v2.pz) / 2;
@@ -222,7 +304,14 @@ export class CrystalCamScreen extends Container {
     }
   }
 
-  private drawNodes(g: Graphics, gg: Graphics, proj: any[], c: number, baseSize: number, glowT: number) {
+  private drawNodes(
+    g: Graphics,
+    gg: Graphics,
+    proj: any[],
+    c: number,
+    baseSize: number,
+    glowT: number,
+  ) {
     proj.forEach((v) => {
       const normZ = (v.pz + 1) / 2;
       if (normZ > 0.8) return;
