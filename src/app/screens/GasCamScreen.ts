@@ -77,7 +77,11 @@ function noise3D(x: number, y: number, z: number): number {
       v,
     ),
     lerp(
-      lerp(grad(PERM[AA + 1], x, y, z - 1), grad(PERM[BA + 1], x - 1, y, z - 1), u),
+      lerp(
+        grad(PERM[AA + 1], x, y, z - 1),
+        grad(PERM[BA + 1], x - 1, y, z - 1),
+        u,
+      ),
       lerp(
         grad(PERM[AB + 1], x, y - 1, z - 1),
         grad(PERM[BB + 1], x - 1, y - 1, z - 1),
@@ -123,10 +127,14 @@ export class GasCamScreen extends Container {
     this.drawPins(g);
   }
 
-  private drawGasLayer(g: Graphics, layerIndex: number, isStatic: boolean): void {
+  private drawGasLayer(
+    g: Graphics,
+    layerIndex: number,
+    isStatic: boolean,
+  ): void {
     const isBig = !isStatic && layerIndex >= N_LAYERS - 4;
     const color = isStatic ? 0xffffff : PALETTE[layerIndex % PALETTE.length];
-    
+
     // Thickness grows but layers are closer
     let thickness = isStatic ? 1.5 : 3 + (layerIndex / N_LAYERS) * 12;
     if (isBig) thickness += 8;
@@ -141,7 +149,7 @@ export class GasCamScreen extends Container {
 
     const points: { x: number; y: number }[] = [];
     const stepsPerCorner = 20;
-    
+
     // Rounded Square Construction
     // Top-Right Corner
     for (let i = 0; i <= stepsPerCorner; i++) {
@@ -153,7 +161,10 @@ export class GasCamScreen extends Container {
     }
     // Right Edge
     for (let i = 1; i < SUBDIVISIONS; i++) {
-      points.push({ x: halfW, y: lerp(-halfH + cornerRadius, halfH - cornerRadius, i / SUBDIVISIONS) });
+      points.push({
+        x: halfW,
+        y: lerp(-halfH + cornerRadius, halfH - cornerRadius, i / SUBDIVISIONS),
+      });
     }
     // Bottom-Right Corner
     for (let i = 0; i <= stepsPerCorner; i++) {
@@ -165,7 +176,10 @@ export class GasCamScreen extends Container {
     }
     // Bottom Edge
     for (let i = 1; i < SUBDIVISIONS; i++) {
-      points.push({ x: lerp(halfW - cornerRadius, -halfW + cornerRadius, i / SUBDIVISIONS), y: halfH });
+      points.push({
+        x: lerp(halfW - cornerRadius, -halfW + cornerRadius, i / SUBDIVISIONS),
+        y: halfH,
+      });
     }
     // Bottom-Left Corner
     for (let i = 0; i <= stepsPerCorner; i++) {
@@ -177,7 +191,10 @@ export class GasCamScreen extends Container {
     }
     // Left Edge
     for (let i = 1; i < SUBDIVISIONS; i++) {
-      points.push({ x: -halfW, y: lerp(halfH - cornerRadius, -halfH + cornerRadius, i / SUBDIVISIONS) });
+      points.push({
+        x: -halfW,
+        y: lerp(halfH - cornerRadius, -halfH + cornerRadius, i / SUBDIVISIONS),
+      });
     }
     // Top-Left Corner
     for (let i = 0; i <= stepsPerCorner; i++) {
@@ -189,23 +206,32 @@ export class GasCamScreen extends Container {
     }
     // Top Edge
     for (let i = 1; i < SUBDIVISIONS; i++) {
-      points.push({ x: lerp(-halfW + cornerRadius, halfW - cornerRadius, i / SUBDIVISIONS), y: -halfH });
+      points.push({
+        x: lerp(-halfW + cornerRadius, halfW - cornerRadius, i / SUBDIVISIONS),
+        y: -halfH,
+      });
     }
 
     // Noise Displacement
     const displacedPoints: number[] = [];
     const noiseScale = isBig ? 0.004 : 0.008;
     const timeScale = isStatic ? 0 : 0.3 + (layerIndex / N_LAYERS) * 0.4;
-    const timeVal = isStatic ? 888.888 : this.time * timeScale + layerIndex * 2.0;
-    
+    const timeVal = isStatic
+      ? 888.888
+      : this.time * timeScale + layerIndex * 2.0;
+
     // Amp keeps them clustering around the line
     let amp = isStatic ? 15 : 10 + (layerIndex / N_LAYERS) * 25;
     if (isBig) amp += 15;
 
     for (const p of points) {
       const nx = noise3D(p.x * noiseScale, p.y * noiseScale, timeVal);
-      const ny = noise3D(p.x * noiseScale + 150, p.y * noiseScale + 150, timeVal);
-      
+      const ny = noise3D(
+        p.x * noiseScale + 150,
+        p.y * noiseScale + 150,
+        timeVal,
+      );
+
       displacedPoints.push(p.x + nx * amp, p.y + ny * amp);
     }
 
@@ -221,7 +247,7 @@ export class GasCamScreen extends Container {
   private drawSharpBorder(g: Graphics): void {
     const halfW = CAM_W / 2;
     const halfH = CAM_H / 2;
-    
+
     // Outer sharp border
     g.rect(-halfW, -halfH, CAM_W, CAM_H).stroke({
       color: 0xffffff,
@@ -233,7 +259,13 @@ export class GasCamScreen extends Container {
 
     // Inner rounded border glow
     const innerRadius = 30;
-    g.roundRect(-halfW + 15, -halfH + 15, CAM_W - 30, CAM_H - 30, innerRadius).stroke({
+    g.roundRect(
+      -halfW + 15,
+      -halfH + 15,
+      CAM_W - 30,
+      CAM_H - 30,
+      innerRadius,
+    ).stroke({
       color: CATT_SKY,
       width: 2,
       alpha: 0.4,
@@ -255,14 +287,18 @@ export class GasCamScreen extends Container {
       g.circle(c.x, c.y, 10).fill({ color: 0xffffff, alpha: 0.15 });
       g.circle(c.x, c.y, 5).fill({ color: 0xffffff, alpha: 0.4 });
       g.circle(c.x, c.y, 2.5).fill({ color: 0xffffff, alpha: 1 });
-      
+
       // Tech Brackets
       const len = 35;
       const xDir = c.x > 0 ? -1 : 1;
       const yDir = c.y > 0 ? -1 : 1;
-      
-      g.moveTo(c.x, c.y).lineTo(c.x + xDir * len, c.y).stroke({ color: 0xffffff, width: 2.5, alpha: 0.9 });
-      g.moveTo(c.x, c.y).lineTo(c.x, c.y + yDir * len).stroke({ color: 0xffffff, width: 2.5, alpha: 0.9 });
+
+      g.moveTo(c.x, c.y)
+        .lineTo(c.x + xDir * len, c.y)
+        .stroke({ color: 0xffffff, width: 2.5, alpha: 0.9 });
+      g.moveTo(c.x, c.y)
+        .lineTo(c.x, c.y + yDir * len)
+        .stroke({ color: 0xffffff, width: 2.5, alpha: 0.9 });
     }
   }
 

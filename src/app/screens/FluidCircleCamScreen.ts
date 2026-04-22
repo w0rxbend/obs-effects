@@ -96,15 +96,51 @@ export class FluidCircleCamScreen extends Container {
 
     // 1. Wavy base lines (already present)
     this.drawWavyCircle(g, WEBCAM_R, 5, 6, this.time, CATT_BLUE, 0.4, 24);
-    this.drawWavyCircle(g, WEBCAM_R, 8, 4, -this.time * 0.8, CATT_MAUVE, 0.3, 16);
+    this.drawWavyCircle(
+      g,
+      WEBCAM_R,
+      8,
+      4,
+      -this.time * 0.8,
+      CATT_MAUVE,
+      0.3,
+      16,
+    );
 
     // ─── ADDED 3 MORE LINES ───
     // Teal line with higher frequency
-    this.drawWavyCircle(g, WEBCAM_R - 15, 12, 8, this.time * 1.2, CATT_TEAL, 0.25, 12);
+    this.drawWavyCircle(
+      g,
+      WEBCAM_R - 15,
+      12,
+      8,
+      this.time * 1.2,
+      CATT_TEAL,
+      0.25,
+      12,
+    );
     // Sky line with large slow waves
-    this.drawWavyCircle(g, WEBCAM_R + 15, 20, 3, -this.time * 0.5, CATT_SKY, 0.2, 18);
+    this.drawWavyCircle(
+      g,
+      WEBCAM_R + 15,
+      20,
+      3,
+      -this.time * 0.5,
+      CATT_SKY,
+      0.2,
+      18,
+    );
     // Lavender line with subtle jitter
-    this.drawWavyCircle(g, WEBCAM_R, 3, 15, this.time * 2, CATT_LAVENDER, 0.35, 10);
+    this.drawWavyCircle(
+      g,
+      WEBCAM_R,
+      3,
+      15,
+      this.time * 2,
+      CATT_LAVENDER,
+      0.35,
+      10,
+    );
     // ──────────────────────────
 
     // 2. Dotted/Dashed circle
@@ -113,7 +149,7 @@ export class FluidCircleCamScreen extends Container {
     for (let i = 0; i < dashCount; i++) {
       const angleStart = (i / dashCount) * Math.PI * 2 + this.time * 0.1;
       const angleEnd = angleStart + dashLength;
-      
+
       const x1 = Math.cos(angleStart) * (WEBCAM_R + 10);
       const y1 = Math.sin(angleStart) * (WEBCAM_R + 10);
       const x2 = Math.cos(angleEnd) * (WEBCAM_R + 10);
@@ -123,7 +159,7 @@ export class FluidCircleCamScreen extends Container {
         color: 0xffffff,
         width: 16,
         alpha: 0.6,
-        cap: 'round'
+        cap: "round",
       });
     }
 
@@ -151,7 +187,7 @@ export class FluidCircleCamScreen extends Container {
         color: b.color,
         alpha: b.alpha,
       });
-      
+
       // Add a small highlight to bubbles
       g.circle(x - b.size * 0.3, y - b.size * 0.3, b.size * 0.2).fill({
         color: 0xffffff,
