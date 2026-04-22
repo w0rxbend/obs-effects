@@ -410,7 +410,7 @@ const GRAFFITI_DEFS: Array<{
   rot: number;
 }> = [
   {
-    label: "rust",
+    label: "steeze",
     size: 26,
     color: RAZER_GREEN,
     angle: 0.3,
@@ -418,7 +418,7 @@ const GRAFFITI_DEFS: Array<{
     rot: -0.15,
   },
   {
-    label: "CODE",
+    label: "aura",
     size: 20,
     color: TOXIC_VIOLET,
     angle: 3.5,
@@ -426,7 +426,7 @@ const GRAFFITI_DEFS: Array<{
     rot: 0.2,
   },
   {
-    label: "crazy",
+    label: "UP",
     size: 15,
     color: TOXIC_GREEN,
     angle: 1.1,
@@ -434,7 +434,7 @@ const GRAFFITI_DEFS: Array<{
     rot: -0.25,
   },
   {
-    label: "★",
+    label: "raw",
     size: 22,
     color: LOL_VIOLET,
     angle: 1.8,
@@ -442,7 +442,7 @@ const GRAFFITI_DEFS: Array<{
     rot: 0.05,
   },
   {
-    label: "hardcore",
+    label: "fire",
     size: 30,
     color: TOXIC_LIME,
     angle: 2.5,
@@ -450,7 +450,7 @@ const GRAFFITI_DEFS: Array<{
     rot: 0.3,
   },
   {
-    label: "*",
+    label: "cringe",
     size: 34,
     color: RAZER_GREEN,
     angle: 4.1,
@@ -458,7 +458,7 @@ const GRAFFITI_DEFS: Array<{
     rot: -0.1,
   },
   {
-    label: "craft",
+    label: "tox",
     size: 24,
     color: LOL_BLUE,
     angle: 5.2,
@@ -466,7 +466,7 @@ const GRAFFITI_DEFS: Array<{
     rot: 0.18,
   },
   {
-    label: "grind",
+    label: "dose",
     size: 18,
     color: TOXIC_VIOLET,
     angle: 0.9,
@@ -474,7 +474,7 @@ const GRAFFITI_DEFS: Array<{
     rot: -0.22,
   },
   {
-    label: "+",
+    label: "vex",
     size: 20,
     color: TOXIC_GREEN,
     angle: 3.9,
@@ -482,7 +482,7 @@ const GRAFFITI_DEFS: Array<{
     rot: 0.12,
   },
   {
-    label: ">>>",
+    label: "void",
     size: 14,
     color: LIME_GREEN,
     angle: 5.8,
