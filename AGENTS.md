@@ -70,3 +70,58 @@ Provide detailed explanation of changes and motivation.
 - Define types for custom sprites and containers
 - Use strict mode (`"strict": true` in `tsconfig.json`)
 - Leverage generics for reusable component patterns
+
+## How to build a Camera Circle Overlay
+
+Follow these steps to create a new animated circular camera overlay (Webcam Border):
+
+1.  **Skeleton Setup:**
+    - Create `src/app/screens/YourCamScreen.ts`.
+    - Extend `Container` and include `static assetBundles = ["main"]`.
+    - Create a specialized `YourCamBorder` class in `src/app/screens/main/` or a dedicated folder.
+2.  **Visual Layering:**
+    - Define a `baseRadius` (usually ~200px) and use it for all radial calculations.
+    - In the border's constructor, initialize multiple `Graphics` objects for specific effects (waves, glow, particles).
+    - Use `Container` for elements that require grouping (e.g., orbiting text or sprites).
+3.  **Animation Logic:**
+    - Implement an `update()` method in the border class that accepts `Ticker` or delta time.
+    - Use a global `time` accumulator for phase-based animations (sin/cos).
+    - Implement a "beat" system using a decay variable (e.g., `beatAmplitude`) that spikes on a timer and decays back to 1.0.
+    - Redraw dynamic shapes in a `drawFrame()` method called by `update()`.
+4.  **Assets & Sprites:**
+    - Use `Sprite` for complex elements from the `sprite.png` sheet.
+    - Use `Texture.from()` in the screen's `show()` method to safely load textures after the bundle is ready.
+    - Use `Text` with custom fonts (preloaded in HTML) for tags.
+5.  **OBS Optimization:**
+    - Ensure the central area remains empty/transparent.
+    - In the entry point (`src/yourcam.ts`), initialize the engine with `backgroundAlpha: 0`.
+6.  **Integration:**
+    - Create `yourcam.html` in the root.
+    - Register `yourcam` in `vite.config.ts` under `build.rollupOptions.input`.
+    - Add the new page to `map.html` for previewing.
+
+## How to build a Full Screen Background Overlay
+
+Follow these steps to create a new opaque procedural background for OBS scenes:
+
+1.  **Skeleton Setup:**
+    - Create `src/app/screens/YourBgScreen.ts` extending `Container`.
+    - Initialize a primary `Graphics` object in the constructor.
+    - Set `static assetBundles: string[] = []` if no external textures are needed.
+2.  **Simulation State:**
+    - Define interfaces for your simulation entities (e.g., `Particle`, `Wave`, `Agent`).
+    - Store entities in an array within the screen class.
+    - Implement an `_initEntities()` method to populate the initial state.
+3.  **Animation Loop (PixiJS 8 API):**
+    - In `update(ticker: Ticker)`, clear the graphics using `this.gfx.clear()`.
+    - Iterate through entities, update their positions using `ticker.deltaTime`.
+    - Draw entities using the `Graphics` context: `moveTo()`, `lineTo()`, `stroke({ color, width, alpha })`, `circle()`, `fill({ color, alpha })`.
+4.  **Responsiveness:**
+    - Implement `resize(w, h)` to capture current dimensions.
+    - Call `_initEntities()` inside `resize` to redistribute elements for the new resolution.
+5.  **Entry Point & Engine:**
+    - Create `src/yourbg.ts`.
+    - Initialize `CreationEngine` with an opaque background: `background: 0x11111b` (Catppuccin Crust) and **do not** set `backgroundAlpha: 0`.
+6.  **Integration:**
+    - Create `yourbg.html` in the root.
+    - Register in `vite.config.ts` and add to `map.html`.

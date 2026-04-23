@@ -46,6 +46,37 @@ To add a new screen:
 3.  **HTML:** Create a `.html` file in the root linking to the `.ts` entry point.
 4.  **Vite Config:** Register the new `.html` file in the `input` section of `vite.config.ts`.
 
+## Webcam Border Architecture (Circular)
+
+Circular webcam borders (e.g., `CameraScreen.ts`) follow a layered design pattern to ensure transparency and dynamic visuals:
+
+1.  **Screen Class:** Extends `Container` and manages the `CameraBorder` instance. Defines `static assetBundles = ["main"]` to ensure core assets like logos are preloaded.
+2.  **Layered Stack:** Visuals are split into multiple `Graphics` or `Container` layers (bottom to top):
+    - **Base Ring:** Solid anchor ring (e.g., Catppuccin Mocha Base).
+    - **Dynamic Waves:** Animated `Graphics` using wave functions.
+    - **VFX:** Sparkles, sparks, and lightning arcs.
+    - **Particles:** GPU-accelerated orbiting dots.
+3.  **Animation Lifecycle:** 
+    - `update(time)`: Uses delta-time for movement and "heartbeat" kicks. 
+    - `drawFrame()`: Clears and redraws dynamic `Graphics` layers each frame.
+4.  **OBS Integration:** Always set `backgroundAlpha: 0` in the engine init to ensure the center of the circle is transparent for the camera feed.
+
+## Full Screen Background Architecture (Opaque)
+
+Full screen backgrounds (e.g., `GenerativeScreen.ts`) are intended as the bottom layer of an OBS scene and are typically opaque.
+
+1.  **Engine Initialization:** In the entry point (e.g., `src/generative.ts`), set a specific `background` color (e.g., `0x11111b`) and omit `backgroundAlpha: 0` to ensure an opaque fill.
+2.  **Procedural Drawing:**
+    - Use a single `Graphics` object (e.g., `this.gfx`) added to the screen container.
+    - In `update(ticker)`, call `this.gfx.clear()` and redraw the entire simulation state.
+    - Utilize PixiJS 8's `stroke()` and `fill()` API for drawing primitives.
+3.  **State Management:**
+    - Maintain a collection of entities (e.g., `dots: Dot[]`) with properties like `history`, `angle`, `speed`, and `color`.
+    - Handle edge logic (e.g., spawning at random margins or wrapping) to ensure the background feels "alive" and continuous.
+4.  **Responsiveness:**
+    - Implement `resize(w, h)` to update internal width/height variables.
+    - Often re-initializes the simulation state (e.g., `_initDots()`) to ensure the distribution matches the new aspect ratio/resolution without stretching.
+
 ## Engineering Standards
 
 - **Performance:** Avoid object allocation in `update()` loops. Reuse `Graphics` objects or use `ParticleContainer` for large counts.
