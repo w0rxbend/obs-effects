@@ -104,6 +104,12 @@ interface DotMesh {
   scale: number;
 }
 
+interface AtmosphereMesh {
+  dots: { x: number; y: number; vx: number; vy: number }[];
+  color: number;
+  alpha: number;
+}
+
 interface DotGrid {
   x: number;
   y: number;
@@ -202,7 +208,7 @@ export class ProceduralLogoScreen extends Container {
   private dotGrids: DotGrid[] = [];
   private boldDotGrids: DotGrid[] = [];
   private rotatingObjects: RotatingObject[] = [];
-  private atmosphereMeshes: DotMesh[] = [];
+  private atmosphereMeshes: AtmosphereMesh[] = [];
   private floatingElements: FloatingElement[] = [];
   private textParticles: TextParticle[] = [];
 
