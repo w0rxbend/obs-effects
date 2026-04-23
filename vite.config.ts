@@ -99,6 +99,7 @@ export default defineConfig({
         startingSoonFluid: resolve(__dirname, "starting-soon-fluid.html"),
         topography: resolve(__dirname, "topography.html"),
         dottedMesh: resolve(__dirname, "dotted-mesh.html"),
+        avatar: resolve(__dirname, "avatar.html"),
       },
     },
   },
