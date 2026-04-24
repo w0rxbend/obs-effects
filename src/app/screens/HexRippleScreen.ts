@@ -2,7 +2,7 @@ import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
 
 const BG = 0x11111b; // Crust
-const BASE_HEX = 0x181825; // Mantle — barely visible at rest
+const BASE_HEX = 0x11111b; // Crust
 const BORDER_C = 0x313244; // Surface0 — faint grid lines
 
 // Pale & darkish Catppuccin — cool tones only, no vivid warm colours
@@ -26,7 +26,7 @@ const WAVELENGTH = 115;
 const WAVE_DECAY = 0.62;
 const MAX_RIPPLE_AGE = 5.5;
 const MAX_RIPPLES = 12;
-const AMBIENT = 0.03; // very quiet ambient shimmer
+const AMBIENT = 0.02; // very quiet ambient shimmer
 
 const SINGLE_MIN = 1.5; // s — min gap between individual spawns
 const SINGLE_MAX = 3.2; // s — max gap
@@ -249,19 +249,23 @@ export class HexRippleScreen extends Container {
 
       for (const r of this.ripples) amp += this.rippleAmp(r, hex.cx, hex.cy);
 
-      const t = Math.max(0, Math.min(1, (amp + 1) * 0.5));
-      const color = lerpColor(BASE_HEX, hex.accent, t);
+      // Map amp (roughly -1 to 1) to a ripple intensity [0, 1]
+      // Using absolute value allows both peaks and troughs of the wave to illuminate the edge
+      const t = Math.max(0, Math.min(1, Math.abs(amp) * 1.5));
 
-      g.poly(hex.pts).fill({ color });
-      g.poly(hex.pts).stroke({ width: 0.6, color: BORDER_C, alpha: 0.35 });
+      // Hexagon body is always Crust
+      g.poly(hex.pts).fill({ color: BASE_HEX });
 
-      // Subtle crest shimmer (gentler than before — pale palette needs less flash)
-      if (t > 0.9) {
-        g.poly(hex.pts).fill({
-          color: 0xcdd6f4,
-          alpha: ((t - 0.9) / 0.1) * 0.16,
-        });
-      }
+      // Ripple effect applied ONLY to the edges
+      const edgeColor = lerpColor(BORDER_C, hex.accent, t);
+      const edgeAlpha = 0.35 + t * 0.55; // Increase opacity during ripple
+      const edgeWidth = 0.6 + t * 1.2; // Increase thickness during ripple
+
+      g.poly(hex.pts).stroke({
+        width: edgeWidth,
+        color: edgeColor,
+        alpha: edgeAlpha,
+      });
     }
   }
 }

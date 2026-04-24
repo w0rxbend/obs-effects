@@ -21,9 +21,12 @@ const ATTRACTOR_W = 0.18; // weight of orbital pull
 
 const TRAIL_LEN = 7;
 
-// Comet swarm color: teal + cyan, bright on fast
-const COMET_COLORS = [
-  0x94e2d5, 0x89dceb, 0x74c7ec, 0xa6e3a1, 0x89b4fa,
+// Comet swarm color: diverse themes for different flocks
+const SINGLE_COLOR = 0x45475a; // Surface1 (subtle)
+const THEMES = [
+  [0xcba6f7, 0xf5c2e7, 0xeba0ac, 0xf2cdcd], // Mauve/Pink
+  [0x89b4fa, 0x74c7ec, 0x89dceb, 0x94e2d5], // Blue/Teal
+  [0xa6e3a1, 0xf9e2af, 0xfab387, 0xf38ba8], // Green/Yellow/Red
 ] as const;
 
 interface Boid {
@@ -32,6 +35,10 @@ interface Boid {
   vx: number;
   vy: number;
   color: number;
+  r: number;
+  g: number;
+  b: number;
+  index: number;
   trail: Array<[number, number]>;
 }
 
@@ -72,12 +79,17 @@ export class BoidsScreen extends Container {
     for (let i = 0; i < N; i++) {
       const a = Math.random() * Math.PI * 2;
       const v = MIN_SPEED + Math.random() * (MAX_SPEED - MIN_SPEED);
+      const startColor = SINGLE_COLOR;
       this.boids.push({
         x: Math.random() * this.w,
         y: Math.random() * this.h,
         vx: Math.cos(a) * v,
         vy: Math.sin(a) * v,
-        color: COMET_COLORS[i % COMET_COLORS.length],
+        index: i,
+        color: startColor,
+        r: (startColor >> 16) & 0xff,
+        g: (startColor >> 8) & 0xff,
+        b: startColor & 0xff,
         trail: [],
       });
     }
@@ -171,6 +183,32 @@ export class BoidsScreen extends Container {
         cohY = cohY / nCoh - b.y;
       }
 
+      // Color logic: flocking vs single
+      let targetHex = SINGLE_COLOR;
+      if (aliN.length > 0) {
+        // We are in a flock. Determine flock "identity" based on neighbors.
+        let avgIndex = b.index;
+        for (const n of aliN) avgIndex += n.index;
+        avgIndex /= aliN.length + 1;
+
+        // Use avgIndex to pick a theme, ensuring different flocks have different themes
+        const themeIdx = Math.floor(avgIndex / 15) % THEMES.length;
+        const theme = THEMES[themeIdx];
+        // Use individual index to pick color within theme for diversity
+        targetHex = theme[b.index % theme.length];
+      }
+
+      // Smooth color transition
+      const tr = (targetHex >> 16) & 0xff;
+      const tg = (targetHex >> 8) & 0xff;
+      const tb = targetHex & 0xff;
+      const lerpSpeed = dt * 2.5;
+      b.r += (tr - b.r) * lerpSpeed;
+      b.g += (tg - b.g) * lerpSpeed;
+      b.b += (tb - b.b) * lerpSpeed;
+      b.color =
+        (Math.round(b.r) << 16) | (Math.round(b.g) << 8) | Math.round(b.b);
+
       // Orbital attractor: steer toward a ring at ATTRACTOR_R from center
       const adx = cx - b.x;
       const ady = cy - b.y;
@@ -235,9 +273,20 @@ export class BoidsScreen extends Container {
       const bright = Math.min(spd / MAX_SPEED, 1);
 
       for (let i = 1; i < b.trail.length; i++) {
+        const [x1, y1] = b.trail[i - 1];
+        const [x2, y2] = b.trail[i];
+
+        // Skip drawing if distance is too large (indicates a wrap-around)
+        if (
+          Math.abs(x1 - x2) > this.w * 0.5 ||
+          Math.abs(y1 - y2) > this.h * 0.5
+        ) {
+          continue;
+        }
+
         const t = i / b.trail.length;
-        g.moveTo(b.trail[i - 1][0], b.trail[i - 1][1])
-          .lineTo(b.trail[i][0], b.trail[i][1])
+        g.moveTo(x1, y1)
+          .lineTo(x2, y2)
           .stroke({ width: 1, color: b.color, alpha: t * bright * 0.5 });
       }
 
