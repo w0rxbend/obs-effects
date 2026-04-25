@@ -137,6 +137,7 @@ export default defineConfig({
         waveBorderCam: resolve(__dirname, "wave-border-cam.html"),
         catCircleCam: resolve(__dirname, "cat-circle-cam.html"),
         animatedLines: resolve(__dirname, "animated-lines.html"),
+        mountainNightRailway: resolve(__dirname, "mountain-night-railway.html"),
       },
     },
   },
