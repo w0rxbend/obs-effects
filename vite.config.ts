@@ -135,6 +135,7 @@ export default defineConfig({
         avatar: resolve(__dirname, "avatar.html"),
         fluidPaint: resolve(__dirname, "fluid-paint.html"),
         waveBorderCam: resolve(__dirname, "wave-border-cam.html"),
+        catCircleCam: resolve(__dirname, "cat-circle-cam.html"),
       },
     },
   },
