@@ -30,7 +30,8 @@
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8082/pcb-bg.html)",
       "Bash(npx vite *)",
       "Bash(xargs -n1 basename)",
-      "Bash(identify /home/worxbend/Worxpace/obs-effects/raw-assets/main\\\\{m\\\\}/sprite-linux.png)"
+      "Bash(identify /home/worxbend/Worxpace/obs-effects/raw-assets/main\\\\{m\\\\}/sprite-linux.png)",
+      "Bash(npx eslint *)"
     ]
   }
 }

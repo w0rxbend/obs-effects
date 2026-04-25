@@ -132,6 +132,8 @@ export default defineConfig({
         nightCityHorizon: resolve(__dirname, "night-city-horizon.html"),
         microbialColony: resolve(__dirname, "microbial-colony.html"),
         avatar: resolve(__dirname, "avatar.html"),
+        fluidPaint: resolve(__dirname, "fluid-paint.html"),
+        waveBorderCam: resolve(__dirname, "wave-border-cam.html"),
       },
     },
   },
