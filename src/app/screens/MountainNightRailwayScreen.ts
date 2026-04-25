@@ -68,7 +68,7 @@ const CAR_GAP = 2;
 const NUM_WAGONS = 15;
 const WAGON_WINDOWS = 10;
 const BOGIE_OFFSET = 14; // how far bogies sit from car ends
-const WHEEL_R = 8; // wheel radius (modern train, smaller than steam)
+const WHEEL_R = 5; // wheel radius (modern train, smaller than steam)
 // TRAIN_LENGTH = 180 + 15*(200+2) + 2 = 3212
 const TRAIN_LENGTH = LOCO_W + NUM_WAGONS * (WAGON_W + CAR_GAP) + CAR_GAP;
 
@@ -123,6 +123,11 @@ interface Pt {
   y: number;
 }
 
+interface MtnData {
+  body: Pt[];
+  snow: Pt[][];
+}
+
 interface WindStreak {
   x: number;
   y: number;
@@ -146,9 +151,9 @@ export class MountainNightRailwayScreen extends Container {
 
   private stars: Star[] = [];
   private clouds: Cloud[] = [];
-  private farPoly: Pt[] = [];
-  private midPoly: Pt[] = [];
-  private nearPoly: Pt[] = [];
+  private farMtn: MtnData = { body: [], snow: [] };
+  private midMtn: MtnData = { body: [], snow: [] };
+  private nearMtn: MtnData = { body: [], snow: [] };
 
   private treeTextures: Texture[] = [];
   private texturesBuilt = false;
@@ -292,16 +297,34 @@ export class MountainNightRailwayScreen extends Container {
   }
 
   private buildMountains(): void {
-    this.farPoly = this.genMtn(this.h * 0.22, this.h * 0.44, this.h * 0.65, 15);
-    this.midPoly = this.genMtn(this.h * 0.3, this.h * 0.54, this.h * 0.7, 12);
-    this.nearPoly = this.genMtn(
-      this.h * 0.39,
-      this.h * 0.62,
-      this.h * 0.76,
-      10,
+    // n must be odd so the sequence starts and ends on a peak (i%2===1)
+    const farBody = this.genMtn(
+      this.h * 0.34,
+      this.h * 0.52,
+      this.h * 0.65,
+      13,
     );
+    const midBody = this.genMtn(this.h * 0.44, this.h * 0.58, this.h * 0.7, 13);
+    const nearBody = this.genMtn(
+      this.h * 0.54,
+      this.h * 0.65,
+      this.h * 0.76,
+      9,
+    );
+    this.farMtn = {
+      body: farBody,
+      snow: this.genSnowPatches(farBody, this.h * 0.44),
+    };
+    this.midMtn = {
+      body: midBody,
+      snow: this.genSnowPatches(midBody, this.h * 0.5),
+    };
+    this.nearMtn = { body: nearBody, snow: [] };
   }
 
+  // Alternating sharp peaks / deep saddles with a large y-gap between zones.
+  // Sub-detail midpoints are clamped inside the face envelope so peak tips
+  // stay pointy and are not rounded off.
   private genMtn(
     peakMin: number,
     peakMax: number,
@@ -309,20 +332,26 @@ export class MountainNightRailwayScreen extends Container {
     n: number,
   ): Pt[] {
     const pts: Pt[] = [{ x: -90, y: baseY }];
+    const range = peakMax - peakMin;
 
-    // Subdivide range into peaks and saddles
     for (let i = 1; i <= n; i++) {
       const x = (i / n) * (this.w + 180) - 90;
       const isPeak = i % 2 === 1;
+      // Large gap between the peak zone (top 28%) and saddle zone (bottom 28%)
+      // gives the silhouette clear, angular teeth.
       const y = isPeak
-        ? rand(peakMin, peakMin + (peakMax - peakMin) * 0.55)
-        : rand(peakMin + (peakMax - peakMin) * 0.45, peakMax);
+        ? rand(peakMin, peakMin + range * 0.28)
+        : rand(peakMin + range * 0.72, peakMax);
 
-      // Add sub-detail point between previous and this
       if (i > 1) {
         const prev = pts[pts.length - 1];
         const mx = (prev.x + x) / 2;
-        const my = (prev.y + y) / 2 + rand(-18, 18);
+        const baseMy = (prev.y + y) / 2;
+        // Clamp midpoint to stay inside the face envelope (±10 px slack)
+        // so it adds rocky texture without smoothing the peak tip.
+        const loY = Math.min(prev.y, y) - 10;
+        const hiY = Math.max(prev.y, y) + 10;
+        const my = Math.max(loY, Math.min(hiY, baseMy + rand(-12, 12)));
         pts.push({ x: mx, y: my });
       }
       pts.push({ x, y });
@@ -332,6 +361,64 @@ export class MountainNightRailwayScreen extends Container {
     pts.push({ x: this.w + 90, y: this.h + 10 });
     pts.push({ x: -90, y: this.h + 10 });
     return pts;
+  }
+
+  // Generate snow-patch polygons along the upper ridge of a mountain outline.
+  private genSnowPatches(outline: Pt[], snowCutoff: number): Pt[][] {
+    const patches: Pt[][] = [];
+    const ridgeEnd = outline.length - 3; // skip the 3 closing pts
+    for (let i = 1; i < ridgeEnd; i++) {
+      const a = outline[i - 1];
+      const b = outline[i];
+      if (a.y > snowCutoff && b.y > snowCutoff) continue;
+      const patch = this.makeSnowPatch(a, b);
+      if (patch.length >= 3) patches.push(patch);
+    }
+    return patches;
+  }
+
+  // Build a snow patch polygon for a single mountain face (A→B).
+  // The patch covers the upper portion of the face and extends inward via
+  // the perpendicular that points toward the mountain body.
+  private makeSnowPatch(a: Pt, b: Pt): Pt[] {
+    const [hi, lo] = a.y <= b.y ? [a, b] : [b, a];
+
+    // Coverage: how far down the face the snow extends
+    const cov = rand(0.28, 0.6);
+    const faceEnd: Pt = {
+      x: hi.x + (lo.x - hi.x) * cov + rand(-10, 10),
+      y: hi.y + (lo.y - hi.y) * cov + rand(-5, 5),
+    };
+
+    // Perpendicular into the mountain body
+    const dx = lo.x - hi.x;
+    const dy = lo.y - hi.y;
+    const len = Math.hypot(dx, dy);
+    if (len < 2) return [];
+    let nx = -dy / len;
+    let ny = dx / len;
+    // Ensure normal points downward (into the mountain interior)
+    if (ny < 0) {
+      nx = -nx;
+      ny = -ny;
+    }
+
+    const depth = rand(14, 42);
+    const innerFaceEnd: Pt = {
+      x: faceEnd.x + nx * depth + rand(-12, 12),
+      y: faceEnd.y + ny * depth + rand(-4, 8),
+    };
+    const innerHi: Pt = {
+      x: hi.x + nx * depth * 0.13 + rand(-4, 4),
+      y: hi.y + ny * depth * 0.13 + rand(-2, 4),
+    };
+    // Extra midpoint for a more organic inner edge
+    const innerMid: Pt = {
+      x: (faceEnd.x + innerFaceEnd.x) * 0.5 + rand(-14, 14),
+      y: (faceEnd.y + innerFaceEnd.y) * 0.5 + rand(-4, 10),
+    };
+
+    return [hi, faceEnd, innerMid, innerFaceEnd, innerHi];
   }
 
   // ── Trees ───────────────────────────────────────────────────────────────────
@@ -567,25 +654,27 @@ export class MountainNightRailwayScreen extends Container {
   }
 
   private drawMountains(g: Graphics): void {
-    this.fillPoly(g, this.farPoly, MTN_FAR);
-    this.fillPoly(g, this.midPoly, MTN_MID);
-    this.fillPoly(g, this.nearPoly, MTN_NEAR);
-
-    // Subtle snow gleam on tallest far-mountain peaks
-    for (const pt of this.farPoly) {
-      if (pt.y < this.h * 0.3) {
-        const pulse = 0.03 + 0.02 * Math.sin(this.time * 0.18);
-        g.circle(pt.x, pt.y, 14).fill({ color: 0x8aaad4, alpha: pulse });
-        g.circle(pt.x, pt.y, 6).fill({ color: 0xb8d0f0, alpha: pulse * 0.9 });
-      }
+    // Far layer — body then snow patches
+    this.fillPoly(g, this.farMtn.body, MTN_FAR);
+    for (const patch of this.farMtn.snow) {
+      this.fillPoly(g, patch, 0x252e4a, 0.92);
     }
+
+    // Mid layer
+    this.fillPoly(g, this.midMtn.body, MTN_MID);
+    for (const patch of this.midMtn.snow) {
+      this.fillPoly(g, patch, 0x18233a, 0.88);
+    }
+
+    // Near layer — no snow (too low)
+    this.fillPoly(g, this.nearMtn.body, MTN_NEAR);
   }
 
-  private fillPoly(g: Graphics, pts: Pt[], color: number): void {
+  private fillPoly(g: Graphics, pts: Pt[], color: number, alpha = 1): void {
     if (pts.length < 3) return;
     g.moveTo(pts[0].x, pts[0].y);
     for (let i = 1; i < pts.length; i++) g.lineTo(pts[i].x, pts[i].y);
-    g.fill({ color });
+    g.fill({ color, alpha });
   }
 
   private drawClouds(g: Graphics): void {
