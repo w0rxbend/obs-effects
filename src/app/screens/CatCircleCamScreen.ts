@@ -5,6 +5,7 @@ import { Container, Graphics } from "pixi.js";
 const C_BLUE = 0x89b4fa;
 const C_PINK = 0xf5c2e7;
 const C_LAVENDER = 0xb4befe;
+const C_RED = 0xf38ba8;
 
 // ── Geometry ──────────────────────────────────────────────────────────────────
 const PAW_X_FRAC = 0.1; // paw tip is ~10 % from each horizontal edge
@@ -12,10 +13,10 @@ const PAW_Y_FRAC = 0.85; // paw bottom is ~85 % from the image top
 const CAT_Y_OFFSET = 0.12; // shift silhouette down by this fraction of catHeight
 
 // ── Dot silhouette ────────────────────────────────────────────────────────────
-// Step 5 gives ~3 800 dots so each particle has breathing room at radius 2–4 px
-const SAMPLE_STEP = 5; // image-pixel grid step; lower = denser
-const DOT_BASE_R = 2.2; // radius at rest
-const DOT_PEAK_R = 4.0; // radius at full elevation
+// Step 6 gives ~2 600 dots so each particle has more breathing room
+const SAMPLE_STEP = 6; // image-pixel grid step; lower = denser
+const DOT_BASE_R = 2.0; // radius at rest
+const DOT_PEAK_R = 3.6; // radius at full elevation
 
 // ── Wave ──────────────────────────────────────────────────────────────────────
 const WAVE_SPEED = 0.42;
@@ -52,12 +53,18 @@ interface CatDot {
   phase: number; // wave phase offset — permanent, varies smoothly across grid
 }
 
+interface EyeCenter {
+  fx: number;
+  fy: number;
+}
+
 export class CatCircleCamScreen extends Container {
   public static assetBundles: string[] = [];
 
   private readonly gfx = new Graphics();
 
   private catDots: CatDot[] = [];
+  private eyeCenters: EyeCenter[] = [];
   private catAspect = 0.515; // nh / nw — set once the image loads
 
   // Current layout cache — recomputed on radius/position change
@@ -70,6 +77,7 @@ export class CatCircleCamScreen extends Container {
   private cx = 960;
   private cy = 540;
   private R = 270;
+  private scaleF = 1.0;
   private pawAngle = 0.644; // canvas angle (rad) from x-axis to paw attachment
 
   constructor() {
@@ -102,6 +110,8 @@ export class CatCircleCamScreen extends Container {
     const w = window.innerWidth || 1920;
     const h = window.innerHeight || 1080;
     this.R = Math.min(w, h) * 0.27;
+    // Scale factor based on reference 1080p height (where R would be ~291)
+    this.scaleF = this.R / 291.6;
     const pawXHalf = (0.5 - PAW_X_FRAC) * 2.0 * this.R;
     this.pawAngle = Math.acos(clamp(pawXHalf / this.R, 0, 1));
     this.updateCatLayout();
@@ -139,23 +149,33 @@ export class CatCircleCamScreen extends Container {
           nh = cv.height;
 
         this.catDots = [];
-        for (let py = 0; py < nh; py += SAMPLE_STEP) {
-          const row = Math.floor(py / SAMPLE_STEP);
-          for (let px = 0; px < nw; px += SAMPLE_STEP) {
-            const col = Math.floor(px / SAMPLE_STEP);
+
+        for (let py = 0; py < nh; py++) {
+          const isSampleRow = py % SAMPLE_STEP === 0;
+          for (let px = 0; px < nw; px++) {
             const i = (py * nw + px) * 4;
             const r = data[i],
               gv = data[i + 1],
               b = data[i + 2],
               a = data[i + 3];
-            if (a > 128 && r + gv + b < 192) {
-              // Phase varies smoothly across the grid → neighbouring dots share
-              // similar phases → they move as a coherent cluster in the wave.
-              const phase = ((row * 0.37 + col * 0.19) % 1) * Math.PI * 2;
-              this.catDots.push({ fx: px / nw, fy: py / nh, phase });
+
+            // Silhouette dots (sampled)
+            if (isSampleRow && px % SAMPLE_STEP === 0) {
+              if (a > 128 && r + gv + b < 192) {
+                const row = Math.floor(py / SAMPLE_STEP);
+                const col = Math.floor(px / SAMPLE_STEP);
+                const phase = ((row * 0.37 + col * 0.19) % 1) * Math.PI * 2;
+                this.catDots.push({ fx: px / nw, fy: py / nh, phase });
+              }
             }
           }
         }
+
+        // Hardcoded eye coordinates from user
+        this.eyeCenters = [
+          { fx: 240 / nw, fy: 375 / nh },
+          { fx: 375 / nw, fy: 375 / nh },
+        ];
         resolve();
       };
       img.onerror = reject;
@@ -351,7 +371,8 @@ export class CatCircleCamScreen extends Container {
 
         // Radius and alpha scale with elevation
         const ne = (elev + 1) * 0.5; // normalised 0..1
-        const radius = DOT_BASE_R + lift * (DOT_PEAK_R - DOT_BASE_R);
+        const radius =
+          (DOT_BASE_R + lift * (DOT_PEAK_R - DOT_BASE_R)) * this.scaleF;
         const alpha = clamp(0.35 + ne * 0.6, 0, 1);
 
         // Match the border arc colour exactly
@@ -377,6 +398,47 @@ export class CatCircleCamScreen extends Container {
             alpha: lift * 0.55,
           });
         }
+      }
+
+      // ── Glowing Eyes ────────────────────────────────────────────────────────
+      for (const eye of this.eyeCenters) {
+        const baseX = catLeft + eye.fx * catWidth;
+        const baseY = catTop + eye.fy * catHeight;
+        const bx = baseX * WAVE_FREQ;
+        const by = baseY * WAVE_FREQ;
+
+        const elev =
+          Math.sin(bx * 1.6 - time * 1.05) * Math.cos(by * 1.25 + time * 0.75);
+        const lift = Math.max(0, elev);
+        const x = baseX + Math.cos(time * 0.2) * lift * DRIFT_X;
+        const y = baseY - lift * LIFT_Y;
+
+        const pulse = (Math.sin(time * 3.5) + 1) * 0.5;
+        const starColor = C_RED;
+        const glowColor = C_RED;
+        const sf = this.scaleF;
+
+        // Core star (reduced by 30%, now scaled by window)
+        this.drawStar(
+          g,
+          x,
+          y,
+          4,
+          (3.5 + pulse * 2.8) * sf,
+          (10.5 + pulse * 7.0) * sf,
+          time * 0.5,
+          starColor,
+          0.9,
+        );
+        // Outer glow (reduced by 30%, now scaled by window)
+        g.circle(x, y, (14 + pulse * 10.5) * sf).fill({
+          color: glowColor,
+          alpha: 0.2 + pulse * 0.15,
+        });
+        g.circle(x, y, (28 + pulse * 17.5) * sf).fill({
+          color: glowColor,
+          alpha: 0.08 + pulse * 0.08,
+        });
       }
     }
 
@@ -458,5 +520,30 @@ export class CatCircleCamScreen extends Container {
       else g.lineTo(x, y);
     }
     g.stroke({ color, width, alpha });
+  }
+
+  private drawStar(
+    g: Graphics,
+    x: number,
+    y: number,
+    points: number,
+    innerRadius: number,
+    outerRadius: number,
+    rotation: number,
+    color: number,
+    alpha: number,
+  ): void {
+    const step = Math.PI / points;
+    let angle = rotation;
+
+    for (let i = 0; i < points * 2; i++) {
+      const r = i % 2 === 0 ? outerRadius : innerRadius;
+      const px = x + Math.cos(angle) * r;
+      const py = y + Math.sin(angle) * r;
+      if (i === 0) g.moveTo(px, py);
+      else g.lineTo(px, py);
+      angle += step;
+    }
+    g.closePath().fill({ color, alpha });
   }
 }

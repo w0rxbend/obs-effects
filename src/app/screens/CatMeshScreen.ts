@@ -2,12 +2,7 @@ import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
 
 // Catppuccin Mocha violet palette
-const C_LINE_LOW = 0x9370c8;
-const C_LINE_MID = 0xb4befe;
-const C_LINE_HIGH = 0xcba6f7;
 const C_DOT = 0xcba6f7;
-const C_DOT_PEAK = 0xf5c2e7;
-const C_HIGHLIGHT = 0xffffff;
 
 const IMG_SIZE = 800;
 const SAMPLE_STEP = 5;
@@ -200,9 +195,7 @@ export class CatMeshScreen extends Container {
         const avg = (node.elev + nb.elev) * 0.5;
         const relief = Math.abs(node.elev - nb.elev);
 
-        let color = C_LINE_LOW;
-        if (avg > 0.3) color = C_LINE_HIGH;
-        else if (avg > -0.2) color = C_LINE_MID;
+        const color = C_DOT;
 
         const alpha = clamp(0.08 + (avg + 1) * 0.1 + relief * 0.25, 0, 0.45);
         const width = 0.25 + relief * 0.5;
@@ -219,7 +212,7 @@ export class CatMeshScreen extends Container {
       const lift = Math.max(0, e);
       const radius = 0.38 + ne * 1.1 + lift * 1.2;
       const alpha = clamp(0.3 + ne * 0.7, 0, 1);
-      const color = e > 0.45 ? C_DOT_PEAK : C_DOT;
+      const color = C_DOT;
 
       if (lift > 0.4) {
         g.circle(node.x, node.y, radius * 2.6).fill({
@@ -229,13 +222,6 @@ export class CatMeshScreen extends Container {
       }
 
       g.circle(node.x, node.y, radius).fill({ color, alpha });
-
-      if (e > 0.68) {
-        g.circle(node.x, node.y, radius * 0.38).fill({
-          color: C_HIGHLIGHT,
-          alpha: clamp((e - 0.68) * 3.0, 0, 1),
-        });
-      }
     }
   }
 }
