@@ -139,6 +139,7 @@ export default defineConfig({
         animatedLines: resolve(__dirname, "animated-lines.html"),
         mountainNightRailway: resolve(__dirname, "mountain-night-railway.html"),
         tuxBlob: resolve(__dirname, "tux-blob.html"),
+        bioluminescentCell: resolve(__dirname, "bioluminescent-cell.html"),
       },
     },
   },
