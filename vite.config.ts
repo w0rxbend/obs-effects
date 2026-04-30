@@ -143,6 +143,7 @@ export default defineConfig({
         metaBlobs: resolve(__dirname, "meta-blobs.html"),
         iridescentBlobs: resolve(__dirname, "iridescent-blobs.html"),
         physicsParticles: resolve(__dirname, "physics-particles.html"),
+        spaceWarBoids: resolve(__dirname, "space-war-boids.html"),
       },
     },
   },
