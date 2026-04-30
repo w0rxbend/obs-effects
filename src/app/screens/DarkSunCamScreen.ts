@@ -38,7 +38,7 @@ function buildRays(): RayDef[] {
     const angle = (i / BASE) * Math.PI * 2;
     rays.push({
       angle,
-      length: 50 + rand() * 90,
+      length: 30 + rand() * 55,
       baseWidth: 2.5 + rand() * 5,
       amp1: 3 + rand() * 9,
       freq1: 2 + rand() * 4,
@@ -59,7 +59,7 @@ function buildRays(): RayDef[] {
     const angle = (i / MID) * Math.PI * 2 + Math.PI / MID;
     rays.push({
       angle,
-      length: 130 + rand() * 110,
+      length: 80 + rand() * 65,
       baseWidth: 5 + rand() * 10,
       amp1: 10 + rand() * 16,
       freq1: 1.5 + rand() * 2.5,
@@ -80,7 +80,7 @@ function buildRays(): RayDef[] {
     const angle = (i / ACCENT) * Math.PI * 2 + 0.08;
     rays.push({
       angle,
-      length: 220 + rand() * 170,
+      length: 130 + rand() * 100,
       baseWidth: 10 + rand() * 16,
       amp1: 20 + rand() * 28,
       freq1: 0.8 + rand() * 1.8,
