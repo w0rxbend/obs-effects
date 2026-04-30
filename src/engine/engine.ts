@@ -47,7 +47,7 @@ export class CreationEngine extends Application {
     document.addEventListener("visibilitychange", this.visibilityChange);
 
     // Init PixiJS assets with this asset manifest
-    await Assets.init({ manifest, basePath: "assets" });
+    await Assets.init({ manifest, basePath: "/assets" });
     await Assets.loadBundle("default");
 
     // List all existing bundles names

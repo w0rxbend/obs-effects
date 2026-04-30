@@ -148,6 +148,7 @@ export default defineConfig({
           __dirname,
           "amorphous-square-border.html",
         ),
+        darkSunCam: resolve(__dirname, "dark-sun-cam.html"),
       },
     },
   },
