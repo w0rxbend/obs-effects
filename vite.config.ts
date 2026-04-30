@@ -144,6 +144,10 @@ export default defineConfig({
         iridescentBlobs: resolve(__dirname, "iridescent-blobs.html"),
         physicsParticles: resolve(__dirname, "physics-particles.html"),
         spaceWarBoids: resolve(__dirname, "space-war-boids.html"),
+        amorphousSquareBorder: resolve(
+          __dirname,
+          "amorphous-square-border.html",
+        ),
       },
     },
   },
