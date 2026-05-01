@@ -151,6 +151,7 @@ export default defineConfig({
         darkSunCam: resolve(__dirname, "dark-sun-cam.html"),
         lavenderDashesCam: resolve(__dirname, "lavender-dashes-cam.html"),
         amorphousBlobCam: resolve(__dirname, "amorphous-blob-cam.html"),
+        ukrainianWaveMesh: resolve(__dirname, "ukrainian-wave-mesh.html"),
       },
     },
   },
