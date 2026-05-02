@@ -66,6 +66,7 @@ export default defineConfig({
         wireframeIcosphere: resolve(__dirname, "wireframe-icosphere.html"),
         nebula: resolve(__dirname, "nebula.html"),
         blackHoleCam: resolve(__dirname, "black-hole-cam.html"),
+        accretionDiskCam: resolve(__dirname, "accretion-disk-cam.html"),
         nbody: resolve(__dirname, "nbody.html"),
         orbitalMechanics: resolve(__dirname, "orbital-mechanics.html"),
         solarWind: resolve(__dirname, "solar-wind.html"),

@@ -33,7 +33,6 @@ function volumeColor(vol: number): number {
   return lerpC(C_MID, C_HOT, (v - 0.45) / 0.55);
 }
 
-
 function clamp(v: number, lo: number, hi: number): number {
   return v < lo ? lo : v > hi ? hi : v;
 }
