@@ -154,6 +154,10 @@ export default defineConfig({
         ukrainianWaveMesh: resolve(__dirname, "ukrainian-wave-mesh.html"),
         uaRedBlackMesh: resolve(__dirname, "ua-red-black-mesh.html"),
         hypeMeterCam: resolve(__dirname, "hype-meter-cam.html"),
+        mainAudioActivatedBorder: resolve(
+          __dirname,
+          "main-audio-activated-border.html",
+        ),
       },
     },
   },
