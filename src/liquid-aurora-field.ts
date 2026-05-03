@@ -1,0 +1,15 @@
+import { setEngine } from "./app/getEngine";
+import { LiquidAuroraFieldScreen } from "./app/screens/LiquidAuroraFieldScreen";
+import { CreationEngine } from "./engine/engine";
+
+const engine = new CreationEngine();
+setEngine(engine);
+
+(async () => {
+  await engine.init({
+    background: 0x030508,
+    resizeOptions: { minWidth: 1920, minHeight: 1080, letterbox: false },
+  });
+
+  await engine.navigation.showScreen(LiquidAuroraFieldScreen);
+})();

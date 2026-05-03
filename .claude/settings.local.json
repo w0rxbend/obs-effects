@@ -39,7 +39,12 @@
       "Bash(rg -l \"blob\\\\|evenodd\\\\|fillRule\\\\|hole\" /home/worxbend/Workspace/obs-effects/src --include=\"*.ts\")",
       "Bash(rg \"evenodd\\\\|fillRule\\\\|AlphaMask\\\\|mask\" /home/worxbend/Workspace/obs-effects/src --include=\"*.ts\" -l)",
       "Bash(rg -l \"AudioContext\\\\|AnalyserNode\\\\|getByteFrequencyData\\\\|getUserMedia\" /home/worxbend/Workspace/obs-effects/src --include=\"*.ts\")",
-      "Bash(grep -E \"\\\\.ts$|\\\\.js$|vite|map\")"
+      "Bash(grep -E \"\\\\.ts$|\\\\.js$|vite|map\")",
+      "Bash(rg -l \"AnalyserNode\\\\|analyser\\\\|AudioContext\\\\|getByteFrequency\" /home/worxbend/Workspace/obs-effects/src/app/screens/ --include=\"*.ts\" -l)",
+      "Bash(rg -rl \"AnalyserNode\\\\|analyser\\\\|AudioContext\\\\|getByteFrequency\" /home/worxbend/Workspace/obs-effects/src/)",
+      "Bash(rg -l \"getByteFrequencyData\\\\|AnalyserNode\\\\|AudioContext\\\\|getFrequency\\\\|audioData\\\\|fftData\" /home/worxbend/Workspace/obs-effects/src --include=\"*.ts\")",
+      "Bash(rg -rl \"AudioContext\\\\|analyser\\\\|frequencyData\\\\|getByte\" /home/worxbend/Workspace/obs-effects/src/)",
+      "Bash(rg -rl \"AudioContext\\\\|analyser\\\\|frequencyData\" /home/worxbend/Workspace/obs-effects/src/)"
     ]
   }
 }
