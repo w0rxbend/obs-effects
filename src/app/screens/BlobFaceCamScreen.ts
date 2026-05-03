@@ -113,7 +113,7 @@ export class BlobFaceCamScreen extends Container {
       const src = ctx.createMediaStreamSource(stream);
       this.analyser = ctx.createAnalyser();
       this.analyser.fftSize = 512;
-      this.analyser.smoothingTimeConstant = 0.45;
+      this.analyser.smoothingTimeConstant = 0.6;
       src.connect(this.analyser);
       this.audioData = new Uint8Array(
         this.analyser.frequencyBinCount,
@@ -153,7 +153,9 @@ export class BlobFaceCamScreen extends Container {
     const dt = Math.min(ticker.deltaMS * 0.001, 0.05);
     this.time += dt;
 
-    const raw = clamp(this._readRMS() * 3, 0, 1);
+    const NOISE_FLOOR = 0.04;
+    const rms = this._readRMS();
+    const raw = clamp((rms - NOISE_FLOOR) * 16, 0, 1);
 
     // Slow envelope: speech activity for mouth width/smile shape
     const sRate = raw > this.slowEnv ? 0.15 : 0.025;
