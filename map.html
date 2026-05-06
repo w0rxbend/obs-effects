@@ -1,439 +1,838 @@
 <!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>OBS Effects — Map</title>
-    <style>
-      *,
-      *::before,
-      *::after {
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>OBS Effects Directory</title>
+<script>
+  // Pre-paint theme set to avoid flash
+  (function(){
+    try {
+      var t = localStorage.getItem('obsefx-theme');
+      if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+    } catch(e) {}
+  })();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Geist+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          display: ['"Space Grotesk"', 'system-ui', 'sans-serif'],
+          mono: ['"Geist Mono"', 'ui-monospace', 'monospace'],
+          sans: ['"Inter"', 'system-ui', 'sans-serif'],
+        },
+        colors: {
+          ink:    'rgb(var(--c-ink) / <alpha-value>)',
+          panel:  'rgb(var(--c-panel) / <alpha-value>)',
+          line:   'rgb(var(--c-line) / <alpha-value>)',
+          line2:  'rgb(var(--c-line2) / <alpha-value>)',
+          fg:     'rgb(var(--c-fg) / <alpha-value>)',
+          dim:    'rgb(var(--c-dim) / <alpha-value>)',
+          dimmer: 'rgb(var(--c-dimmer) / <alpha-value>)',
+          lav:    'rgb(var(--c-lav) / <alpha-value>)',
+          vb:     'rgb(var(--c-vb) / <alpha-value>)',
+        },
+      },
+    },
+  };
+</script>
+<script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/framer-motion@11.3.19/dist/framer-motion.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+<style>
+  :root {
+    /* dark (default) */
+    --c-ink: 0 0 0;
+    --c-panel: 7 7 7;
+    --c-line: 24 24 24;
+    --c-line2: 38 38 38;
+    --c-fg: 237 237 237;
+    --c-dim: 122 122 122;
+    --c-dimmer: 74 74 74;
+    --c-lav: 203 166 247;
+    --c-vb: 0 112 243;
+    --grid-line: rgba(255,255,255,0.025);
+    --shimmer-mask: #000;
+  }
+  :root[data-theme="light"] {
+    --c-ink: 255 255 255;
+    --c-panel: 250 250 250;
+    --c-line: 230 230 230;
+    --c-line2: 210 210 210;
+    --c-fg: 10 10 10;
+    --c-dim: 110 110 110;
+    --c-dimmer: 160 160 160;
+    --c-lav: 124 58 237;
+    --c-vb: 0 92 219;
+    --grid-line: rgba(0,0,0,0.04);
+    --shimmer-mask: #fff;
+  }
+  html, body { background: rgb(var(--c-ink)); color: rgb(var(--c-fg)); }
+  body { font-family: 'Inter', system-ui, sans-serif; }
+  .font-display { font-family: 'Space Grotesk', system-ui, sans-serif; letter-spacing: -0.02em; }
+  .font-mono   { font-family: 'Geist Mono', ui-monospace, monospace; }
+
+  /* Background grid */
+  .bg-grid {
+    background-image:
+      linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
+    background-size: 48px 48px;
+    mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 30%, transparent 80%);
+  }
+
+  /* Card shimmer (Vercel-style) */
+  .shimmer { position: relative; overflow: hidden; isolation: isolate; }
+  .shimmer::before {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    padding: 1px;
+    background: conic-gradient(from var(--shimmer-angle, 0deg), transparent 0%, transparent 70%, rgba(203,166,247,0.55) 80%, rgba(0,112,243,0.55) 90%, transparent 100%);
+    -webkit-mask: linear-gradient(var(--shimmer-mask) 0 0) content-box, linear-gradient(var(--shimmer-mask) 0 0);
+    -webkit-mask-composite: xor;
+            mask-composite: exclude;
+    opacity: 0;
+    transition: opacity .35s ease;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .shimmer:hover::before { opacity: 1; animation: spin 2.4s linear infinite; }
+  @keyframes spin { to { --shimmer-angle: 360deg; } }
+  @property --shimmer-angle { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
+
+  /* Live-preview animated motif backgrounds — purely cosmetic */
+  .preview-base { position: absolute; inset: 0; opacity: 0; transition: opacity .4s ease; pointer-events: none; }
+  .preview-on .preview-base { opacity: 1; }
+
+  .preview-dots {
+    background-image: radial-gradient(rgba(203,166,247,0.55) 1px, transparent 1.4px);
+    background-size: 10px 10px;
+    animation: drift 6s linear infinite;
+  }
+  @keyframes drift { from { background-position: 0 0; } to { background-position: 40px 40px; } }
+
+  .preview-rings {
+    background:
+      radial-gradient(circle at 50% 50%, transparent 0 22%, rgba(0,112,243,0.35) 22.5% 23%, transparent 23.5% 32%, rgba(203,166,247,0.4) 32.5% 33%, transparent 33.5% 46%, rgba(0,112,243,0.25) 46.5% 47%, transparent 47.5%);
+    animation: pulse 2.4s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100%{ transform: scale(1);} 50%{ transform: scale(1.08);} }
+
+  .preview-bars {
+    background:
+      repeating-linear-gradient(90deg, transparent 0 6px, rgba(203,166,247,0.5) 6px 8px, transparent 8px 14px);
+    animation: bars 1.2s steps(8) infinite;
+  }
+  @keyframes bars { from{ background-position: 0 0;} to{ background-position: 56px 0;} }
+
+  .preview-particles {
+    background:
+      radial-gradient(2px 2px at 20% 30%, rgba(203,166,247,0.9), transparent 60%),
+      radial-gradient(1.5px 1.5px at 80% 20%, rgba(0,112,243,0.9), transparent 60%),
+      radial-gradient(2px 2px at 60% 70%, rgba(203,166,247,0.7), transparent 60%),
+      radial-gradient(1.5px 1.5px at 30% 80%, rgba(0,112,243,0.7), transparent 60%),
+      radial-gradient(1.5px 1.5px at 90% 60%, rgba(203,166,247,0.6), transparent 60%);
+    animation: float 4s ease-in-out infinite;
+  }
+  @keyframes float { 0%,100%{ transform: translateY(0);} 50%{ transform: translateY(-4px);} }
+
+  .preview-flow {
+    background:
+      repeating-linear-gradient(45deg, transparent 0 8px, rgba(203,166,247,0.35) 8px 9px, transparent 9px 18px),
+      repeating-linear-gradient(-45deg, transparent 0 12px, rgba(0,112,243,0.25) 12px 13px, transparent 13px 26px);
+    animation: drift 8s linear infinite;
+  }
+
+  /* DIIA-style chunky number markers */
+  .num-tab {
+    font-family: 'Geist Mono', ui-monospace, monospace;
+    font-feature-settings: "tnum" 1;
+  }
+
+  /* Sticky bar blur */
+  .sticky-blur {
+    backdrop-filter: blur(14px) saturate(140%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+    background-color: rgb(var(--c-ink) / 0.72);
+  }
+
+  /* Custom scrollbar (subtle) */
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: rgb(var(--c-ink)); }
+  ::-webkit-scrollbar-thumb { background: rgb(var(--c-line2)); border-radius: 0; }
+  ::-webkit-scrollbar-thumb:hover { background: rgb(var(--c-dimmer)); }
+
+  /* Focus state — DIIA heavy border */
+  a.card-link:focus-visible { outline: none; border-color: rgb(var(--c-lav)); box-shadow: 0 0 0 1px rgb(var(--c-lav)) inset; }
+
+  /* Bold underline accents under section headings */
+  .heading-rule { height: 4px; background: rgb(var(--c-lav)); width: 56px; }
+
+  /* Marquee for ticker */
+  .ticker { display: flex; gap: 48px; white-space: nowrap; animation: tick 60s linear infinite; }
+  @keyframes tick { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+</style>
+</head>
+<body class="bg-ink text-fg antialiased">
+<div id="root"></div>
+
+<script type="text/babel" data-presets="env,react">
+const { useState, useMemo, useEffect, useRef } = React;
+const { motion, AnimatePresence } = window.Motion ?? window['framer-motion'] ?? window.framerMotion ?? window.FramerMotion ?? {};
+// framer-motion UMD exposes as `Motion`
+const M = window.Motion;
+
+/* ---------------- Data: full effect list with category + tags ---------------- */
+const RAW = [
+  ["main-web-cam-border.html","Main Web Cam Border","Webcam Borders",["Overlay","Border"]],
+  ["main-audio-activated-border.html","Main Audio Activated Border","Webcam Borders",["Audio-Reactive","Border"]],
+  ["simple-web-cam-border.html","Simple Web Cam Border","Webcam Borders",["Overlay","Border"]],
+  ["planet-circle-webcam-border.html","Planet Circle Webcam Border","Webcam Borders",["Overlay","3D"]],
+  ["black-hole-cam.html","Black Hole Cam","Webcam Borders",["Shader","WebGL"]],
+  ["accretion-disk-cam.html","Accretion Disk Cam","Webcam Borders",["Shader","WebGL"]],
+  ["trapcam.html","Trap Cam","Webcam Borders",["Audio-Reactive","Border"]],
+  ["wavecam.html","Wave Cam","Webcam Borders",["Fluid","Border"]],
+  ["hexcam.html","Hex Cam","Webcam Borders",["Geometric","Border"]],
+  ["hexgridcam.html","Hex Grid Cam","Webcam Borders",["Geometric","Border"]],
+  ["hexlayercam.html","Hex Layer Cam","Webcam Borders",["Geometric","Border"]],
+  ["wireframe-sphere-cam.html","Wireframe Sphere Cam","Webcam Borders",["3D","Border"]],
+  ["cam-frame-overlay.html","Cam Frame Overlay","Webcam Borders",["Overlay","Border"]],
+  ["smoke-ring-cam.html","Smoke Ring Cam","Webcam Borders",["Fluid","Border"]],
+  ["crystalcam.html","Crystal Cam","Webcam Borders",["Geometric","3D"]],
+  ["fluid-circle-cam.html","Fluid Circle Cam","Webcam Borders",["Fluid","Border"]],
+  ["fluid-catppuccin-rings-cam.html","Fluid Catppuccin Rings Cam","Webcam Borders",["Fluid","Border"]],
+  ["fluid-dotted-ring-cam.html","Fluid Dotted Ring Cam","Webcam Borders",["Fluid","Particles"]],
+  ["fluid-mesh-ring-cam.html","Fluid Mesh Ring Cam","Webcam Borders",["Fluid","Mesh"]],
+  ["gas-cam.html","Gas Cam","Webcam Borders",["Fluid","Overlay"]],
+  ["wavy-cam.html","Wavy Cam","Webcam Borders",["Fluid","Border"]],
+  ["wave-border-cam.html","Wave Border Cam","Webcam Borders",["Fluid","Border"]],
+  ["amorphous-square-border.html","Amorphous Square Border","Webcam Borders",["Fluid","Border"]],
+  ["dark-sun-cam.html","Dark Sun Cam","Webcam Borders",["Fluid","Border"]],
+  ["lavender-dashes-cam.html","Lavender Dashes Cam","Webcam Borders",["Geometric","Border"]],
+  ["amorphous-blob-cam.html","Amorphous Blob Cam","Webcam Borders",["Fluid","Border"]],
+  ["hype-meter-cam.html","Hype Meter Cam","Webcam Borders",["Audio-Reactive","Border"]],
+  ["cat-circle-cam.html","Cat Circle Cam","Webcam Borders",["Mascot","Border"]],
+  ["smoke-bar.html","Smoke Bar","Webcam Borders",["Fluid","Overlay"]],
+
+  ["aquarium.html","Aquarium","Backgrounds",["Scene","WebGL"]],
+  ["background.html","Background","Backgrounds",["Loop"]],
+  ["generative.html","Generative","Backgrounds",["Generative"]],
+  ["graph-bg.html","Graph Bg","Backgrounds",["Generative"]],
+  ["galaxy-bg.html","Galaxy Background","Backgrounds",["Scene","Space"]],
+  ["pcb-bg.html","PCB Background","Backgrounds",["Scene","Tech"]],
+  ["nebula.html","Nebula","Backgrounds",["Shader","Space"]],
+  ["aurora-borealis.html","Aurora Borealis","Backgrounds",["Shader","Atmospheric"]],
+  ["night-city-horizon.html","Night City Horizon","Backgrounds",["Scene","Parallax"]],
+  ["topo-landscape.html","Topo Landscape","Backgrounds",["Generative","Terrain"]],
+  ["topography.html","Topography","Backgrounds",["Generative","Terrain"]],
+  ["star-field.html","Star Field","Backgrounds",["Space","Loop"]],
+  ["grass.html","Grass","Backgrounds",["Scene","Nature"]],
+  ["plasma-wave.html","Plasma Wave","Backgrounds",["Shader","Loop"]],
+  ["animated-lines.html","Animated Lines","Backgrounds",["GSAP","Loop"]],
+  ["mountain-night-railway.html","Mountain Night Railway","Backgrounds",["Scene","Parallax"]],
+  ["forest-ambient-bg.html","Forest Ambient Background","Backgrounds",["Scene","Parallax"]],
+  ["vector-field-bg.html","Vector Field","Backgrounds",["Generative","Particles"]],
+  ["gaussian-distribution-bg.html","Gaussian Distribution Bg","Backgrounds",["Generative","Mesh"]],
+  ["matrix-dots.html","Matrix Dots","Backgrounds",["Generative","Loop"]],
+  ["dotted-mesh.html","Dotted Mesh","Backgrounds",["Mesh","Particles"]],
+  ["wormhole-dive.html","Wormhole Dive","Backgrounds",["Shader","Loop"]],
+  ["cosmic-portal.html","Cosmic Portal","Backgrounds",["Shader","Space"]],
+  ["tunnel-vortex.html","Tunnel Vortex","Backgrounds",["Shader","Loop"]],
+  ["spiral-pull.html","Spiral Pull","Backgrounds",["Shader","Loop"]],
+  ["rain.html","Rain","Backgrounds",["Atmospheric","Loop"]],
+  ["flight-simulation.html","Flight Simulation","Backgrounds",["Scene","3D"]],
+
+  ["trapnation.html","Trap Nation","Audio Visualizers",["Audio-Reactive","Visualizer"]],
+  ["particle-constellation.html","Particle Constellation","Audio Visualizers",["Audio-Reactive","Particles"]],
+  ["liquid-aurora-field.html","Liquid Aurora Field","Audio Visualizers",["Audio-Reactive","Fluid"]],
+  ["radial-energy-core.html","Radial Energy Core","Audio Visualizers",["Audio-Reactive","Shader"]],
+  ["ink-in-water.html","Abstract Ink in Water","Audio Visualizers",["Audio-Reactive","Fluid"]],
+  ["minimalist-gradient-breathing.html","Minimalist Gradient Breathing","Audio Visualizers",["Audio-Reactive","Shader"]],
+
+  ["particle-splash.html","Particle Splash","Particle Systems",["Particles","Physics"]],
+  ["plexus-constellation.html","Plexus Constellation","Particle Systems",["Particles","Mesh"]],
+  ["flow-field.html","Flow Field","Particle Systems",["Particles","Generative"]],
+  ["gravity-sphere.html","Gravity Sphere","Particle Systems",["Particles","Physics"]],
+  ["lissajous.html","Lissajous Interference","Particle Systems",["Generative","Math"]],
+  ["nbody.html","N-Body Gravity","Particle Systems",["Physics","Space"]],
+  ["orbital-mechanics.html","Orbital Mechanics","Particle Systems",["Physics","Space"]],
+  ["solar-wind.html","Solar Wind","Particle Systems",["Physics","Space"]],
+  ["shock-wave.html","Shock Wave","Particle Systems",["Physics","Space"]],
+  ["boids.html","Boids — Comet Swarm","Particle Systems",["Boids","Particles"]],
+  ["linux-boids.html","Linux Boids","Particle Systems",["Boids","Mascot"]],
+  ["linux-icon-mesh.html","Linux Icon Mesh","Particle Systems",["Mesh","Mascot"]],
+  ["catppuccin-linux-overlay.html","Catppuccin Linux Overlay","Particle Systems",["Mesh","Mascot"]],
+  ["ember-pentagram-overlay.html","Ember Pentagram Overlay","Particle Systems",["Particles","Overlay"]],
+  ["verlet-cloth.html","Verlet Cloth","Particle Systems",["Physics","Cloth"]],
+  ["sph.html","SPH","Particle Systems",["Physics","Fluid"]],
+  ["life.html","Particle Life","Particle Systems",["WebGPU","Particles"]],
+  ["particle-globe.html","Particle Globe","Particle Systems",["Particles","3D"]],
+  ["fourier-epicycles.html","Fourier Epicycles","Particle Systems",["Math","Generative"]],
+  ["hex-ripple.html","Hex Ripple","Particle Systems",["Geometric","Wave"]],
+  ["stippled-geodesic.html","Stippled Geodesic","Particle Systems",["Particles","3D"]],
+  ["geodesic-sphere.html","Geodesic Sphere","Particle Systems",["3D","Geometric"]],
+  ["wireframe-icosphere.html","Wireframe Icosphere","Particle Systems",["3D","Geometric"]],
+  ["wavy-planet-mesh.html","Wavy Planet Mesh","Particle Systems",["Mesh","3D"]],
+  ["microbial-colony.html","Microbial Colony","Particle Systems",["Boids","Sim"]],
+  ["cubic-blob-overlay.html","Cubic Blob Overlay","Particle Systems",["Mascot","Fluid"]],
+  ["cubic-blob-face-overlay.html","Cubic Blob Face Overlay","Particle Systems",["Mascot","Fluid"]],
+  ["triangulation.html","Triangulation","Particle Systems",["Mesh","Generative"]],
+  ["voronoi-stippling.html","Digital Organism — Voronoi","Particle Systems",["Generative","Stippling"]],
+  ["physics-particles.html","Physics Particles","Particle Systems",["Physics","Particles"]],
+  ["space-war-boids.html","Space War Boids","Particle Systems",["Boids","Combat"]],
+  ["mycelium-network.html","Mycelium Network","Particle Systems",["Generative","Sim"]],
+  ["tux-blob.html","Tux Blob","Particle Systems",["Mascot","Fluid"]],
+  ["bioluminescent-cell.html","Bioluminescent Cell","Particle Systems",["Mascot","Fluid"]],
+  ["meta-blobs.html","Meta Blobs","Particle Systems",["SDF","Fluid"]],
+  ["iridescent-blobs.html","Iridescent Blobs","Particle Systems",["Fluid","Overlay"]],
+  ["fluid-paint.html","Fluid Paint","Particle Systems",["WebGPU","Fluid"]],
+  ["cat-mesh.html","Cat Mesh","Particle Systems",["Mesh","Mascot"]],
+  ["ukrainian-wave-mesh.html","Ukrainian Wave Mesh","Particle Systems",["Mesh","Flag"]],
+  ["ua-red-black-mesh.html","UA Red & Black Mesh","Particle Systems",["Mesh","Flag"]],
+  ["blob-face-cam.html","Blob Face Cam","Particle Systems",["Mascot","Overlay"]],
+  ["maurer-rose.html","Maurer Rose","Particle Systems",["Math","Generative"]],
+  ["collatz.html","Collatz Conjecture","Particle Systems",["Math","Generative"]],
+  ["perlin-blobs.html","Fluid Blobs (Stam)","Particle Systems",["Fluid","Sim"]],
+  ["magnetic-field.html","Magnetic Field Lines","Particle Systems",["Physics","Generative"]],
+  ["atom.html","Atom","Particle Systems",["Physics","Loop"]],
+  ["planet.html","Planet","Particle Systems",["3D","Space"]],
+  ["planet-hologram.html","Planet Hologram","Particle Systems",["Shader","3D"]],
+  ["avatar.html","Avatar — Robotic Bust","Particle Systems",["3D","Mascot"]],
+  ["elastic-rings.html","Elastic Rings","Particle Systems",["Physics","Loop"]],
+  ["figure-eight-torus.html","Figure Eight Torus","Particle Systems",["3D","Geometric"]],
+  ["infinity.html","Infinity","Particle Systems",["Loop","Geometric"]],
+  ["worxbend-text.html","Worxbend Particle Text","Particle Systems",["Particles","Text"]],
+  ["worxbend-fluid.html","Worxbend Fluid","Particle Systems",["Fluid","Brand"]],
+  ["worxbend-molecular.html","Worxbend Molecular","Particle Systems",["Particles","Brand"]],
+  ["procedural-logo.html","Procedural Logo — Worxbend","Particle Systems",["Brand","Generative"]],
+  ["break.html","Break","Particle Systems",["Scene","Loop"]],
+  ["confidential.html","Confidential","Particle Systems",["Overlay","Text"]],
+  ["music-break.html","Music Break","Particle Systems",["Audio-Reactive","Scene"]],
+  ["title-powerline.html","Title Powerline","Particle Systems",["Overlay","Text"]],
+  ["logo.html","Logo","Particle Systems",["Brand","Loop"]],
+  ["starting-soon.html","Starting Soon","Particle Systems",["Scene","Text"]],
+  ["starting-soon-fluid.html","Starting Soon Fluid","Particle Systems",["Fluid","Text"]],
+  ["starting-soon-jelly.html","Starting Soon Jelly","Particle Systems",["Fluid","Text"]],
+  ["starting-soon-particle-mesh.html","Starting Soon Particle Mesh","Particle Systems",["Mesh","Text"]],
+  ["stream-ended-particle-mesh.html","Stream Ended Particle Mesh","Particle Systems",["Mesh","Text"]],
+  ["break-water-text.html","Break Water Text","Particle Systems",["Fluid","Text"]],
+];
+
+const ITEMS = RAW.map(([href,label,cat,tags]) => ({href,label,cat,tags}));
+
+const CATS = ["All","Webcam Borders","Backgrounds","Audio Visualizers","Particle Systems"];
+
+/* Tag → preview motif mapping */
+function previewMotif(tags) {
+  const t = tags.join(" ").toLowerCase();
+  if (t.includes("audio")) return "preview-bars";
+  if (t.includes("fluid") || t.includes("shader")) return "preview-rings";
+  if (t.includes("mesh") || t.includes("particles")) return "preview-particles";
+  if (t.includes("flow") || t.includes("generative")) return "preview-flow";
+  return "preview-dots";
+}
+
+/* ---------------- Components ---------------- */
+function Logo() {
+  return (
+    <div className="flex items-center gap-2.5">
+      <div className="w-7 h-7 border border-line2 grid grid-cols-2 grid-rows-2 overflow-hidden">
+        <div className="bg-lav"></div>
+        <div className="bg-ink"></div>
+        <div className="bg-ink"></div>
+        <div className="bg-vb"></div>
+      </div>
+      <div className="font-display font-bold text-[15px] tracking-tight">OBS/EFX</div>
+    </div>
+  );
+}
+
+function Pill({active, children, onClick, count}) {
+  return (
+    <button
+      onClick={onClick}
+      className={
+        "group relative px-3.5 h-9 inline-flex items-center gap-2 border text-[12px] font-mono uppercase tracking-wider transition-colors " +
+        (active
+          ? "bg-fg text-ink border-fg"
+          : "bg-ink text-dim border-line hover:text-fg hover:border-line2")
+      }>
+      <span>{children}</span>
+      {typeof count === 'number' && (
+        <span className={"text-[10px] font-mono " + (active ? "text-ink/60" : "text-dimmer")}>
+          {String(count).padStart(3,'0')}
+        </span>
+      )}
+    </button>
+  );
+}
+
+function Card({item, idx, livePreview}) {
+  const motif = previewMotif(item.tags);
+  return (
+    <M.motion.a
+      href={item.href}
+      target="_blank"
+      rel="noopener"
+      className={"card-link shimmer relative block border border-line bg-panel hover:border-line2 transition-colors " + (livePreview ? "preview-on" : "")}
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, delay: Math.min(idx, 30) * 0.015, ease: [0.22, 1, 0.36, 1] }}
+      whileHover={{ y: -2 }}>
+      {/* Preview tile */}
+      <div className="relative h-[88px] border-b border-line overflow-hidden bg-ink">
+        <div className={"preview-base " + motif}></div>
+        {/* corner index */}
+        <div className="absolute top-2 left-2 num-tab text-[10px] text-dimmer">
+          {String(idx + 1).padStart(3,'0')}
+        </div>
+        {/* category mark */}
+        <div className="absolute top-2 right-2 num-tab text-[10px] text-dim uppercase tracking-wider">
+          {item.cat.split(" ")[0]}
+        </div>
+        {/* DIIA-style heavy corner cuts */}
+        <div className="absolute bottom-0 left-0 w-3 h-px bg-line2"></div>
+        <div className="absolute bottom-0 left-0 w-px h-3 bg-line2"></div>
+        <div className="absolute bottom-0 right-0 w-3 h-px bg-line2"></div>
+        <div className="absolute bottom-0 right-0 w-px h-3 bg-line2"></div>
+      </div>
+
+      {/* Body */}
+      <div className="relative p-3.5 z-10">
+        <div className="flex items-start justify-between gap-3">
+          <div className="font-display font-bold text-[14.5px] leading-snug text-fg pr-4">
+            {item.label}
+          </div>
+          {/* arrow on hover */}
+          <div className="shrink-0 w-7 h-7 -mt-0.5 -mr-1 grid place-items-center border border-line text-dim opacity-0 -translate-x-1 group-hover:opacity-100 transition-all duration-200" style={{transition:'all .2s'}}>
+            <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+              <path d="M3 9L9 3M9 3H4M9 3V8" stroke="currentColor" strokeWidth="1.4" strokeLinecap="square"/>
+            </svg>
+          </div>
+        </div>
+
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          {item.tags.map(t => (
+            <span key={t} className="font-mono text-[10px] uppercase tracking-wider text-dim border border-line px-1.5 py-0.5">
+              {t}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* hover arrow override (always-visible variant on hover via CSS sibling) */}
+      <style>{`
+        .card-link:hover svg { color: #cba6f7; }
+        .card-link:hover .arrow-box { opacity: 1; transform: translateX(0); border-color: #cba6f7; color: #cba6f7; }
+      `}</style>
+    </M.motion.a>
+  );
+}
+
+function SectionHeader({num, title, count}) {
+  return (
+    <div className="flex items-end justify-between border-b border-line pb-4 mb-6">
+      <div className="flex items-end gap-5">
+        <div className="num-tab text-dim text-[12px]">{num}</div>
+        <div>
+          <h2 className="font-display font-bold text-[28px] md:text-[34px] leading-none tracking-tight">{title}</h2>
+          <div className="heading-rule mt-3"></div>
+        </div>
+      </div>
+      <div className="num-tab text-[11px] text-dim uppercase tracking-wider">
+        {String(count).padStart(3,'0')} effects
+      </div>
+    </div>
+  );
+}
+
+function Hero({total, livePreview, setLivePreview}) {
+  return (
+    <section className="relative border-b border-line">
+      <div className="absolute inset-0 bg-grid pointer-events-none"></div>
+      <div className="relative max-w-[1400px] mx-auto px-6 md:px-10 pt-20 pb-16">
+        {/* Eyebrow */}
+        <div className="flex items-center gap-3 mb-10">
+          <div className="w-2 h-2 bg-lav"></div>
+          <div className="font-mono text-[11px] uppercase tracking-[0.2em] text-dim">
+            v2.6.1 · Catalog · {total} effects · OBS Browser Source ready
+          </div>
+        </div>
+
+        {/* Headline */}
+        <h1 className="font-display font-bold tracking-tight leading-[0.92]">
+          <span className="block text-[68px] md:text-[112px] lg:text-[136px]">OBS Effects</span>
+          <span className="block text-[68px] md:text-[112px] lg:text-[136px] text-lav">Directory.</span>
+        </h1>
+
+        {/* Subhead row */}
+        <div className="mt-12 grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-10 items-end">
+          <div className="md:col-span-7">
+            <div className="border-l-2 border-lav pl-5">
+              <p className="font-display font-semibold text-[22px] md:text-[26px] leading-[1.25] text-fg max-w-[620px]">
+                Optimized for OBS Browser Sources.<br/>
+                One click to deploy.
+              </p>
+              <p className="mt-4 text-[14px] text-dim max-w-[560px]">
+                A curated set of GPU-accelerated overlays, generative backgrounds, audio visualizers and physics-driven particle systems — engineered to drop straight into your scene.
+              </p>
+            </div>
+          </div>
+
+          {/* Stats block — DIIA-style structured panel */}
+          <div className="md:col-span-5 border border-line">
+            <div className="grid grid-cols-3 divide-x divide-line border-b border-line">
+              {[
+                ["Effects", total],
+                ["Categories", 4],
+                ["WebGPU", "12"],
+              ].map(([k,v]) => (
+                <div key={k} className="p-4">
+                  <div className="font-display font-bold text-[34px] leading-none">{v}</div>
+                  <div className="mt-2 font-mono text-[10px] uppercase tracking-wider text-dim">{k}</div>
+                </div>
+              ))}
+            </div>
+            <div className="p-4 flex items-center justify-between">
+              <div>
+                <div className="font-mono text-[10px] uppercase tracking-wider text-dim">Live preview</div>
+                <div className="font-display font-bold text-[14px] mt-1">{livePreview ? "Animations active" : "Static thumbnails"}</div>
+              </div>
+              <button
+                onClick={() => setLivePreview(v => !v)}
+                aria-pressed={livePreview}
+                className={"relative w-14 h-7 border transition-colors " + (livePreview ? "bg-lav border-lav" : "bg-ink border-line2")}>
+                <span className={"absolute top-0.5 w-6 h-6 bg-ink transition-transform " + (livePreview ? "translate-x-[28px]" : "translate-x-0.5")}></span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Ticker bottom */}
+      <div className="border-t border-line overflow-hidden">
+        <div className="ticker py-3 font-mono text-[11px] uppercase tracking-[0.18em] text-dim">
+          {Array.from({length: 2}).map((_, i) => (
+            <div key={i} className="flex gap-12 shrink-0">
+              {["WebGL · WebGPU · Canvas2D","Transparent OBS Overlays","Audio-Reactive · FFT 2048","Catppuccin Lavender Theme","Drop-in Browser Source","60FPS · GPU-Accelerated","Physics: Verlet · SPH · Boids","Procedural · Generative · Math"].map((s, j) => (
+                <span key={j} className="flex items-center gap-12">
+                  <span>{s}</span>
+                  <span className="text-lav">◆</span>
+                </span>
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function FilterBar({query, setQuery, cat, setCat, counts, livePreview, setLivePreview, view, setView}) {
+  return (
+    <div className="sticky top-0 z-30 sticky-blur border-b border-line">
+      <div className="max-w-[1400px] mx-auto px-6 md:px-10 py-4">
+        <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+          {/* Search */}
+          <div className="relative flex-1 lg:max-w-[440px]">
+            <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-dim">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.4"/>
+                <path d="M9.5 9.5L13 13" stroke="currentColor" strokeWidth="1.4" strokeLinecap="square"/>
+              </svg>
+            </div>
+            <input
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              placeholder="Search 130+ effects… (e.g. nebula, audio, webgpu)"
+              className="w-full h-10 pl-10 pr-24 bg-ink border border-line text-fg placeholder-dim/70 font-mono text-[12px] uppercase tracking-wider focus:outline-none focus:border-lav transition-colors" />
+            <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+              <kbd className="font-mono text-[10px] text-dim border border-line px-1.5 py-0.5">⌘</kbd>
+              <kbd className="font-mono text-[10px] text-dim border border-line px-1.5 py-0.5">K</kbd>
+            </div>
+          </div>
+
+          {/* Categories */}
+          <div className="flex flex-wrap gap-2 flex-1">
+            {CATS.map(c => (
+              <Pill key={c} active={cat===c} onClick={() => setCat(c)} count={counts[c]}>
+                {c}
+              </Pill>
+            ))}
+          </div>
+
+          {/* Right controls */}
+          <div className="flex items-center gap-2">
+            <div className="flex border border-line">
+              {["grid","list"].map(v => (
+                <button key={v} onClick={() => setView(v)}
+                  className={"w-9 h-9 grid place-items-center transition-colors " + (view===v ? "bg-fg text-ink" : "text-dim hover:text-fg")}>
+                  {v==="grid" ? (
+                    <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+                      <rect x="1" y="1" width="4.5" height="4.5" stroke="currentColor" strokeWidth="1.2"/>
+                      <rect x="7.5" y="1" width="4.5" height="4.5" stroke="currentColor" strokeWidth="1.2"/>
+                      <rect x="1" y="7.5" width="4.5" height="4.5" stroke="currentColor" strokeWidth="1.2"/>
+                      <rect x="7.5" y="7.5" width="4.5" height="4.5" stroke="currentColor" strokeWidth="1.2"/>
+                    </svg>
+                  ) : (
+                    <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+                      <path d="M1 2.5h11M1 6.5h11M1 10.5h11" stroke="currentColor" strokeWidth="1.2"/>
+                    </svg>
+                  )}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={() => setLivePreview(v => !v)}
+              className={"h-9 px-3 inline-flex items-center gap-2 border font-mono text-[11px] uppercase tracking-wider transition-colors " + (livePreview ? "bg-lav text-ink border-lav" : "border-line text-dim hover:text-fg hover:border-line2")}>
+              <span className={"w-1.5 h-1.5 " + (livePreview ? "bg-ink" : "bg-dim")}></span>
+              Live Preview
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ListRow({item, idx, livePreview}) {
+  const motif = previewMotif(item.tags);
+  return (
+    <M.motion.a
+      href={item.href} target="_blank" rel="noopener"
+      className={"card-link group grid grid-cols-12 gap-4 items-center border-b border-line py-3.5 px-4 hover:bg-panel transition-colors " + (livePreview ? "preview-on" : "")}
+      initial={{ opacity: 0, x: -8 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.3, delay: Math.min(idx, 30) * 0.01 }}>
+      <div className="col-span-1 num-tab text-[11px] text-dim">{String(idx+1).padStart(3,'0')}</div>
+      <div className="col-span-1 relative h-9 border border-line overflow-hidden bg-ink">
+        <div className={"preview-base " + motif}></div>
+      </div>
+      <div className="col-span-5 font-display font-bold text-[15px]">{item.label}</div>
+      <div className="col-span-2 font-mono text-[10px] uppercase tracking-wider text-dim">{item.cat}</div>
+      <div className="col-span-2 flex flex-wrap gap-1">
+        {item.tags.slice(0,2).map(t => (
+          <span key={t} className="font-mono text-[10px] uppercase tracking-wider text-dim border border-line px-1.5 py-0.5">{t}</span>
+        ))}
+      </div>
+      <div className="col-span-1 flex justify-end">
+        <div className="w-7 h-7 grid place-items-center border border-line text-dim group-hover:text-lav group-hover:border-lav transition-colors">
+          <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+            <path d="M3 9L9 3M9 3H4M9 3V8" stroke="currentColor" strokeWidth="1.4" strokeLinecap="square"/>
+          </svg>
+        </div>
+      </div>
+    </M.motion.a>
+  );
+}
+
+function ThemeToggle({theme, setTheme}) {
+  const isLight = theme === "light";
+  return (
+    <button
+      onClick={() => setTheme(isLight ? "dark" : "light")}
+      aria-label="Toggle theme"
+      title={isLight ? "Switch to dark" : "Switch to light"}
+      className="relative h-8 w-[68px] border border-line bg-ink hover:border-line2 transition-colors flex items-center">
+      <span
+        className={"absolute top-1/2 -translate-y-1/2 h-6 w-[30px] bg-fg transition-transform duration-200 " + (isLight ? "translate-x-[34px]" : "translate-x-1")}
+      ></span>
+      <span className="relative z-10 flex-1 grid place-items-center text-fg" style={{color: isLight ? 'rgb(var(--c-fg))' : 'rgb(var(--c-ink))'}}>
+        {/* moon */}
+        <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+          <path d="M9.5 7.2A4 4 0 1 1 4.8 2.5 3.2 3.2 0 0 0 9.5 7.2Z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/>
+        </svg>
+      </span>
+      <span className="relative z-10 flex-1 grid place-items-center" style={{color: isLight ? 'rgb(var(--c-ink))' : 'rgb(var(--c-fg))'}}>
+        {/* sun */}
+        <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+          <circle cx="6" cy="6" r="2.2" stroke="currentColor" strokeWidth="1.2"/>
+          <path d="M6 1v1.5M6 9.5V11M1 6h1.5M9.5 6H11M2.5 2.5l1 1M8.5 8.5l1 1M2.5 9.5l1-1M8.5 3.5l1-1" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+        </svg>
+      </span>
+    </button>
+  );
+}
+
+function App() {
+  const [query, setQuery] = useState("");
+  const [cat, setCat] = useState("All");
+  const [livePreview, setLivePreview] = useState(false);
+  const [view, setView] = useState("grid");
+  const [theme, setTheme] = useState(() => {
+    if (typeof window === 'undefined') return 'dark';
+    const saved = localStorage.getItem('obsefx-theme');
+    if (saved === 'light' || saved === 'dark') return saved;
+    return 'dark';
+  });
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    try { localStorage.setItem('obsefx-theme', theme); } catch {}
+  }, [theme]);
+
+  const counts = useMemo(() => {
+    const c = { All: ITEMS.length };
+    for (const k of CATS.slice(1)) c[k] = ITEMS.filter(x => x.cat === k).length;
+    return c;
+  }, []);
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return ITEMS.filter(it => {
+      if (cat !== "All" && it.cat !== cat) return false;
+      if (!q) return true;
+      const hay = (it.label + " " + it.cat + " " + it.tags.join(" ")).toLowerCase();
+      return hay.includes(q);
+    });
+  }, [query, cat]);
+
+  /* group by category for the grid view (when All is selected) */
+  const grouped = useMemo(() => {
+    if (cat !== "All" || query.trim()) return null;
+    const g = {};
+    for (const k of CATS.slice(1)) g[k] = filtered.filter(x => x.cat === k);
+    return g;
+  }, [filtered, cat, query]);
+
+  /* ⌘K focus */
+  const inputRef = useRef(null);
+  useEffect(() => {
+    const handler = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        const el = document.querySelector('input[placeholder^="Search"]');
+        el?.focus();
       }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
 
-      body {
-        background: #11111b;
-        color: #cdd6f4;
-        font-family:
-          system-ui,
-          -apple-system,
-          sans-serif;
-        padding: 32px;
-        line-height: 1.5;
-      }
+  return (
+    <div className="min-h-screen">
+      {/* Top nav */}
+      <nav className="border-b border-line">
+        <div className="max-w-[1400px] mx-auto px-6 md:px-10 h-14 flex items-center justify-between">
+          <Logo />
+          <div className="hidden md:flex items-center gap-7 font-mono text-[11px] uppercase tracking-wider text-dim">
+            <a href="#" className="hover:text-fg transition-colors">Catalog</a>
+            <a href="#" className="hover:text-fg transition-colors">Docs</a>
+            <a href="#" className="hover:text-fg transition-colors">Changelog</a>
+            <a href="#" className="hover:text-fg transition-colors">GitHub ↗</a>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="hidden sm:flex items-center gap-2 font-mono text-[10px] uppercase tracking-wider text-dim border border-line px-2.5 h-8">
+              <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full" style={{boxShadow:'0 0 8px rgba(52,211,153,0.6)'}}></span>
+              All systems normal
+            </div>
+            <ThemeToggle theme={theme} setTheme={setTheme} />
+            <a href="#catalog" className="h-8 px-3 inline-flex items-center gap-2 bg-fg text-ink font-mono text-[11px] uppercase tracking-wider hover:bg-lav transition-colors">
+              Deploy
+              <span>→</span>
+            </a>
+          </div>
+        </div>
+      </nav>
 
-      header {
-        max-width: 1200px;
-        margin: 0 auto 32px auto;
-      }
+      <Hero total={ITEMS.length} livePreview={livePreview} setLivePreview={setLivePreview} />
 
-      h1 {
-        font-size: 28px;
-        font-weight: 700;
-        color: #cba6f7;
-        margin-bottom: 8px;
-      }
+      <FilterBar
+        query={query} setQuery={setQuery}
+        cat={cat} setCat={setCat}
+        counts={counts}
+        livePreview={livePreview} setLivePreview={setLivePreview}
+        view={view} setView={setView}
+      />
 
-      p {
-        color: #a6adc8;
-        font-size: 14px;
-      }
+      {/* Main */}
+      <main id="catalog" className="max-w-[1400px] mx-auto px-6 md:px-10 py-12">
+        {grouped ? (
+          <div className="space-y-16">
+            {CATS.slice(1).map((c, i) => (
+              <section key={c} data-screen-label={`${String(i+1).padStart(2,'0')} ${c}`}>
+                <SectionHeader num={`§ ${String(i+1).padStart(2,'0')}`} title={c} count={grouped[c].length} />
+                {view === "grid" ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                    {grouped[c].map((it, idx) => <Card key={it.href} item={it} idx={idx} livePreview={livePreview} />)}
+                  </div>
+                ) : (
+                  <div className="border-t border-line">
+                    {grouped[c].map((it, idx) => <ListRow key={it.href} item={it} idx={idx} livePreview={livePreview} />)}
+                  </div>
+                )}
+              </section>
+            ))}
+          </div>
+        ) : (
+          <section>
+            <SectionHeader num="§ 00" title={query.trim() ? `Results for "${query}"` : cat} count={filtered.length} />
+            {filtered.length === 0 ? (
+              <div className="border border-line p-12 text-center">
+                <div className="font-display font-bold text-[22px]">No effects found</div>
+                <div className="mt-2 font-mono text-[12px] uppercase tracking-wider text-dim">try a different query or category</div>
+              </div>
+            ) : view === "grid" ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                {filtered.map((it, idx) => <Card key={it.href} item={it} idx={idx} livePreview={livePreview} />)}
+              </div>
+            ) : (
+              <div className="border-t border-line">
+                {filtered.map((it, idx) => <ListRow key={it.href} item={it} idx={idx} livePreview={livePreview} />)}
+              </div>
+            )}
+          </section>
+        )}
+      </main>
 
-      .grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-        gap: 12px;
-        max-width: 1200px;
-        margin: 0 auto;
-      }
+      {/* Footer */}
+      <footer className="border-t border-line">
+        <div className="max-w-[1400px] mx-auto px-6 md:px-10 py-10 grid grid-cols-1 md:grid-cols-12 gap-8">
+          <div className="md:col-span-5">
+            <Logo />
+            <p className="mt-4 text-dim text-[13px] max-w-md">
+              A directory of GPU-accelerated browser-source effects for streamers. Drop any URL into OBS as a Browser Source — transparency is preserved.
+            </p>
+          </div>
+          <div className="md:col-span-7 grid grid-cols-3 gap-6">
+            {[
+              ["Catalog", ["All Effects","Webcam Borders","Backgrounds","Audio Visualizers"]],
+              ["Resources", ["Docs","Setup Guide","Performance","Changelog"]],
+              ["About", ["GitHub","License","Contact","Status"]],
+            ].map(([h, items]) => (
+              <div key={h}>
+                <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-dim mb-3">{h}</div>
+                <ul className="space-y-2">
+                  {items.map(i => <li key={i}><a href="#" className="text-[13px] text-fg/80 hover:text-lav transition-colors">{i}</a></li>)}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="border-t border-line">
+          <div className="max-w-[1400px] mx-auto px-6 md:px-10 h-12 flex items-center justify-between font-mono text-[10px] uppercase tracking-wider text-dim">
+            <div>© 2026 OBS/EFX · MIT</div>
+            <div className="flex items-center gap-4">
+              <span>Build 2026.05.06</span>
+              <span className="text-lav">●</span>
+              <span>Operational</span>
+            </div>
+          </div>
+        </div>
+      </footer>
+    </div>
+  );
+}
 
-      .card {
-        display: flex;
-        align-items: center;
-        text-decoration: none;
-        color: #cdd6f4;
-        border: 1px solid #313244;
-        border-radius: 8px;
-        padding: 14px 18px;
-        background: #1e1e2e;
-        transition:
-          background 0.2s,
-          border-color 0.2s,
-          transform 0.1s;
-        font-size: 14px;
-        font-weight: 500;
-      }
-
-      .card:hover {
-        background: #313244;
-        border-color: #cba6f7;
-        color: #cba6f7;
-        transform: translateY(-1px);
-      }
-
-      .card:active {
-        transform: translateY(0);
-      }
-
-      .card::before {
-        content: "→";
-        margin-right: 12px;
-        color: #cba6f7;
-        opacity: 0.5;
-      }
-
-      .card:hover::before {
-        opacity: 1;
-      }
-    </style>
-  </head>
-  <body>
-    <header>
-      <h1>OBS Effects Directory</h1>
-      <p>
-        Click any effect to open it in a new tab. Optimized for OBS Browser
-        Sources.
-      </p>
-    </header>
-
-    <div class="grid" id="grid"></div>
-
-    <script>
-      const pages = [
-        { href: "index.html", label: "Index" },
-        { href: "main-web-cam-border.html", label: "Main Web Cam Border" },
-        {
-          href: "main-audio-activated-border.html",
-          label: "Main Audio Activated Border",
-        },
-        { href: "simple-web-cam-border.html", label: "Simple Web Cam Border" },
-        {
-          href: "planet-circle-webcam-border.html",
-          label: "Planet Circle Webcam Border",
-        },
-        { href: "black-hole-cam.html", label: "Black Hole Cam" },
-        { href: "accretion-disk-cam.html", label: "Accretion Disk Cam" },
-        { href: "planet.html", label: "Planet" },
-        { href: "aquarium.html", label: "Aquarium" },
-        { href: "avatar.html", label: "Avatar — Robotic Bust" },
-        { href: "atom.html", label: "Atom" },
-        { href: "background.html", label: "Background" },
-        { href: "break.html", label: "Break" },
-        { href: "confidential.html", label: "Confidential" },
-        { href: "generative.html", label: "Generative" },
-        { href: "graph-bg.html", label: "Graph Bg" },
-        { href: "maurer-rose.html", label: "Maurer Rose" },
-        { href: "collatz.html", label: "Collatz Conjecture" },
-        { href: "perlin-blobs.html", label: "Fluid Blobs (Stam)" },
-        { href: "planet-hologram.html", label: "Planet Hologram" },
-        { href: "particle-splash.html", label: "Particle Splash" },
-        { href: "plexus-constellation.html", label: "Plexus Constellation" },
-        { href: "flow-field.html", label: "Flow Field" },
-        { href: "gravity-sphere.html", label: "Gravity Sphere" },
-        { href: "lissajous.html", label: "Lissajous Interference" },
-        {
-          href: "nbody.html",
-          label: "N-Body Gravity — Stellar Cluster Formation",
-        },
-        {
-          href: "orbital-mechanics.html",
-          label: "Orbital Mechanics — Keplerian Ellipses",
-        },
-        { href: "solar-wind.html", label: "Solar Wind — Magnetic Deflection" },
-        { href: "shock-wave.html", label: "Shock Wave — Supernova Expansion" },
-        { href: "boids.html", label: "Boids — Comet Swarm Flocking" },
-        { href: "linux-boids.html", label: "Linux Boids — Flock Simulation" },
-        {
-          href: "linux-icon-mesh.html",
-          label: "Linux Icon Mesh — Fluid Particle Grid",
-        },
-        {
-          href: "catppuccin-linux-overlay.html",
-          label: "Catppuccin Linux Overlay — Lavender Dotted Silhouette",
-        },
-        {
-          href: "ember-pentagram-overlay.html",
-          label: "Ember Pentagram Overlay — Rotating Infernal Dot Sigil",
-        },
-        { href: "verlet-cloth.html", label: "Verlet Cloth — Gas Filaments" },
-        { href: "sph.html", label: "SPH — Gas Cloud Collision" },
-        { href: "tunnel-vortex.html", label: "Tunnel Vortex" },
-        { href: "spiral-pull.html", label: "Spiral Pull" },
-        { href: "plasma-wave.html", label: "Plasma Wave" },
-        { href: "grass.html", label: "Grass" },
-        { href: "flight-simulation.html", label: "Flight Simulation" },
-        {
-          href: "magnetic-field.html",
-          label: "Magnetic Field Lines (Iron Filings)",
-        },
-        { href: "life.html", label: "Particle Life — Emergence (WebGPU)" },
-        {
-          href: "particle-globe.html",
-          label: "Particle Globe — Wireframe Globe",
-        },
-        {
-          href: "aurora-borealis.html",
-          label: "Aurora Borealis — Curtain Waves",
-        },
-        {
-          href: "fourier-epicycles.html",
-          label: "Fourier Epicycles — Drawing with Circles",
-        },
-        {
-          href: "hex-ripple.html",
-          label: "Hex Ripple — Grid Wave Propagation",
-        },
-        {
-          href: "stippled-geodesic.html",
-          label: "Stippled Geodesic — Shimmering Dot Sphere",
-        },
-        {
-          href: "geodesic-sphere.html",
-          label: "Geodesic Sphere — Faceted Breathe & Explode",
-        },
-        {
-          href: "wireframe-icosphere.html",
-          label: "Wireframe Icosphere — Geodesic Globe",
-        },
-        { href: "nebula.html", label: "Nebula — Perlin fBm Gas Tendrils" },
-        { href: "matrix-dots.html", label: "Matrix Dots" },
-        { href: "dotted-mesh.html", label: "Dotted Mesh — Wave Grid" },
-        {
-          href: "wavy-planet-mesh.html",
-          label: "Wavy Planet Mesh — Rotating Fluid Dot Sphere",
-        },
-        {
-          href: "night-city-horizon.html",
-          label: "Night City Horizon — Parallax Skyline",
-        },
-        {
-          href: "microbial-colony.html",
-          label: "Microbial Colony — Cells, Predation & Bacterial Swarms",
-        },
-        {
-          href: "cubic-blob-overlay.html",
-          label: "Cubic Blob Overlay — Reactive Mascot",
-        },
-        {
-          href: "cubic-blob-face-overlay.html",
-          label: "Cubic Blob Face Overlay — Goofy Fluid OBS Mascot",
-        },
-        { href: "music-break.html", label: "Music Break" },
-        { href: "rain.html", label: "Rain" },
-        { href: "triangulation.html", label: "Triangulation" },
-        { href: "trapcam.html", label: "Trap Cam" },
-        { href: "trapnation.html", label: "Trap Nation — Audio Visualizer" },
-        { href: "wavecam.html", label: "Wave Cam" },
-        { href: "hexcam.html", label: "Hex Cam" },
-        { href: "hexgridcam.html", label: "Hex Grid Cam" },
-        { href: "hexlayercam.html", label: "Hex Layer Cam" },
-        { href: "title-powerline.html", label: "Title Powerline" },
-        { href: "logo.html", label: "Logo" },
-        { href: "starting-soon.html", label: "Starting Soon" },
-        { href: "wireframe-sphere-cam.html", label: "Wireframe Sphere Cam" },
-        { href: "smoke-bar.html", label: "Smoke Bar" },
-        { href: "cam-frame-overlay.html", label: "Cam Frame Overlay" },
-        { href: "smoke-ring-cam.html", label: "Smoke Ring Cam" },
-        { href: "elastic-rings.html", label: "Elastic Rings" },
-        { href: "galaxy-bg.html", label: "Galaxy Background" },
-        { href: "pcb-bg.html", label: "PCB Background" },
-        {
-          href: "voronoi-stippling.html",
-          label: "Digital Organism — Voronoi Stippling",
-        },
-        {
-          href: "cosmic-portal.html",
-          label: "Cosmic Portal — Multidimensional Gateway",
-        },
-        {
-          href: "crystalcam.html",
-          label: "Crystal Cam — Crystalline Geodesic",
-        },
-        {
-          href: "figure-eight-torus.html",
-          label: "Figure Eight Torus — Geometric Breathing",
-        },
-        {
-          href: "fluid-circle-cam.html",
-          label: "Fluid Circle Cam — Liquid Frame",
-        },
-        {
-          href: "fluid-catppuccin-rings-cam.html",
-          label: "Fluid Catppuccin Rings Cam — Pulsing Circular Line Border",
-        },
-        {
-          href: "fluid-dotted-ring-cam.html",
-          label: "Fluid Dotted Ring Cam — Pulsing Particle Border",
-        },
-        {
-          href: "fluid-mesh-ring-cam.html",
-          label: "Fluid Mesh Ring Cam — Rotating Dotted OBS Border",
-        },
-        { href: "gas-cam.html", label: "Gas Cam — Fluid Gas Overlay" },
-        { href: "infinity.html", label: "Infinity — Eternal Loop" },
-        { href: "star-field.html", label: "Star Field — Deep Space Voyage" },
-        {
-          href: "topo-landscape.html",
-          label: "Topo Landscape — Perlin Terrain",
-        },
-        { href: "wavy-cam.html", label: "Wavy Cam — Oscillating Frame" },
-        { href: "worxbend-text.html", label: "Worxbend Particle Text" },
-        { href: "starting-soon-fluid.html", label: "Starting Soon Fluid" },
-        {
-          href: "starting-soon-particle-mesh.html",
-          label: "Starting Soon Particle Mesh — Transparent OBS Overlay",
-        },
-        {
-          href: "stream-ended-particle-mesh.html",
-          label: "Stream Ended Particle Mesh — Transparent OBS Overlay",
-        },
-        { href: "topography.html", label: "Topography" },
-        { href: "worxbend-fluid.html", label: "Worxbend Fluid" },
-        { href: "worxbend-molecular.html", label: "Worxbend Molecular" },
-        {
-          href: "fluid-paint.html",
-          label: "Fluid Paint — GPU Acrylic Simulation",
-        },
-        {
-          href: "wave-border-cam.html",
-          label: "Wave Border Cam — Fluid Wavy Lines",
-        },
-        { href: "procedural-logo.html", label: "Procedural Logo — Worxbend" },
-        {
-          href: "cat-mesh.html",
-          label: "Cat Mesh — Particle Mesh Cat Shape Overlay",
-        },
-        {
-          href: "cat-circle-cam.html",
-          label: "Cat Circle Cam — Peeking Cat Circular Webcam Border",
-        },
-        {
-          href: "animated-lines.html",
-          label: "Animated Lines — GSAP Background",
-        },
-        {
-          href: "mountain-night-railway.html",
-          label: "Mountain Night Railway — Cloudy Night Forest & Moving Train",
-        },
-        {
-          href: "tux-blob.html",
-          label: "Tux Blob — Amorphous Tux Mascot Transparent Overlay",
-        },
-        {
-          href: "bioluminescent-cell.html",
-          label:
-            "Bioluminescent Cell — Amorphous Cell Organism Transparent Overlay",
-        },
-        {
-          href: "meta-blobs.html",
-          label: "Meta Blobs — Fluid Metaball SDF Overlay (Catppuccin Mocha)",
-        },
-        {
-          href: "iridescent-blobs.html",
-          label: "Iridescent Blobs — Oil-Slick Fluid Blobs Transparent Overlay",
-        },
-        {
-          href: "physics-particles.html",
-          label:
-            "Physics Particles — 4-Phase Particle Sim (Gravity / Repel / Plexus / Metaballs)",
-        },
-        {
-          href: "space-war-boids.html",
-          label:
-            "Space War Boids — 5-Faction Fleet Combat with Galaxy, Black Hole & Pulsar",
-        },
-        {
-          href: "amorphous-square-border.html",
-          label: "Amorphous Square Border — Layered Fluid Square Webcam Frame",
-        },
-        {
-          href: "dark-sun-cam.html",
-          label: "Dark Sun Cam — Black Circle Border with Wavy Fluid Rays",
-        },
-        {
-          href: "lavender-dashes-cam.html",
-          label:
-            "Lavender Dashes Cam — Catppuccin Rotating Dashed Circle Border",
-        },
-        {
-          href: "amorphous-blob-cam.html",
-          label:
-            "Amorphous Blob Cam — Fluid Organic Circle Border with Transparent Camera Hole",
-        },
-        {
-          href: "ukrainian-wave-mesh.html",
-          label:
-            "Ukrainian Wave Mesh — Blue & Gold Flag Wave Particle Mesh on Catppuccin Crust",
-        },
-        {
-          href: "ua-red-black-mesh.html",
-          label:
-            "UA Red & Black Mesh — Red & Black Revolutionary Flag Wave Particle Mesh",
-        },
-        {
-          href: "hype-meter-cam.html",
-          label:
-            "Hype Meter Cam — Audio-Reactive Liquid Neon Circle Border (Blue → Red on Volume)",
-        },
-        {
-          href: "blob-face-cam.html",
-          label: "Blob Face Cam — Amorphous Cartoon Mascot OBS Overlay",
-        },
-        {
-          href: "vector-field-bg.html",
-          label:
-            "Vector Field — Catppuccin Crust Flow Field Particle Background",
-        },
-        {
-          href: "wormhole-dive.html",
-          label: "Wormhole Dive — Hypnotic Perspective Depth Tunnel",
-        },
-        {
-          href: "gaussian-distribution-bg.html",
-          label:
-            "Gaussian Distribution Bg — Animated Normal Curve Particle Mesh (Catppuccin Crust)",
-        },
-        {
-          href: "mycelium-network.html",
-          label: "Mycelium Network — Space Colonization Growth Simulation",
-        },
-        {
-          href: "particle-constellation.html",
-          label: "Particle Constellation — Audio-Reactive 3D Parallax Stars",
-        },
-        {
-          href: "liquid-aurora-field.html",
-          label: "Liquid Aurora Field — Audio-Reactive Flowing Aurora Ribbons",
-        },
-        {
-          href: "radial-energy-core.html",
-          label: "Radial Energy Core — Audio-Reactive Concentric Wave Emitter",
-        },
-        {
-          href: "ink-in-water.html",
-          label:
-            "Abstract Ink in Water — Audio-Reactive Organic Ink Diffusion Blobs",
-        },
-        {
-          href: "minimalist-gradient-breathing.html",
-          label:
-            "Minimalist Gradient Breathing — Audio-Reactive Catppuccin Gradient Morph",
-        },
-      ];
-
-      const grid = document.getElementById("grid");
-
-      for (const { href, label } of pages) {
-        const card = document.createElement("a");
-        card.className = "card";
-        card.href = href;
-        card.target = "_blank";
-        card.rel = "noopener";
-        card.textContent = label;
-        grid.appendChild(card);
-      }
-    </script>
-  </body>
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
 </html>
