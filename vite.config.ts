@@ -98,7 +98,6 @@ export default defineConfig({
           __dirname,
           "cubic-blob-face-overlay.html",
         ),
-        map: resolve(__dirname, "map.html"),
         confidential: resolve(__dirname, "confidential.html"),
         trapnation: resolve(__dirname, "trapnation.html"),
         index: resolve(__dirname, "index.html"),
