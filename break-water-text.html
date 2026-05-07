@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      html,
+      body {
+        width: 1280px;
+        height: 300px;
+        overflow: hidden;
+        background: transparent;
+      }
+    </style>
+  </head>
+  <body>
+    <script src="https://cdn.jsdelivr.net/npm/pixi.js@7/dist/pixi.min.js"></script>
+    <script>
+      (function () {
+        "use strict";
+
+        const W = 1280,
+          H = 300;
+
+        // ── Application ───────────────────────────────────────────────────────
+        const app = new PIXI.Application({
+          width: W,
+          height: H,
+          backgroundAlpha: 0,
+          antialias: true,
+          resolution: 1,
+        });
+        document.body.appendChild(app.view);
+
+        // ── Text mask via Canvas 2D (unambiguous y=0-at-top coords) ───────────
+        const mc = document.createElement("canvas");
+        mc.width = W;
+        mc.height = H;
+        const mctx = mc.getContext("2d");
+        mctx.font =
+          '900 200px Impact, "Arial Black", "Helvetica Neue", sans-serif';
+        mctx.textAlign = "center";
+        mctx.textBaseline = "middle";
+        mctx.fillStyle = "#ffffff";
+        mctx.fillText("BREAK", W / 2, H / 2);
+        const px = mctx.getImageData(0, 0, W, H).data;
+
+        function isIn(x, y) {
+          const ix = x | 0,
+            iy = y | 0;
+          if (ix < 0 || iy < 0 || ix >= W || iy >= H) return false;
+          return px[(iy * W + ix) * 4 + 3] > 60;
+        }
+
+        // Anchor grid — every 5 px inside the glyphs
+        const anchors = [];
+        for (let y = 3; y < H - 3; y += 5)
+          for (let x = 3; x < W - 3; x += 5)
+            if (isIn(x, y)) anchors.push([x, y]);
+
+        // ── Utilities ─────────────────────────────────────────────────────────
+        const rand = (a, b) => a + Math.random() * (b - a);
+        const pick = (arr) => arr[(Math.random() * arr.length) | 0];
+        const anch = () =>
+          anchors.length
+            ? anchors[(Math.random() * anchors.length) | 0]
+            : [W / 2, H / 2];
+
+        // ── Catppuccin Mocha palette ───────────────────────────────────────────
+        const C_IN = [0x89b4fa, 0x74c7ec, 0x94e2d5]; // blue, sapphire, teal
+        const C_OUT = [0xcba6f7, 0xb4befe]; // mauve, lavender
+        const C_RIP = [0x89dceb, 0x74c7ec]; // sky, sapphire
+        const C_CAU = [0x94e2d5, 0x74c7ec]; // teal, sapphire
+
+        // ── Layer stack ───────────────────────────────────────────────────────
+        // 1. Glow — blurred duplicate of inside-particles, ADD-composited
+        const glowGfx = new PIXI.Graphics();
+        const glowWrap = new PIXI.Container();
+        glowWrap.addChild(glowGfx);
+        glowWrap.filters = [new PIXI.BlurFilter(6, 3)];
+        glowWrap.blendMode = PIXI.BLEND_MODES.ADD;
+        app.stage.addChild(glowWrap);
+
+        // 2. Caustic patches — slow ellipses, ADD blend
+        const causticCtr = new PIXI.Container();
+        app.stage.addChild(causticCtr);
+
+        // 3. Ripple rings
+        const rippleGfx = new PIXI.Graphics();
+        app.stage.addChild(rippleGfx);
+
+        // 4. Sharp particles — topmost
+        const sharpGfx = new PIXI.Graphics();
+        app.stage.addChild(sharpGfx);
+
+        // ── Caustic patches ───────────────────────────────────────────────────
+        const caustics = Array.from({ length: 8 }, () => {
+          const [bx, by] = anch();
+          const gfx = new PIXI.Graphics();
+          gfx.blendMode = PIXI.BLEND_MODES.ADD;
+          causticCtr.addChild(gfx);
+          return {
+            gfx,
+            bx,
+            by,
+            phase: rand(0, Math.PI * 2),
+            speed: rand(0.008, 0.022),
+            rw: rand(30, 80),
+            rh: rand(12, 36),
+            color: pick(C_CAU),
+            alpha: rand(0.04, 0.09),
+          };
+        });
+
+        // ── Ripple pool ───────────────────────────────────────────────────────
+        const ripples = [];
+        let ripClk = 0;
+        let nextRip = (18 + Math.random() * 12) | 0;
+
+        // ── Particle factories ────────────────────────────────────────────────
+        function mkIn() {
+          const [ax, ay] = anch();
+          return {
+            x: ax + rand(-4, 4),
+            y: ay + rand(-4, 4),
+            vx: rand(-0.4, 0.4),
+            vy: rand(-0.6, 0.2),
+            ax,
+            ay,
+            r: rand(2, 4),
+            a: rand(0.65, 1.0),
+            color: pick(C_IN),
+            t: 0, // 0 = inside
+            life: (60 + Math.random() * 160) | 0,
+            age: 0,
+          };
+        }
+
+        function mkOut() {
+          const [ax, ay] = anch();
+          const ang = Math.random() * Math.PI * 2;
+          const d = rand(8, 28);
+          return {
+            x: ax + Math.cos(ang) * d,
+            y: ay + Math.sin(ang) * d,
+            vx: Math.cos(ang) * rand(0.4, 1.8),
+            vy: -rand(0.5, 2.0),
+            ax: 0,
+            ay: 0,
+            r: rand(3, 7),
+            a: rand(0.45, 0.85),
+            color: pick(C_OUT),
+            t: 1, // 1 = outside / splash
+            life: (40 + Math.random() * 70) | 0,
+            age: 0,
+          };
+        }
+
+        // 75 % inside, 25 % outside, staggered ages so it doesn't start blank
+        const N = 1500;
+        const parts = Array.from({ length: N }, (_, i) => {
+          const p = i < N * 0.75 ? mkIn() : mkOut();
+          p.age = (Math.random() * p.life) | 0;
+          return p;
+        });
+
+        // ── Main loop ─────────────────────────────────────────────────────────
+        app.ticker.add(() => {
+          // Caustics
+          for (const c of caustics) {
+            c.phase += c.speed;
+            c.gfx.clear();
+            c.gfx.beginFill(c.color, c.alpha);
+            c.gfx.drawEllipse(
+              c.bx + Math.sin(c.phase) * 18,
+              c.by + Math.cos(c.phase * 0.73) * 9,
+              c.rw,
+              c.rh,
+            );
+            c.gfx.endFill();
+          }
+
+          // Ripple spawn
+          if (++ripClk >= nextRip) {
+            ripClk = 0;
+            nextRip = (18 + Math.random() * 12) | 0;
+            const outside = Math.random() < 0.25;
+            const [bx, by] = anch();
+            ripples.push({
+              x: bx + (outside ? rand(-50, 50) : 0),
+              y: by + (outside ? rand(-30, 30) : 0),
+              maxR: outside ? rand(35, 55) : rand(28, 45),
+              life: 50,
+              age: 0,
+              color: pick(C_RIP),
+              lw: rand(1.0, 1.5),
+            });
+          }
+
+          // Draw ripples
+          rippleGfx.clear();
+          for (let i = ripples.length - 1; i >= 0; i--) {
+            const r = ripples[i];
+            if (++r.age >= r.life) {
+              ripples.splice(i, 1);
+              continue;
+            }
+            const t = r.age / r.life;
+            rippleGfx.lineStyle(r.lw, r.color, 0.65 * (1 - t));
+            rippleGfx.drawCircle(r.x, r.y, r.maxR * t);
+          }
+
+          // Update & draw particles
+          glowGfx.clear();
+          sharpGfx.clear();
+
+          for (const p of parts) {
+            if (++p.age >= p.life) {
+              Object.assign(
+                p,
+                p.t === 0 || Math.random() < 0.78 ? mkIn() : mkOut(),
+              );
+              continue;
+            }
+
+            if (p.t === 0) {
+              // Inside: soft spring return + mild gravity + rare micro-burst
+              p.vx += (p.ax - p.x) * 0.025;
+              p.vy += (p.ay - p.y) * 0.025 + 0.012;
+              if (Math.random() < 0.0015) p.vy -= rand(0.8, 2.0);
+              p.vx *= 0.94;
+              p.vy *= 0.94;
+            } else {
+              // Outside: gravity, drag, alpha fade-out
+              p.vy += 0.04;
+              p.vx *= 0.98;
+              p.vy *= 0.98;
+              p.a = (1 - p.age / p.life) * 0.85;
+            }
+
+            p.x += p.vx;
+            p.y += p.vy;
+
+            // Glow pass — inside particles only, larger radius, higher alpha
+            if (p.t === 0) {
+              glowGfx.beginFill(p.color, p.a * 0.7);
+              glowGfx.drawCircle(p.x, p.y, p.r * 1.8);
+              glowGfx.endFill();
+            }
+
+            // Sharp pass — all particles
+            sharpGfx.beginFill(p.color, p.a);
+            sharpGfx.drawCircle(p.x, p.y, p.r);
+            sharpGfx.endFill();
+          }
+        });
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,1009 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Forest Ambient Background — worxbend</title>
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      html,
+      body {
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background: transparent;
+      }
+    </style>
+  </head>
+  <body>
+    <script src="https://cdn.jsdelivr.net/npm/pixi.js@8/dist/pixi.min.js"></script>
+    <script>
+      (async () => {
+        "use strict";
+
+        const W = 1920,
+          H = 1080;
+        const GROUND_Y = Math.round(H * 0.8); // 864 — base horizon reference
+
+        const app = new PIXI.Application();
+        await app.init({
+          width: W,
+          height: H,
+          backgroundAlpha: 0,
+          antialias: true,
+          resolution: 1,
+        });
+        document.body.appendChild(app.canvas);
+        app.stage.sortableChildren = true;
+
+        // ── Canvas texture helper ──────────────────────────────────────────────
+
+        function canvasTex(w, h, drawFn) {
+          const cv = document.createElement("canvas");
+          cv.width = w;
+          cv.height = h;
+          drawFn(cv.getContext("2d"));
+          return PIXI.Texture.from(cv);
+        }
+
+        // ── Sky gradient ──────────────────────────────────────────────────────
+
+        const sky = new PIXI.Sprite(
+          canvasTex(4, H, (ctx) => {
+            const grd = ctx.createLinearGradient(0, 0, 0, H);
+            grd.addColorStop(0.0, "#1e1e2e");
+            grd.addColorStop(0.65, "#1a1a2e");
+            grd.addColorStop(1.0, "#181825");
+            ctx.fillStyle = grd;
+            ctx.fillRect(0, 0, 4, H);
+          }),
+        );
+        sky.width = W;
+        sky.height = H;
+        sky.zIndex = 0;
+        app.stage.addChild(sky);
+
+        // ── Stars (drifting slowly left) ──────────────────────────────────────
+
+        const starsCont = new PIXI.Container();
+        starsCont.zIndex = 1;
+        app.stage.addChild(starsCont);
+
+        const stars = Array.from({ length: 140 }, () => {
+          const g = new PIXI.Graphics();
+          g.circle(
+            0,
+            0,
+            Math.random() < 0.15 ? 1.8 : Math.random() < 0.4 ? 1.2 : 0.8,
+          ).fill(0xcdd6f4);
+          g.x = Math.random() * W;
+          g.y = Math.random() * H * 0.38;
+          starsCont.addChild(g);
+          return {
+            g,
+            phase: Math.random() * Math.PI * 2,
+            speed: 0.007 + Math.random() * 0.013,
+            vx: -(0.018 + Math.random() * 0.022),
+          };
+        });
+
+        // ── Moon ─────────────────────────────────────────────────────────────
+
+        const moonTex = canvasTex(150, 150, (ctx) => {
+          // Soft outer glow halo
+          const halo = ctx.createRadialGradient(75, 75, 30, 75, 75, 75);
+          halo.addColorStop(0, "rgba(230,220,160,0.18)");
+          halo.addColorStop(0.55, "rgba(210,200,130,0.07)");
+          halo.addColorStop(1, "rgba(180,165,110,0)");
+          ctx.fillStyle = halo;
+          ctx.fillRect(0, 0, 150, 150);
+
+          // Moon disc
+          ctx.fillStyle = "#c8c490";
+          ctx.beginPath();
+          ctx.arc(75, 75, 32, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Crescent shadow — offset circle punches out the crescent shape
+          ctx.globalCompositeOperation = "destination-out";
+          ctx.fillStyle = "rgba(0,0,0,0.80)";
+          ctx.beginPath();
+          ctx.arc(90, 68, 29, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.globalCompositeOperation = "source-over";
+        });
+
+        const moonSpr = new PIXI.Sprite(moonTex);
+        moonSpr.anchor.set(0.5);
+        moonSpr.x = W * 0.22;
+        moonSpr.y = H * 0.11;
+        moonSpr.zIndex = 2;
+        app.stage.addChild(moonSpr);
+        // Moon drifts at same speed as fastest stars for a coherent sky
+        const moon = { x: moonSpr.x, vx: -0.007 };
+
+        // ── Load all assets ───────────────────────────────────────────────────
+
+        const BASE = "/raw-assets/main%7Bm%7D/";
+        const [
+          forestTex,
+          elementsTex,
+          elementsTopTex,
+          cabinTex,
+          bush1,
+          bush2,
+          bush3,
+          bush4,
+          bush5,
+        ] = await Promise.all([
+          PIXI.Assets.load(BASE + "forest-175-255.png"),
+          PIXI.Assets.load(BASE + "forest-elements-704x344.png"),
+          PIXI.Assets.load(BASE + "forest-elements-top-704x344.png"),
+          PIXI.Assets.load(BASE + "cabin-in-the-wood.png"),
+          PIXI.Assets.load(BASE + "bush-1.png"),
+          PIXI.Assets.load(BASE + "bush-2.png"),
+          PIXI.Assets.load(BASE + "bush-3.png"),
+          PIXI.Assets.load(BASE + "bush-4.png"),
+          PIXI.Assets.load(BASE + "bush-5.png"),
+        ]);
+
+        const bushTextures = [bush1, bush2, bush3, bush4, bush5];
+
+        // ── Forest sprite sheet — slice into individual 175×255 frames ────────
+
+        const FRAME_W = 175,
+          FRAME_H = 255;
+        const SHEET_COLS = Math.floor(forestTex.width / FRAME_W);
+        const SHEET_ROWS = Math.floor(forestTex.height / FRAME_H);
+        const treeFrames = [];
+        for (let row = 0; row < SHEET_ROWS; row++)
+          for (let col = 0; col < SHEET_COLS; col++)
+            treeFrames.push(
+              new PIXI.Texture({
+                source: forestTex.source,
+                frame: new PIXI.Rectangle(
+                  col * FRAME_W,
+                  row * FRAME_H,
+                  FRAME_W,
+                  FRAME_H,
+                ),
+              }),
+            );
+
+        function randFrame() {
+          return treeFrames[Math.floor(Math.random() * treeFrames.length)];
+        }
+
+        // ── Tree layer builder ────────────────────────────────────────────────
+
+        function buildTreeLayer(
+          zIdx,
+          tintHex,
+          alpha,
+          heightFrac,
+          scrollSpd,
+          spacingFrac = 0.68,
+        ) {
+          const cont = new PIXI.Container();
+          cont.zIndex = zIdx;
+          app.stage.addChild(cont);
+          const scale = (H * heightFrac) / FRAME_H;
+          const treeW = FRAME_W * scale;
+          const treeH = FRAME_H * scale;
+          const spacing = Math.round(treeW * spacingFrac);
+          const count = Math.ceil((W + treeW) / spacing) + 2;
+          const sprites = [];
+          for (let i = 0; i < count; i++) {
+            const spr = new PIXI.Sprite(randFrame());
+            spr.anchor.set(0.5, 1);
+            spr.scale.set(scale);
+            spr.x = i * spacing;
+            spr.y = GROUND_Y + Math.round(treeH * 0.07);
+            spr.tint = tintHex;
+            spr.alpha = alpha;
+            cont.addChild(spr);
+            sprites.push(spr);
+          }
+          return { cont, sprites, treeW, spacing, count, scrollSpd };
+        }
+
+        function scrollTreeLayer(L) {
+          const span = L.count * L.spacing;
+          for (const spr of L.sprites) {
+            spr.x -= L.scrollSpd;
+            if (spr.x + L.treeW * 0.5 < 0) {
+              spr.x += span;
+              spr.texture = randFrame();
+            }
+          }
+        }
+
+        // ── Ground element sheet slicer ───────────────────────────────────────
+        // Each element sheet is a 4×4 grid of 704×344 px frames (2816×1376 total).
+
+        const ELEM_FW = 704,
+          ELEM_FH = 344;
+
+        function sliceSheet(tex, fw, fh) {
+          const cols = Math.floor(tex.width / fw);
+          const rows = Math.floor(tex.height / fh);
+          const result = [];
+          for (let row = 0; row < rows; row++)
+            for (let col = 0; col < cols; col++)
+              result.push(
+                new PIXI.Texture({
+                  source: tex.source,
+                  frame: new PIXI.Rectangle(col * fw, row * fh, fw, fh),
+                }),
+              );
+          return result;
+        }
+
+        // scatter=true distributes sprites randomly within each spacing zone
+        function buildGroundLayer(
+          zIdx,
+          framesArr,
+          tintHex,
+          alpha,
+          heightFrac,
+          scrollSpd,
+          spacingFrac = 0.6,
+          scatter = false,
+        ) {
+          const cont = new PIXI.Container();
+          cont.zIndex = zIdx;
+          app.stage.addChild(cont);
+          const scale = (H * heightFrac) / ELEM_FH;
+          const sprW = ELEM_FW * scale;
+          const sprH = ELEM_FH * scale;
+          const spacing = Math.round(sprW * spacingFrac);
+          const count = Math.ceil((W + sprW) / spacing) + 2;
+          function pick() {
+            return framesArr[Math.floor(Math.random() * framesArr.length)];
+          }
+          const sprites = [];
+          for (let i = 0; i < count; i++) {
+            const spr = new PIXI.Sprite(pick());
+            spr.anchor.set(0.5, 1);
+            spr.scale.set(scale);
+            spr.x = scatter
+              ? i * spacing + Math.random() * spacing
+              : i * spacing;
+            spr.y = GROUND_Y + Math.round(sprH * 0.04);
+            spr.tint = tintHex;
+            spr.alpha = alpha;
+            cont.addChild(spr);
+            sprites.push(spr);
+          }
+          return { cont, sprites, sprW, spacing, count, scrollSpd, pick };
+        }
+
+        function scrollGroundLayer(L) {
+          const span = L.count * L.spacing;
+          for (const spr of L.sprites) {
+            spr.x -= L.scrollSpd;
+            if (spr.x + L.sprW * 0.5 < 0) {
+              spr.x += span;
+              spr.texture = L.pick();
+            }
+          }
+        }
+
+        // ── Bush layer (topmost, black silhouettes) ───────────────────────────
+
+        const BUSH_H = Math.round(H * 0.13); // target display height for all bushes
+
+        function buildBushLayer(zIdx, texArr, scrollSpd, count) {
+          const cont = new PIXI.Container();
+          cont.zIndex = zIdx;
+          app.stage.addChild(cont);
+          const span = W + 800;
+          function pickTex() {
+            return texArr[Math.floor(Math.random() * texArr.length)];
+          }
+          const sprites = [];
+          for (let i = 0; i < count; i++) {
+            const tex = pickTex();
+            const sc = BUSH_H / tex.height;
+            const spr = new PIXI.Sprite(tex);
+            spr.anchor.set(0.5, 1);
+            spr.scale.set(sc);
+            spr.tint = 0x000000;
+            spr.x = Math.random() * span;
+            spr.y = GROUND_Y + Math.round(BUSH_H * 0.06);
+            cont.addChild(spr);
+            sprites.push(spr);
+          }
+          return { cont, sprites, span, scrollSpd, pickTex };
+        }
+
+        function scrollBushLayer(L) {
+          for (const spr of L.sprites) {
+            spr.x -= L.scrollSpd;
+            if (spr.x + spr.width * 0.5 < 0) {
+              spr.x += L.span;
+              const newTex = L.pickTex();
+              spr.texture = newTex;
+              spr.scale.set(BUSH_H / newTex.height);
+            }
+          }
+        }
+
+        // ── Z-index layout ─────────────────────────────────────────────────────
+        // 0  sky
+        // 1  stars          2  moon
+        // 3  elements       4  elementsTop   ← back horizon silhouettes
+        // 5  L1 far trees   6  L2 mid-far trees
+        // 7  fog1           8  fog2
+        // 9  cabin          10 smoke
+        // 11 L4 near trees  12 fog3
+        // 13 mist band
+        // 14 L5 foreground
+        // 15 fireflies
+        // 16 ground (wavy)  17 vignette
+        // 18 bushes (topmost)
+
+        const L1 = buildTreeLayer(5, 0x1e2d1e, 0.6, 0.22, 0.008, 0.35);
+        const L2 = buildTreeLayer(6, 0x2d4a2d, 0.8, 0.3, 0.022, 0.4);
+        const L4 = buildTreeLayer(11, 0x1a2e1a, 0.95, 0.4, 0.065, 1.55);
+        const L5 = buildTreeLayer(14, 0x0f1a0f, 1.0, 0.5, 0.1, 1.9);
+
+        const elemFrames = sliceSheet(elementsTex, ELEM_FW, ELEM_FH);
+        const elemTopFrames = sliceSheet(elementsTopTex, ELEM_FW, ELEM_FH);
+
+        const elementsLayer = buildGroundLayer(
+          7,
+          elemFrames,
+          0xffffff,
+          1.0,
+          0.07,
+          0.006,
+          1.4,
+          true,
+        );
+
+        const elemTopLayer = buildGroundLayer(
+          7.5,
+          elemTopFrames,
+          0xffffff,
+          1.0,
+          0.1,
+          0.009,
+          1.6,
+          true,
+        );
+
+        elementsLayer.cont.tint = 0x000000;
+        elemTopLayer.cont.tint = 0x000000;
+
+        const bushLayer = buildBushLayer(18, bushTextures, 0.18, 10);
+
+        // ── Fog layers ────────────────────────────────────────────────────────
+
+        function softBlobTex(w, h, hexColor) {
+          return canvasTex(w, h, (ctx) => {
+            const r = (hexColor >> 16) & 0xff;
+            const g = (hexColor >> 8) & 0xff;
+            const b = hexColor & 0xff;
+            const grd = ctx.createRadialGradient(
+              w / 2,
+              h / 2,
+              0,
+              w / 2,
+              h / 2,
+              Math.max(w, h) / 2,
+            );
+            grd.addColorStop(0.0, `rgba(${r},${g},${b},1)`);
+            grd.addColorStop(0.55, `rgba(${r},${g},${b},0.28)`);
+            grd.addColorStop(1.0, `rgba(${r},${g},${b},0)`);
+            ctx.fillStyle = grd;
+            ctx.fillRect(0, 0, w, h);
+          });
+        }
+
+        const fogTexPool = [
+          softBlobTex(960, 220, 0xcdd6f4),
+          softBlobTex(740, 185, 0xa6e3a1),
+          softBlobTex(820, 205, 0xcdd6f4),
+          softBlobTex(680, 170, 0xa6e3a1),
+        ];
+
+        function buildFogLayer(zIdx, speed, alphaMax, blobCount = 12) {
+          const cont = new PIXI.Container();
+          cont.zIndex = zIdx;
+          app.stage.addChild(cont);
+          const span = W * 2.8;
+          const blobs = [];
+          for (let i = 0; i < blobCount; i++) {
+            const tex = fogTexPool[i % fogTexPool.length];
+            const spr = new PIXI.Sprite(tex);
+            spr.anchor.set(0.5, 0.5);
+            spr.alpha = alphaMax * (0.55 + Math.random() * 0.9);
+            spr.x = (i / blobCount) * span - 280 + Math.random() * 160;
+            spr.y = GROUND_Y - tex.height * 0.38 - Math.random() * 60;
+            cont.addChild(spr);
+            blobs.push(spr);
+          }
+          return { cont, blobs, speed, span };
+        }
+
+        const fog1 = buildFogLayer(5.5, 0.07, 0.04, 12);
+        const fog2 = buildFogLayer(8, 0.12, 0.035, 12);
+        const fog3 = buildFogLayer(12, 0.18, 0.04, 14);
+
+        function scrollFog(fog) {
+          for (const spr of fog.blobs) {
+            spr.x -= fog.speed;
+            if (spr.x < -700) spr.x += fog.span;
+          }
+        }
+
+        // Ground mist band
+        const mistSpr = new PIXI.Sprite(
+          canvasTex(W, 150, (ctx) => {
+            const grd = ctx.createLinearGradient(0, 0, 0, 150);
+            grd.addColorStop(0, "rgba(165,195,165,0)");
+            grd.addColorStop(0.3, "rgba(165,195,165,0.22)");
+            grd.addColorStop(0.7, "rgba(165,195,165,0.16)");
+            grd.addColorStop(1, "rgba(165,195,165,0)");
+            ctx.fillStyle = grd;
+            ctx.fillRect(0, 0, W, 150);
+          }),
+        );
+        mistSpr.x = 0;
+        mistSpr.y = GROUND_Y - 100;
+        mistSpr.zIndex = 13;
+        app.stage.addChild(mistSpr);
+
+        // ── Cabin ─────────────────────────────────────────────────────────────
+
+        const cabinCont = new PIXI.Container();
+        cabinCont.zIndex = 9.5;
+        app.stage.addChild(cabinCont);
+
+        const CX = Math.round(W * 0.7);
+        const CABIN_TARGET_H = 230;
+        const cabScale = CABIN_TARGET_H / cabinTex.height;
+        const CABIN_W = cabinTex.width * cabScale;
+        const CABIN_Y = GROUND_Y + Math.round(CABIN_TARGET_H * 0.14);
+
+        function makeCabinSprite(tint, blend, alpha) {
+          const spr = new PIXI.Sprite(cabinTex);
+          spr.anchor.set(0.5, 1);
+          spr.scale.set(cabScale);
+          spr.x = CX;
+          spr.y = CABIN_Y;
+          if (tint !== null) spr.tint = tint;
+          if (blend !== null) spr.blendMode = blend;
+          spr.alpha = alpha;
+          cabinCont.addChild(spr);
+          return spr;
+        }
+
+        makeCabinSprite(null, null, 1.0);
+        const cabFire = makeCabinSprite(0xff6600, "screen", 0.1);
+
+        // Warm orange lit look via CMF: boost R, reduce B, slight G drop
+        const warmCMF = new PIXI.ColorMatrixFilter();
+        warmCMF.matrix = [
+          1.03, 0.02, 0, 0, 0.025, 0, 0.96, 0, 0, 0.005, 0, 0, 0.78, 0, 0, 0, 0,
+          0, 1, 0,
+        ];
+        cabinCont.filters = [warmCMF];
+
+        // ── Smoke particles ───────────────────────────────────────────────────
+
+        function makeSmokeTex(size, hex) {
+          return canvasTex(size, size, (ctx) => {
+            const r = (hex >> 16) & 0xff,
+              g = (hex >> 8) & 0xff,
+              b = hex & 0xff;
+            const grd = ctx.createRadialGradient(
+              size / 2,
+              size / 2,
+              0,
+              size / 2,
+              size / 2,
+              size / 2,
+            );
+            grd.addColorStop(0.0, `rgba(${r},${g},${b},1)`);
+            grd.addColorStop(0.45, `rgba(${r},${g},${b},0.55)`);
+            grd.addColorStop(0.78, `rgba(${r},${g},${b},0.18)`);
+            grd.addColorStop(1.0, `rgba(${r},${g},${b},0)`);
+            ctx.fillStyle = grd;
+            ctx.beginPath();
+            ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
+            ctx.fill();
+          });
+        }
+
+        const smokeTex = [
+          makeSmokeTex(128, 0x7a7a8a),
+          makeSmokeTex(128, 0x5c5c6e),
+          makeSmokeTex(128, 0x4a4855),
+          makeSmokeTex(96, 0x686878),
+        ];
+
+        const smokeCont = new PIXI.Container();
+        smokeCont.zIndex = 9.8;
+        app.stage.addChild(smokeCont);
+        smokeCont.filters = [new PIXI.BlurFilter({ strength: 14, quality: 3 })];
+
+        const EMIT_X = CX + CABIN_W * 0.28;
+        const EMIT_Y = CABIN_Y - CABIN_TARGET_H * 0.94;
+        const smokePool = [];
+        let smokeTimer = 0;
+
+        function spawnSmoke() {
+          const tex = smokeTex[Math.floor(Math.random() * smokeTex.length)];
+          const spr = new PIXI.Sprite(tex);
+          spr.anchor.set(0.5);
+          smokeCont.addChild(spr);
+          smokePool.push({
+            spr,
+            x: EMIT_X + (Math.random() - 0.5) * 4,
+            y: EMIT_Y,
+            vy: -(0.5 + Math.random() * 0.4),
+            r: 6 + Math.random() * 4,
+            maxR: 28 + Math.random() * 18,
+            age: 0,
+            life: 260 + Math.floor(Math.random() * 120),
+            phase: Math.random() * Math.PI * 2,
+            phase2: Math.random() * Math.PI * 2,
+          });
+        }
+
+        function tickSmoke() {
+          smokeTimer++;
+          if (smokeTimer >= 5 + Math.floor(Math.random() * 5)) {
+            smokeTimer = 0;
+            const burst = Math.random() < 0.35 ? 2 : 1;
+            for (let b = 0; b < burst; b++) spawnSmoke();
+          }
+          for (let i = smokePool.length - 1; i >= 0; i--) {
+            const p = smokePool[i];
+            p.age++;
+            const t = p.age / p.life;
+            if (t >= 1) {
+              smokeCont.removeChild(p.spr);
+              p.spr.destroy();
+              smokePool.splice(i, 1);
+              continue;
+            }
+            // Gentle horizontal drift + wind push
+            const drift =
+              Math.sin(p.age * 0.04 + p.phase) * 0.5 +
+              Math.sin(p.age * 0.017 + p.phase2) * 0.7;
+            p.x += drift - windStrength * 0.8;
+            p.y += p.vy;
+            const rNow = p.r + (p.maxR - p.r) * Math.min(t * 1.8, 1);
+            p.spr.x = p.x;
+            p.spr.y = p.y;
+            p.spr.scale.set(rNow / 64);
+            // Fade-in, plateau, fade-out
+            const a =
+              t < 0.15 ? t / 0.15 : t > 0.55 ? 1 - (t - 0.55) / 0.45 : 1;
+            p.spr.alpha = a * 0.62;
+          }
+        }
+
+        // ── Fireflies ─────────────────────────────────────────────────────────
+
+        const fireflyTex = canvasTex(20, 20, (ctx) => {
+          const grd = ctx.createRadialGradient(10, 10, 0, 10, 10, 10);
+          grd.addColorStop(0.0, "rgba(210,255,100,1)");
+          grd.addColorStop(0.3, "rgba(185,245,70,0.55)");
+          grd.addColorStop(1.0, "rgba(140,210,40,0)");
+          ctx.fillStyle = grd;
+          ctx.fillRect(0, 0, 20, 20);
+        });
+
+        const fireflyCont = new PIXI.Container();
+        fireflyCont.zIndex = 15;
+        app.stage.addChild(fireflyCont);
+
+        const fireflies = Array.from({ length: 18 }, () => {
+          const spr = new PIXI.Sprite(fireflyTex);
+          spr.anchor.set(0.5);
+          spr.blendMode = "add";
+          const sc = 0.28 + Math.random() * 0.45;
+          spr.scale.set(sc);
+          fireflyCont.addChild(spr);
+          return {
+            spr,
+            x: Math.random() * W,
+            y: GROUND_Y - 20 - Math.random() * 380,
+            vx: (Math.random() - 0.5) * 0.32,
+            vy: (Math.random() - 0.5) * 0.22,
+            wx: Math.random() * Math.PI * 2,
+            wy: Math.random() * Math.PI * 2,
+            blinkPhase: Math.random() * Math.PI * 2,
+            blinkSpeed: 0.016 + Math.random() * 0.024,
+            baseScale: sc,
+          };
+        });
+
+        function tickFireflies() {
+          for (const f of fireflies) {
+            f.x += f.vx + Math.sin(frame * 0.009 + f.wx) * 0.55;
+            f.y += f.vy + Math.cos(frame * 0.007 + f.wy) * 0.32;
+            if (f.x > W + 20) f.x -= W + 40;
+            if (f.x < -20) f.x += W + 40;
+            if (f.y < GROUND_Y - 420) f.vy = Math.min(f.vy + 0.025, 0.6);
+            if (f.y > GROUND_Y - 8) f.vy = Math.max(f.vy - 0.025, -0.6);
+            f.spr.x = f.x;
+            f.spr.y = f.y;
+            const blink = Math.sin(frame * f.blinkSpeed + f.blinkPhase);
+            f.spr.alpha = Math.max(0, blink * 0.72 + 0.28);
+            f.spr.scale.set(f.baseScale * (0.85 + Math.max(0, blink) * 0.28));
+          }
+        }
+
+        // ── Wavy ground ───────────────────────────────────────────────────────
+        // The top edge of the ground follows a sum of absolute-value sine waves
+        // so it only ever rises above GROUND_Y (hills, no dips below baseline).
+
+        function hillY(x) {
+          // Rises 0–20 px above GROUND_Y (~1-2% of H) to hide tree roots
+          return (
+            GROUND_Y -
+            Math.abs(Math.sin(x * 0.0019 + 0.4)) * 8 -
+            Math.abs(Math.sin(x * 0.0051 + 2.2)) * 5 -
+            Math.abs(Math.sin(x * 0.0011 + 1.1)) * 7
+          );
+        }
+
+        const hillPts = [];
+        for (let x = 0; x <= W; x += 5) hillPts.push(x, hillY(x));
+        hillPts.push(W, H, 0, H);
+
+        const groundG = new PIXI.Graphics();
+        groundG.poly(hillPts).fill(0x000000);
+        groundG.zIndex = 16;
+        app.stage.addChild(groundG);
+
+        // ── Vignette ──────────────────────────────────────────────────────────
+
+        const vigSpr = new PIXI.Sprite(
+          canvasTex(480, 270, (ctx) => {
+            const vw = 480,
+              vh = 270;
+            const grd = ctx.createRadialGradient(
+              vw / 2,
+              vh / 2,
+              vh * 0.22,
+              vw / 2,
+              vh / 2,
+              vh * 0.82,
+            );
+            grd.addColorStop(0, "rgba(0,0,0,0)");
+            grd.addColorStop(1, "rgba(0,0,0,0.74)");
+            ctx.fillStyle = grd;
+            ctx.fillRect(0, 0, vw, vh);
+          }),
+        );
+        vigSpr.width = W;
+        vigSpr.height = H;
+        vigSpr.zIndex = 17;
+        app.stage.addChild(vigSpr);
+
+        // ── Bats ─────────────────────────────────────────────────────────────
+
+        const batCont = new PIXI.Container();
+        batCont.zIndex = 14.5;
+        app.stage.addChild(batCont);
+
+        // 6 wing-flap frames: sine-driven elevation gives smooth cycle
+        const BAT_NF = 6;
+        const batTextures = Array.from({ length: BAT_NF }, (_, i) => {
+          const elev = Math.sin((i / BAT_NF) * Math.PI * 2); // -1..1
+          return canvasTex(64, 32, (ctx) => {
+            const cx = 32,
+              cy = 16,
+              span = 28;
+            const wy = cy - elev * 10;
+            ctx.fillStyle = "rgba(55,58,72,0.97)";
+
+            // Left wing membrane
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.quadraticCurveTo(cx - span * 0.52, wy - 1, cx - span, wy + 1);
+            ctx.quadraticCurveTo(cx - span * 0.62, cy + 9, cx, cy + 2);
+            ctx.closePath();
+            ctx.fill();
+
+            // Right wing membrane
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.quadraticCurveTo(cx + span * 0.52, wy - 1, cx + span, wy + 1);
+            ctx.quadraticCurveTo(cx + span * 0.62, cy + 9, cx, cy + 2);
+            ctx.closePath();
+            ctx.fill();
+
+            // Body + head
+            ctx.beginPath();
+            ctx.ellipse(cx, cy + 1, 3, 5, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(cx, cy - 3, 2.5, 0, Math.PI * 2);
+            ctx.fill();
+          });
+        });
+
+        const batPool = [];
+        let batClock = 0;
+        let nextBatAt = 280 + Math.floor(Math.random() * 500);
+
+        function spawnBatGroup() {
+          const count = 1 + Math.floor(Math.random() * 3);
+          for (let i = 0; i < count; i++) {
+            const goRight = Math.random() < 0.5;
+            const sc = 0.55 + Math.random() * 0.65;
+            const spr = new PIXI.Sprite(batTextures[0]);
+            spr.anchor.set(0.5);
+            spr.scale.set(goRight ? sc : -sc, sc);
+            batCont.addChild(spr);
+            const spd = 1.6 + Math.random() * 1.8;
+            batPool.push({
+              spr,
+              x: goRight ? -50 : W + 50,
+              y: GROUND_Y - 70 - Math.random() * 360,
+              vx: goRight ? spd : -spd,
+              vy: (Math.random() - 0.5) * 0.4,
+              wx: Math.random() * Math.PI * 2,
+              fi: Math.random() * BAT_NF,
+              flapSpd: 0.22 + Math.random() * 0.18,
+              goRight,
+              sc,
+            });
+          }
+        }
+
+        function tickBats() {
+          batClock++;
+          if (batClock >= nextBatAt) {
+            spawnBatGroup();
+            batClock = 0;
+            nextBatAt = 420 + Math.floor(Math.random() * 720);
+          }
+          for (let i = batPool.length - 1; i >= 0; i--) {
+            const b = batPool[i];
+            b.x += b.vx;
+            b.y += b.vy + Math.sin(b.x * 0.016 + b.wx) * 0.65;
+            if (b.y < GROUND_Y - 440) b.vy += 0.12;
+            if (b.y > GROUND_Y - 45) b.vy -= 0.12;
+            b.fi = (b.fi + b.flapSpd) % BAT_NF;
+            b.spr.texture = batTextures[Math.floor(b.fi)];
+            b.spr.x = b.x;
+            b.spr.y = b.y;
+            if ((b.goRight && b.x > W + 60) || (!b.goRight && b.x < -60)) {
+              batCont.removeChild(b.spr);
+              b.spr.destroy();
+              batPool.splice(i, 1);
+            }
+          }
+        }
+
+        // ── Meteor shower ─────────────────────────────────────────────────────
+        // Periodic bursts of 3-6 meteors falling from upper sky.
+        // Tail points opposite to travel; blendMode 'add' gives natural glow.
+
+        const meteorCont = new PIXI.Container();
+        meteorCont.zIndex = 1.5;
+        app.stage.addChild(meteorCont);
+
+        const meteorTex = canvasTex(180, 4, (ctx) => {
+          const g = ctx.createLinearGradient(0, 0, 180, 0);
+          g.addColorStop(0.0, "rgba(255,255,255,0)");
+          g.addColorStop(0.6, "rgba(255,252,235,0.45)");
+          g.addColorStop(1.0, "rgba(255,255,255,1)");
+          ctx.fillStyle = g;
+          ctx.fillRect(0, 0, 180, 4);
+          // Thin bright inner core
+          const gc = ctx.createLinearGradient(90, 0, 180, 0);
+          gc.addColorStop(0, "rgba(255,255,255,0)");
+          gc.addColorStop(1, "rgba(255,255,255,0.7)");
+          ctx.fillStyle = gc;
+          ctx.fillRect(90, 1, 90, 2);
+        });
+
+        const M_VX = -13,
+          M_VY = 8;
+        // tail extends opposite to direction of travel
+        const M_ROT = Math.atan2(-M_VY, -M_VX);
+
+        const meteorPool = [];
+        let meteorTimer = 0;
+        let nextShowerAt = 700 + Math.floor(Math.random() * 800);
+
+        function spawnShower() {
+          const count = 3 + Math.floor(Math.random() * 4);
+          for (let i = 0; i < count; i++) {
+            const spr = new PIXI.Sprite(meteorTex);
+            spr.anchor.set(1, 0.5);
+            spr.rotation = M_ROT;
+            spr.blendMode = "add";
+            spr.visible = false;
+            meteorCont.addChild(spr);
+            const spd = 14 + Math.random() * 9;
+            meteorPool.push({
+              spr,
+              x: W * 0.25 + Math.random() * W * 0.7,
+              y: H * 0.02 + Math.random() * H * 0.26,
+              vx: (M_VX / 13) * spd,
+              vy: (M_VY / 13) * spd,
+              delay: i * 9 + Math.floor(Math.random() * 14),
+              age: 0,
+              life: 26 + Math.floor(Math.random() * 18),
+            });
+          }
+        }
+
+        function tickMeteors() {
+          meteorTimer++;
+          if (meteorTimer >= nextShowerAt) {
+            spawnShower();
+            meteorTimer = 0;
+            nextShowerAt = 1400 + Math.floor(Math.random() * 2000);
+          }
+          for (let i = meteorPool.length - 1; i >= 0; i--) {
+            const m = meteorPool[i];
+            if (m.delay > 0) {
+              m.delay--;
+              continue;
+            }
+            m.spr.visible = true;
+            m.age++;
+            const t = m.age / m.life;
+            if (t >= 1) {
+              meteorCont.removeChild(m.spr);
+              m.spr.destroy();
+              meteorPool.splice(i, 1);
+              continue;
+            }
+            m.x += m.vx;
+            m.y += m.vy;
+            m.spr.x = m.x;
+            m.spr.y = m.y;
+            m.spr.alpha =
+              t < 0.12 ? t / 0.12 : Math.pow(1 - (t - 0.12) / 0.88, 1.8);
+          }
+        }
+
+        // ── Wind over the forest ──────────────────────────────────────────────
+        // Horizontal streaks at canopy level, spawn in bursts with ramp-up/down.
+        // windStrength (0-1) also widens the tree-layer sway.
+
+        const windCont = new PIXI.Container();
+        windCont.zIndex = 9;
+        app.stage.addChild(windCont);
+
+        const windTextures = [60, 90, 130, 170, 80].map((len) =>
+          canvasTex(len, 2, (ctx) => {
+            const g = ctx.createLinearGradient(0, 0, len, 0);
+            g.addColorStop(0.0, "rgba(210,235,210,0)");
+            g.addColorStop(0.2, "rgba(210,235,210,0.40)");
+            g.addColorStop(0.78, "rgba(210,235,210,0.40)");
+            g.addColorStop(1.0, "rgba(210,235,210,0)");
+            ctx.fillStyle = g;
+            ctx.fillRect(0, 0, len, 2);
+          }),
+        );
+
+        const windPool = [];
+        let windClock = 0;
+        let nextWindAt = 600 + Math.floor(Math.random() * 900);
+        let windDuration = 0;
+        let windStrength = 0;
+
+        function spawnWindStreak() {
+          const tex =
+            windTextures[Math.floor(Math.random() * windTextures.length)];
+          const spr = new PIXI.Sprite(tex);
+          spr.anchor.set(0, 0.5);
+          spr.blendMode = "screen";
+          windCont.addChild(spr);
+          const vx = -(5 + Math.random() * 7);
+          windPool.push({
+            spr,
+            x: W + Math.random() * 80,
+            y: GROUND_Y - 35 - Math.random() * 310,
+            vx,
+            vy: (Math.random() - 0.5) * 0.5,
+          });
+        }
+
+        function tickWind() {
+          windClock++;
+          if (windDuration <= 0 && windClock >= nextWindAt) {
+            windDuration = 160 + Math.floor(Math.random() * 200);
+            windClock = 0;
+          }
+          if (windDuration > 0) {
+            windDuration--;
+            windStrength = Math.min(1, windStrength + 0.035);
+            if (Math.random() < 0.3 * windStrength) spawnWindStreak();
+            if (windDuration <= 0)
+              nextWindAt = 1000 + Math.floor(Math.random() * 1600);
+          } else {
+            windStrength = Math.max(0, windStrength - 0.012);
+            if (windStrength > 0.1 && Math.random() < 0.08 * windStrength)
+              spawnWindStreak();
+          }
+          for (let i = windPool.length - 1; i >= 0; i--) {
+            const w = windPool[i];
+            w.x += w.vx;
+            w.y += w.vy;
+            w.spr.x = w.x;
+            w.spr.y = w.y;
+            if (w.x < -220) {
+              windCont.removeChild(w.spr);
+              w.spr.destroy();
+              windPool.splice(i, 1);
+            }
+          }
+        }
+
+        // ── Animation loop ────────────────────────────────────────────────────
+
+        let frame = 0;
+
+        app.ticker.add(() => {
+          frame++;
+
+          // Stars twinkle + drift left
+          for (const s of stars) {
+            s.g.alpha = 0.2 + Math.sin(frame * s.speed + s.phase) * 0.15;
+            s.g.x += s.vx;
+            if (s.g.x < -2) s.g.x += W + 4;
+          }
+
+          // Moon drifts at same rate
+          moon.x += moon.vx;
+          if (moon.x < -75) moon.x += W + 150;
+          moonSpr.x = moon.x;
+
+          // Tree layers
+          scrollTreeLayer(L1);
+          scrollTreeLayer(L2);
+          scrollTreeLayer(L4);
+          scrollTreeLayer(L5);
+
+          const swayAmp = 1 + windStrength * 2.8;
+          L2.cont.y = Math.sin(frame * 0.003) * 2 * swayAmp;
+          L4.cont.y = Math.sin(frame * 0.002 + 1.1) * 1.5 * swayAmp;
+
+          // Ground element back layers
+          scrollGroundLayer(elementsLayer);
+          scrollGroundLayer(elemTopLayer);
+
+          // Fog
+          scrollFog(fog1);
+          scrollFog(fog2);
+          scrollFog(fog3);
+
+          // Subtle warm flicker on top of the CMF-lit cabin
+          const ff =
+            Math.sin(frame * 0.09) * 0.04 +
+            Math.sin(frame * 0.17) * 0.03 +
+            Math.sin(frame * 0.31) * 0.02;
+          cabFire.alpha = 0.08 + ff;
+
+          tickFireflies();
+          tickSmoke();
+          tickMeteors();
+          tickWind();
+          tickBats();
+
+          // Foreground bushes
+          scrollBushLayer(bushLayer);
+        });
+      })();
+    </script>
+  </body>
+</html>

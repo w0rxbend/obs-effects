@@ -44,7 +44,8 @@
       "Bash(rg -rl \"AnalyserNode\\\\|analyser\\\\|AudioContext\\\\|getByteFrequency\" /home/worxbend/Workspace/obs-effects/src/)",
       "Bash(rg -l \"getByteFrequencyData\\\\|AnalyserNode\\\\|AudioContext\\\\|getFrequency\\\\|audioData\\\\|fftData\" /home/worxbend/Workspace/obs-effects/src --include=\"*.ts\")",
       "Bash(rg -rl \"AudioContext\\\\|analyser\\\\|frequencyData\\\\|getByte\" /home/worxbend/Workspace/obs-effects/src/)",
-      "Bash(rg -rl \"AudioContext\\\\|analyser\\\\|frequencyData\" /home/worxbend/Workspace/obs-effects/src/)"
+      "Bash(rg -rl \"AudioContext\\\\|analyser\\\\|frequencyData\" /home/worxbend/Workspace/obs-effects/src/)",
+      "Bash(rg \"poly\\\\|lineTo\\\\|moveTo\\\\|beginPath\\\\|\\\\.fill\\\\\\(\" /home/worxbend/Workspace/obs-effects/src/app/screens/ --include=\"*.ts\" -l)"
     ]
   }
 }

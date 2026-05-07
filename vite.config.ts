@@ -118,6 +118,7 @@ export default defineConfig({
         worxbendText: resolve(__dirname, "worxbend-text.html"),
         worxbendFluid: resolve(__dirname, "worxbend-fluid.html"),
         worxbendMolecular: resolve(__dirname, "worxbend-molecular.html"),
+        startingSoonJelly: resolve(__dirname, "starting-soon-jelly.html"),
         startingSoonFluid: resolve(__dirname, "starting-soon-fluid.html"),
         startingSoonParticleMesh: resolve(
           __dirname,
@@ -178,6 +179,8 @@ export default defineConfig({
           __dirname,
           "minimalist-gradient-breathing.html",
         ),
+        breakWaterText: resolve(__dirname, "break-water-text.html"),
+        forestAmbientBg: resolve(__dirname, "forest-ambient-bg.html"),
       },
     },
   },
