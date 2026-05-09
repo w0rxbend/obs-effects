@@ -9,7 +9,8 @@ setEngine(engine);
   await document.fonts.ready;
 
   await engine.init({
-    background: 0x050508,
+    background: "transparent",
+    backgroundAlpha: 0,
     resizeOptions: { minWidth: 400, minHeight: 300, letterbox: false },
   });
 

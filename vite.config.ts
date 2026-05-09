@@ -188,6 +188,7 @@ export default defineConfig({
         fpvBlueprintBg: resolve(__dirname, "fpv-blueprint-bg.html"),
         blueprintGlobe: resolve(__dirname, "blueprint-globe.html"),
         linuxBlueprint: resolve(__dirname, "linux-blueprint.html"),
+        voidImplode: resolve(__dirname, "void-implode.html"),
       },
     },
   },
