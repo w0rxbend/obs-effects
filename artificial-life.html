@@ -1,0 +1,453 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Artificial Life — worxbend</title>
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #000;
+      }
+      canvas {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="c"></canvas>
+    <script>
+      /* jshint esversion: 11 */
+      (function () {
+        "use strict";
+
+        // ── Config ───────────────────────────────────────────────────────────────
+        const SIM_W = 640; // simulation grid width  (px)
+        const SIM_H = 360; // simulation grid height (px)
+        const SUBSTEPS = 1; // simulation steps per rendered frame
+
+        // ── Canvas + WebGL2 ──────────────────────────────────────────────────────
+        const canvas = document.getElementById("c");
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const gl = canvas.getContext("webgl2", {
+          alpha: false,
+          antialias: false,
+          preserveDrawingBuffer: false,
+          powerPreference: "high-performance",
+        });
+
+        if (!gl) {
+          document.body.innerHTML =
+            '<p style="color:#0ff;font-family:monospace;padding:2em">WebGL2 required — use Chrome or Firefox.</p>';
+          return;
+        }
+
+        // Float framebuffer support → R16F for continuous fields (better precision)
+        const extFloat = gl.getExtension("EXT_color_buffer_float");
+        const FLOAT_INT = extFloat ? gl.R16F : gl.R8;
+        const FLOAT_TYPE = extFloat ? gl.HALF_FLOAT : gl.UNSIGNED_BYTE;
+
+        // ── Shader helpers ───────────────────────────────────────────────────────
+        function compile(type, src) {
+          const s = gl.createShader(type);
+          gl.shaderSource(s, src);
+          gl.compileShader(s);
+          if (!gl.getShaderParameter(s, gl.COMPILE_STATUS))
+            console.error("Shader:", gl.getShaderInfoLog(s), src);
+          return s;
+        }
+
+        function prog(vsrc, fsrc) {
+          const p = gl.createProgram();
+          gl.attachShader(p, compile(gl.VERTEX_SHADER, vsrc));
+          gl.attachShader(p, compile(gl.FRAGMENT_SHADER, fsrc));
+          gl.linkProgram(p);
+          if (!gl.getProgramParameter(p, gl.LINK_STATUS))
+            console.error("Link:", gl.getProgramInfoLog(p));
+          return p;
+        }
+
+        // ── Shared vertex shader: fullscreen quad, UV in v_uv ───────────────────
+        const VS = /* glsl */ `#version 300 es
+layout(location=0) in vec2 a_pos;
+out vec2 v_uv;
+void main() {
+  v_uv = a_pos * 0.5 + 0.5;
+  gl_Position = vec4(a_pos, 0.0, 1.0);
+}`;
+
+        // ── Seed GoL with spatial hash noise ────────────────────────────────────
+        const FS_SEED = /* glsl */ `#version 300 es
+precision mediump float;
+in vec2 v_uv;
+out vec4 o;
+uniform float u_seed;
+float hash(vec2 p) {
+  p = fract(p * vec2(127.34, 311.71) + u_seed);
+  p += dot(p, p + 17.43);
+  return fract(p.x * p.y);
+}
+void main() {
+  float a = hash(v_uv * 47.0);
+  float b = hash(v_uv * 173.0 + 0.61);
+  o = vec4((a < 0.38 && b > 0.12) ? 1.0 : 0.0, 0.0, 0.0, 1.0);
+}`;
+
+        // ── Game of Life update ──────────────────────────────────────────────────
+        // Modified rules:
+        //   - Standard survival / birth (Conway)
+        //   - Neural birth: high excitation can birth with relaxed neighbour count
+        //   - Pheromone sustain: trail-rich cells survive at population edges
+        const FS_GOL = /* glsl */ `#version 300 es
+precision mediump float;
+in vec2 v_uv;
+out vec4 o;
+uniform sampler2D u_gol;
+uniform sampler2D u_neu;
+uniform sampler2D u_phr;
+uniform vec2 u_ts;
+void main() {
+  float self = texture(u_gol, v_uv).r;
+  float neu  = texture(u_neu, v_uv).r;
+  float phr  = texture(u_phr, v_uv).r;
+
+  // Moore neighbourhood (torus via fract)
+  float n = 0.0;
+  for (int dx = -1; dx <= 1; dx++)
+    for (int dy = -1; dy <= 1; dy++) {
+      if (dx == 0 && dy == 0) continue;
+      n += texture(u_gol,
+        fract(v_uv + vec2(float(dx), float(dy)) * u_ts)).r;
+    }
+
+  bool alive = self > 0.5;
+  bool next  = (alive  &&  n > 1.5 && n < 3.5)              // Conway survive
+             || (!alive && n > 2.5 && n < 3.5)              // Conway birth
+             || (!alive && neu > 0.70 && n > 1.5 && n < 4.5)// neural birth
+             || (alive  && phr > 0.44 && n > 1.5 && n < 4.5);// phero sustain
+  o = vec4(next ? 1.0 : 0.0, 0.0, 0.0, 1.0);
+}`;
+
+        // ── Neural excitation field ──────────────────────────────────────────────
+        // Reaction-diffusion: live cells excite, field diffuses + decays.
+        // Creates brain-like oscillatory wave fronts.
+        const FS_NEU = /* glsl */ `#version 300 es
+precision mediump float;
+in vec2 v_uv;
+out vec4 o;
+uniform sampler2D u_neu;
+uniform sampler2D u_gol;
+uniform vec2 u_ts;
+void main() {
+  float self = texture(u_neu, v_uv).r;
+  float gol  = texture(u_gol, v_uv).r;
+
+  // Isotropic weighted diffusion (diagonal = 1/sqrt(2))
+  float s = 0.0, w = 0.0;
+  for (int dx = -1; dx <= 1; dx++)
+    for (int dy = -1; dy <= 1; dy++) {
+      if (dx == 0 && dy == 0) continue;
+      float k = (dx == 0 || dy == 0) ? 1.0 : 0.7071;
+      s += texture(u_neu,
+        fract(v_uv + vec2(float(dx), float(dy)) * u_ts)).r * k;
+      w += k;
+    }
+  float diff = s / w;
+
+  // Decay × self + spread × diffused + excitation from live cells
+  float v = self * 0.83 + diff * 0.23 + gol * 0.14;
+  o = vec4(clamp(v, 0.0, 1.0), 0.0, 0.0, 1.0);
+}`;
+
+        // ── Pheromone diffusion field ────────────────────────────────────────────
+        // Anisotropic diffusion (cardinal > diagonal) → vein-like branching.
+        // Live cells deposit; trails evaporate over time.
+        const FS_PHR = /* glsl */ `#version 300 es
+precision mediump float;
+in vec2 v_uv;
+out vec4 o;
+uniform sampler2D u_phr;
+uniform sampler2D u_gol;
+uniform vec2 u_ts;
+void main() {
+  float gol = texture(u_gol, v_uv).r;
+  vec2 ts = u_ts;
+
+  // Cardinal neighbours (weight 1.0)
+  float C = texture(u_phr, fract(v_uv + vec2( ts.x,  0.0))).r
+          + texture(u_phr, fract(v_uv + vec2(-ts.x,  0.0))).r
+          + texture(u_phr, fract(v_uv + vec2( 0.0,  ts.y))).r
+          + texture(u_phr, fract(v_uv + vec2( 0.0, -ts.y))).r;
+
+  // Diagonal neighbours (weight 0.5 — suppressed for vein sharpness)
+  float D = texture(u_phr, fract(v_uv + vec2( ts.x,  ts.y))).r
+          + texture(u_phr, fract(v_uv + vec2(-ts.x,  ts.y))).r
+          + texture(u_phr, fract(v_uv + vec2( ts.x, -ts.y))).r
+          + texture(u_phr, fract(v_uv + vec2(-ts.x, -ts.y))).r;
+
+  float diff = (C * 0.65 + D * 0.175) / (4.0 * 0.65 + 4.0 * 0.175);
+  // re-normalise so total weight sums to 1
+  // simplified: diff = C * 0.136 + D * 0.037
+  diff = C * 0.136 + D * 0.037;
+
+  float v = diff * 0.88 + gol * 0.054;
+  o = vec4(clamp(v, 0.0, 1.0), 0.0, 0.0, 1.0);
+}`;
+
+        // ── Display composite ────────────────────────────────────────────────────
+        // Deep black + purple slime veins + cyan neural pulses + bioluminescent
+        // cell cores. Reinhard tonemap + mild gamma for OBS-friendly brightness.
+        const FS_DRAW = /* glsl */ `#version 300 es
+precision mediump float;
+in vec2 v_uv;
+out vec4 o;
+uniform sampler2D u_gol;
+uniform sampler2D u_neu;
+uniform sampler2D u_phr;
+void main() {
+  float gol = texture(u_gol, v_uv).r;
+  float neu = texture(u_neu, v_uv).r;
+  float phr = texture(u_phr, v_uv).r;
+
+  vec3 col = vec3(0.0);
+
+  // Purple slime veins
+  col += vec3(0.58, 0.04, 1.00) * pow(phr, 0.55) * 1.9;
+
+  // Cyan neural oscillations
+  col += vec3(0.00, 0.82, 1.00) * pow(neu, 0.65) * 1.6;
+
+  // Bright bioluminescent cell cores
+  col += vec3(0.08, 1.00, 0.78) * gol * 2.8;
+
+  // Ambient scatter glow (halo around dense regions)
+  float glow = gol * 0.30 + neu * 0.13 + phr * 0.05;
+  col += vec3(0.02, 0.28, 0.48) * glow;
+
+  // Reinhard tonemap + mild gamma
+  col  = col / (col + vec3(0.50));
+  col  = pow(col, vec3(0.76));
+
+  o = vec4(col, 1.0);
+}`;
+
+        // ── Compile programs ─────────────────────────────────────────────────────
+        const pSeed = prog(VS, FS_SEED);
+        const pGoL = prog(VS, FS_GOL);
+        const pNeu = prog(VS, FS_NEU);
+        const pPhr = prog(VS, FS_PHR);
+        const pDraw = prog(VS, FS_DRAW);
+
+        // ── Fullscreen quad VAO (attribute 0 = position) ─────────────────────────
+        const vao = gl.createVertexArray();
+        gl.bindVertexArray(vao);
+        const vbo = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
+        gl.bufferData(
+          gl.ARRAY_BUFFER,
+          new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]),
+          gl.STATIC_DRAW,
+        );
+        gl.enableVertexAttribArray(0);
+        gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+        gl.bindVertexArray(null);
+
+        // ── Texture + framebuffer helpers ────────────────────────────────────────
+        function mkTex(intFmt, fmt, type) {
+          const t = gl.createTexture();
+          gl.bindTexture(gl.TEXTURE_2D, t);
+          gl.texImage2D(
+            gl.TEXTURE_2D,
+            0,
+            intFmt,
+            SIM_W,
+            SIM_H,
+            0,
+            fmt,
+            type,
+            null,
+          );
+          // LINEAR is safe for compute: fragment UVs land on texel centres when
+          // rendering same-size FBO. Also gives smooth upscaling at display time.
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+          return t;
+        }
+
+        function mkFbo(t) {
+          const f = gl.createFramebuffer();
+          gl.bindFramebuffer(gl.FRAMEBUFFER, f);
+          gl.framebufferTexture2D(
+            gl.FRAMEBUFFER,
+            gl.COLOR_ATTACHMENT0,
+            gl.TEXTURE_2D,
+            t,
+            0,
+          );
+          if (
+            gl.checkFramebufferStatus(gl.FRAMEBUFFER) !==
+            gl.FRAMEBUFFER_COMPLETE
+          )
+            console.error("FBO incomplete");
+          gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+          return f;
+        }
+
+        // ── Ping-pong buffers ────────────────────────────────────────────────────
+        // GoL:    8-bit binary state (R8 is colour-renderable in core WebGL2)
+        // Neural: float continuous field (R16F when EXT_color_buffer_float)
+        // Phero:  float continuous field
+        const golTex = [
+          mkTex(gl.R8, gl.RED, gl.UNSIGNED_BYTE),
+          mkTex(gl.R8, gl.RED, gl.UNSIGNED_BYTE),
+        ];
+        const golFbo = [mkFbo(golTex[0]), mkFbo(golTex[1])];
+
+        const neuTex = [
+          mkTex(FLOAT_INT, gl.RED, FLOAT_TYPE),
+          mkTex(FLOAT_INT, gl.RED, FLOAT_TYPE),
+        ];
+        const neuFbo = [mkFbo(neuTex[0]), mkFbo(neuTex[1])];
+
+        const phrTex = [
+          mkTex(FLOAT_INT, gl.RED, FLOAT_TYPE),
+          mkTex(FLOAT_INT, gl.RED, FLOAT_TYPE),
+        ];
+        const phrFbo = [mkFbo(phrTex[0]), mkFbo(phrTex[1])];
+
+        // ── Uniform location cache ───────────────────────────────────────────────
+        const U = {
+          seed: { seed: gl.getUniformLocation(pSeed, "u_seed") },
+          gol: {
+            gol: gl.getUniformLocation(pGoL, "u_gol"),
+            neu: gl.getUniformLocation(pGoL, "u_neu"),
+            phr: gl.getUniformLocation(pGoL, "u_phr"),
+            ts: gl.getUniformLocation(pGoL, "u_ts"),
+          },
+          neu: {
+            neu: gl.getUniformLocation(pNeu, "u_neu"),
+            gol: gl.getUniformLocation(pNeu, "u_gol"),
+            ts: gl.getUniformLocation(pNeu, "u_ts"),
+          },
+          phr: {
+            phr: gl.getUniformLocation(pPhr, "u_phr"),
+            gol: gl.getUniformLocation(pPhr, "u_gol"),
+            ts: gl.getUniformLocation(pPhr, "u_ts"),
+          },
+          draw: {
+            gol: gl.getUniformLocation(pDraw, "u_gol"),
+            neu: gl.getUniformLocation(pDraw, "u_neu"),
+            phr: gl.getUniformLocation(pDraw, "u_phr"),
+          },
+        };
+
+        const tsX = 1 / SIM_W;
+        const tsY = 1 / SIM_H;
+
+        // ── Seed initial GoL state with shader hash ──────────────────────────────
+        gl.bindFramebuffer(gl.FRAMEBUFFER, golFbo[0]);
+        gl.viewport(0, 0, SIM_W, SIM_H);
+        gl.useProgram(pSeed);
+        gl.uniform1f(U.seed.seed, Math.random() * 99 + 1);
+        gl.bindVertexArray(vao);
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+        // ── Resize ───────────────────────────────────────────────────────────────
+        window.addEventListener("resize", () => {
+          canvas.width = window.innerWidth;
+          canvas.height = window.innerHeight;
+        });
+
+        // ── Simulation step (ping-pong) ──────────────────────────────────────────
+        let cur = 0;
+
+        function step() {
+          const nxt = 1 - cur;
+          gl.bindVertexArray(vao);
+          gl.viewport(0, 0, SIM_W, SIM_H);
+
+          // 1. GoL update: reads cur GoL, neural, phero → nxt GoL
+          gl.bindFramebuffer(gl.FRAMEBUFFER, golFbo[nxt]);
+          gl.useProgram(pGoL);
+          gl.activeTexture(gl.TEXTURE0);
+          gl.bindTexture(gl.TEXTURE_2D, golTex[cur]);
+          gl.activeTexture(gl.TEXTURE1);
+          gl.bindTexture(gl.TEXTURE_2D, neuTex[cur]);
+          gl.activeTexture(gl.TEXTURE2);
+          gl.bindTexture(gl.TEXTURE_2D, phrTex[cur]);
+          gl.uniform1i(U.gol.gol, 0);
+          gl.uniform1i(U.gol.neu, 1);
+          gl.uniform1i(U.gol.phr, 2);
+          gl.uniform2f(U.gol.ts, tsX, tsY);
+          gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+          // 2. Neural update: reads cur neural + nxt GoL (newly updated) → nxt neural
+          gl.bindFramebuffer(gl.FRAMEBUFFER, neuFbo[nxt]);
+          gl.useProgram(pNeu);
+          gl.activeTexture(gl.TEXTURE0);
+          gl.bindTexture(gl.TEXTURE_2D, neuTex[cur]);
+          gl.activeTexture(gl.TEXTURE1);
+          gl.bindTexture(gl.TEXTURE_2D, golTex[nxt]);
+          gl.uniform1i(U.neu.neu, 0);
+          gl.uniform1i(U.neu.gol, 1);
+          gl.uniform2f(U.neu.ts, tsX, tsY);
+          gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+          // 3. Phero update: reads cur phero + nxt GoL → nxt phero
+          gl.bindFramebuffer(gl.FRAMEBUFFER, phrFbo[nxt]);
+          gl.useProgram(pPhr);
+          gl.activeTexture(gl.TEXTURE0);
+          gl.bindTexture(gl.TEXTURE_2D, phrTex[cur]);
+          gl.activeTexture(gl.TEXTURE1);
+          gl.bindTexture(gl.TEXTURE_2D, golTex[nxt]);
+          gl.uniform1i(U.phr.phr, 0);
+          gl.uniform1i(U.phr.gol, 1);
+          gl.uniform2f(U.phr.ts, tsX, tsY);
+          gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+          cur = nxt;
+        }
+
+        // ── Frame loop ───────────────────────────────────────────────────────────
+        function frame() {
+          for (let s = 0; s < SUBSTEPS; s++) step();
+
+          // Display: composite all three fields at full screen resolution.
+          // Sampling a 640×360 texture from a larger viewport → automatic upscale
+          // with LINEAR filtering for smooth bioluminescent edges.
+          gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+          gl.viewport(0, 0, canvas.width, canvas.height);
+          gl.useProgram(pDraw);
+          gl.activeTexture(gl.TEXTURE0);
+          gl.bindTexture(gl.TEXTURE_2D, golTex[cur]);
+          gl.activeTexture(gl.TEXTURE1);
+          gl.bindTexture(gl.TEXTURE_2D, neuTex[cur]);
+          gl.activeTexture(gl.TEXTURE2);
+          gl.bindTexture(gl.TEXTURE_2D, phrTex[cur]);
+          gl.uniform1i(U.draw.gol, 0);
+          gl.uniform1i(U.draw.neu, 1);
+          gl.uniform1i(U.draw.phr, 2);
+          gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+          requestAnimationFrame(frame);
+        }
+
+        requestAnimationFrame(frame);
+      })();
+    </script>
+  </body>
+</html>

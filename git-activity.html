@@ -1,0 +1,513 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Git Activity</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #020810;
+      }
+      canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="c"></canvas>
+    <script>
+      "use strict";
+      (function () {
+        const canvas = document.getElementById("c");
+        const ctx = canvas.getContext("2d");
+
+        let W = (canvas.width = window.innerWidth);
+        let H = (canvas.height = window.innerHeight);
+        window.addEventListener("resize", () => {
+          W = canvas.width = window.innerWidth;
+          H = canvas.height = window.innerHeight;
+        });
+
+        // ── Config ────────────────────────────────────────────────────────────────────
+        const SCROLL = 44; // px / s — horizontal scroll speed
+        const LANE_GAP = 62; // px between lane centres
+        const N_LANES = 5; // total lanes (0..4, main = centre = 2)
+        const MAIN_LANE = 2;
+        const COMMIT_R = 5;
+        const MERGE_R = 7;
+        const TICK_MS = 1900; // ms between simulation steps
+        const MAX_FEAT = 3; // max concurrent feature branches
+
+        const C_MAIN = "#00f0ff";
+        const C_MERGE = "#ffffff";
+        const C_FEAT = ["#44ffaa", "#ff66cc", "#aa88ff", "#ffbb44"];
+        const C_BG = "#020810";
+
+        // ── State ─────────────────────────────────────────────────────────────────────
+        let uid = 0;
+        let commits = [];
+        let branches = {};
+        let parts = []; // particles
+        let pulses = []; // expanding ring animations
+
+        let freeLanes = [0, 1, 3, 4];
+        let freeColors = [0, 1, 2, 3];
+
+        let simT = 0;
+        let t0 = null;
+        let prevT = null;
+        let lastTickMs = 0;
+
+        let statCommits = 0,
+          statMerges = 0;
+
+        // ── Geometry helpers ──────────────────────────────────────────────────────────
+        const laneY = (lane) => H / 2 + (lane - MAIN_LANE) * LANE_GAP;
+        const cX = (c) => W - 80 - (simT - c.spawnT) * SCROLL;
+        const cY = (c) => laneY(c.lane);
+        const rnd = () => Math.random();
+        const rhash = () => rnd().toString(36).slice(2, 9);
+
+        function findC(id) {
+          for (let i = commits.length - 1; i >= 0; i--)
+            if (commits[i].id === id) return commits[i];
+          return null;
+        }
+
+        // ── Commit factory ────────────────────────────────────────────────────────────
+        function mkCommit(lane, pids, color, isMerge = false) {
+          const c = {
+            id: uid++,
+            hash: rhash(),
+            lane,
+            spawnT: simT,
+            parentIds: [...pids],
+            color,
+            isMerge,
+            alpha: 0,
+            r: isMerge ? MERGE_R : COMMIT_R,
+          };
+          commits.push(c);
+          statCommits++;
+          if (isMerge) statMerges++;
+          return c.id;
+        }
+
+        // ── Init ──────────────────────────────────────────────────────────────────────
+        function init() {
+          branches["main"] = {
+            lane: MAIN_LANE,
+            color: C_MAIN,
+            headId: null,
+            ci: -1,
+          };
+
+          // Pre-seed history so the graph isn't empty at startup
+          const n = 14;
+          const dt = TICK_MS / 1000;
+          let prev = null;
+          for (let i = n; i >= 1; i--) {
+            const id = uid++;
+            commits.push({
+              id,
+              hash: rhash(),
+              lane: MAIN_LANE,
+              spawnT: -(i * dt),
+              parentIds: prev !== null ? [prev] : [],
+              color: C_MAIN,
+              isMerge: false,
+              alpha: 1,
+              r: COMMIT_R,
+            });
+            statCommits++;
+            prev = id;
+          }
+          branches["main"].headId = prev;
+        }
+
+        // ── Simulation step ───────────────────────────────────────────────────────────
+        function simTick(nowMs) {
+          if (nowMs - lastTickMs < TICK_MS) return;
+          lastTickMs = nowMs;
+
+          const featNames = Object.keys(branches).filter((n) => n !== "main");
+          const canBranch =
+            freeLanes.length > 0 &&
+            freeColors.length > 0 &&
+            featNames.length < MAX_FEAT;
+          const canMerge = featNames.length > 0;
+          const roll = rnd();
+
+          if (roll < 0.15 && canBranch) {
+            // ── New feature branch off main head
+            const li = Math.floor(rnd() * freeLanes.length);
+            const lane = freeLanes.splice(li, 1)[0];
+            const ci = freeColors.shift();
+            const color = C_FEAT[ci];
+            const bname = "feat/" + rhash().slice(0, 4);
+            branches[bname] = { lane, color, headId: null, ci };
+            const pid = branches["main"].headId;
+            const id = mkCommit(lane, pid ? [pid] : [], color);
+            branches[bname].headId = id;
+            addPulse(id);
+          } else if (roll < 0.3 && canMerge) {
+            // ── Merge a random feature branch into main
+            const bname = featNames[Math.floor(rnd() * featNames.length)];
+            const fb = branches[bname];
+            const mHd = branches["main"].headId;
+            const pids = [mHd, fb.headId].filter(Boolean);
+            const id = mkCommit(MAIN_LANE, pids, C_MERGE, true);
+            branches["main"].headId = id;
+            freeLanes.push(fb.lane);
+            freeColors.push(fb.ci);
+            delete branches[bname];
+            addPulse(id);
+            mergeBurst(id);
+          } else {
+            // ── Regular commit on a random branch
+            const names = Object.keys(branches);
+            const bname = names[Math.floor(rnd() * names.length)];
+            const br = branches[bname];
+            const id = mkCommit(
+              br.lane,
+              br.headId ? [br.headId] : [],
+              br.color,
+            );
+            br.headId = id;
+            addPulse(id);
+          }
+        }
+
+        // ── Pulses & burst ────────────────────────────────────────────────────────────
+        function addPulse(cid) {
+          const c = findC(cid);
+          if (!c) return;
+          pulses.push({
+            cid,
+            r: 0,
+            maxR: c.isMerge ? 52 : 28,
+            alpha: 0.85,
+            color: c.color,
+          });
+        }
+
+        function mergeBurst(cid) {
+          const c = findC(cid);
+          if (!c) return;
+          const x = cX(c),
+            y = cY(c);
+          for (let i = 0; i < 28; i++) {
+            const a = rnd() * Math.PI * 2;
+            const s = 35 + rnd() * 80;
+            parts.push({
+              x,
+              y,
+              vx: Math.cos(a) * s - SCROLL,
+              vy: Math.sin(a) * s,
+              alpha: 1,
+              color: C_MERGE,
+              life: 0.5 + rnd() * 0.7,
+              maxLife: 1.2,
+              r: 1.4 + rnd() * 1.2,
+            });
+          }
+        }
+
+        // ── Particle system ───────────────────────────────────────────────────────────
+        function spawnTrail() {
+          if (commits.length < 2) return;
+          for (let tries = 0; tries < 6; tries++) {
+            const c = commits[Math.floor(rnd() * commits.length)];
+            if (!c.parentIds.length) continue;
+            const pid = c.parentIds[Math.floor(rnd() * c.parentIds.length)];
+            const p = findC(pid);
+            if (!p) continue;
+            const t = rnd();
+            const x = cX(c) + (cX(p) - cX(c)) * t;
+            const y = cY(c) + (cY(p) - cY(c)) * t;
+            const life = 0.4 + rnd() * 0.85;
+            parts.push({
+              x,
+              y,
+              vx: -SCROLL + (rnd() - 0.5) * 30,
+              vy: (rnd() - 0.5) * 22,
+              alpha: 0.45 + rnd() * 0.45,
+              color: c.color,
+              life,
+              maxLife: life,
+              r: 1 + rnd() * 0.9,
+            });
+            break;
+          }
+        }
+
+        function tickParts(dt) {
+          for (let i = parts.length - 1; i >= 0; i--) {
+            const p = parts[i];
+            p.x += p.vx * dt;
+            p.y += p.vy * dt;
+            p.life -= dt;
+            p.alpha = Math.max(0, (p.life / p.maxLife) * 0.9);
+            if (p.life <= 0) parts.splice(i, 1);
+          }
+          while (parts.length < 95) spawnTrail();
+        }
+
+        function tickPulses(dt) {
+          for (let i = pulses.length - 1; i >= 0; i--) {
+            const pu = pulses[i];
+            pu.r += pu.maxR * dt * 1.9;
+            pu.alpha -= dt * 1.5;
+            if (pu.alpha <= 0) pulses.splice(i, 1);
+          }
+        }
+
+        // ── Draw passes ───────────────────────────────────────────────────────────────
+        function drawBg() {
+          ctx.fillStyle = C_BG;
+          ctx.fillRect(0, 0, W, H);
+
+          // Faint lane guide lines
+          ctx.strokeStyle = "rgba(0,200,255,0.03)";
+          ctx.lineWidth = 1;
+          for (let i = 0; i < N_LANES; i++) {
+            const y = laneY(i);
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(W, y);
+            ctx.stroke();
+          }
+
+          // Left-edge fog
+          const fog = ctx.createLinearGradient(0, 0, W * 0.38, 0);
+          fog.addColorStop(0, "rgba(2,8,16,0.93)");
+          fog.addColorStop(1, "rgba(2,8,16,0)");
+          ctx.fillStyle = fog;
+          ctx.fillRect(0, 0, W, H);
+        }
+
+        function drawEdges() {
+          commits.forEach((c) => {
+            const cx = cX(c),
+              cy = cY(c);
+            if (cx < -160 || cx > W + 20) return;
+
+            c.parentIds.forEach((pid) => {
+              const p = findC(pid);
+              if (!p) return;
+              const px = cX(p),
+                py = cY(p);
+              if (px < -160) return;
+
+              const fog = Math.max(0, Math.min(1, cx / (W * 0.28)));
+              const a = c.alpha * fog * 0.68;
+              if (a < 0.01) return;
+
+              // Gradient along edge: child colour → parent colour
+              const grad = ctx.createLinearGradient(cx, cy, px, py);
+              grad.addColorStop(0, c.color);
+              grad.addColorStop(1, p.color);
+
+              ctx.save();
+              ctx.globalAlpha = a;
+              ctx.strokeStyle = grad;
+              ctx.lineWidth = 1.5;
+              ctx.shadowColor = c.color;
+              ctx.shadowBlur = 4;
+              ctx.beginPath();
+              if (Math.abs(cy - py) < 2) {
+                ctx.moveTo(cx, cy);
+                ctx.lineTo(px, py);
+              } else {
+                // S-curve for cross-lane edges
+                const mx = px + (cx - px) * 0.35;
+                ctx.moveTo(cx, cy);
+                ctx.bezierCurveTo(mx, cy, mx, py, px, py);
+              }
+              ctx.stroke();
+              ctx.restore();
+            });
+          });
+        }
+
+        function drawPulses() {
+          pulses.forEach((pu) => {
+            const c = findC(pu.cid);
+            if (!c) return;
+            const a = Math.max(0, pu.alpha);
+            if (a < 0.01) return;
+            ctx.save();
+            ctx.globalAlpha = a;
+            ctx.strokeStyle = pu.color;
+            ctx.lineWidth = 1.2;
+            ctx.shadowColor = pu.color;
+            ctx.shadowBlur = 10;
+            ctx.beginPath();
+            ctx.arc(cX(c), cY(c), pu.r, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.restore();
+          });
+        }
+
+        function drawParts() {
+          parts.forEach((p) => {
+            if (p.alpha < 0.02) return;
+            ctx.save();
+            ctx.globalAlpha = p.alpha;
+            ctx.fillStyle = p.color;
+            ctx.shadowColor = p.color;
+            ctx.shadowBlur = 6;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+          });
+        }
+
+        function drawCommits() {
+          commits.forEach((c) => {
+            c.alpha = Math.min(1, c.alpha + 0.06);
+            const x = cX(c),
+              y = cY(c);
+            if (x < -20 || x > W + 20) return;
+
+            const fog = Math.max(0, Math.min(1, x / (W * 0.22)));
+            const a = c.alpha * Math.max(0.12, fog);
+            if (a < 0.04) return;
+
+            const pulse = 0.87 + 0.13 * Math.sin(simT * 3.2 + c.id * 1.9);
+            const r = c.r * pulse;
+
+            // Soft outer halo
+            ctx.save();
+            ctx.globalAlpha = a * 0.38;
+            ctx.fillStyle = c.color;
+            ctx.shadowColor = c.color;
+            ctx.shadowBlur = 24;
+            ctx.beginPath();
+            ctx.arc(x, y, r * 2.2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+
+            // Main glowing dot
+            ctx.save();
+            ctx.globalAlpha = a;
+            ctx.fillStyle = c.color;
+            ctx.shadowColor = c.color;
+            ctx.shadowBlur = 14;
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+
+            // Bright white core
+            ctx.save();
+            ctx.globalAlpha = a * 0.88;
+            ctx.fillStyle = "#fff";
+            ctx.beginPath();
+            ctx.arc(x, y, r * 0.38, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+          });
+        }
+
+        function drawLabels() {
+          ctx.textAlign = "left";
+          Object.entries(branches).forEach(([name, br]) => {
+            if (br.headId === null) return;
+            const c = findC(br.headId);
+            if (!c) return;
+            const x = cX(c),
+              y = cY(c);
+            if (x < 90 || x > W - 10) return;
+
+            const fog = Math.max(0, Math.min(1, x / (W * 0.35)));
+            if (fog < 0.08) return;
+
+            const label = name === "main" ? "HEAD -> main" : name;
+            ctx.font = 'bold 10px "Courier New", monospace';
+            const tw = ctx.measureText(label).width;
+            const tx = x + 12,
+              ty = y - 24;
+
+            ctx.save();
+            // Tag background
+            ctx.globalAlpha = fog * 0.55;
+            ctx.fillStyle = br.color + "18";
+            ctx.strokeStyle = br.color + "55";
+            ctx.lineWidth = 0.8;
+            ctx.beginPath();
+            ctx.rect(tx, ty, tw + 16, 15);
+            ctx.fill();
+            ctx.stroke();
+
+            // Label
+            ctx.globalAlpha = fog * 0.95;
+            ctx.fillStyle = br.color;
+            ctx.fillText(label, tx + 8, ty + 11);
+
+            // Hash below the node
+            ctx.globalAlpha = fog * 0.5;
+            ctx.fillStyle = "#7ac8d8";
+            ctx.font = '9px "Courier New", monospace';
+            ctx.fillText(c.hash, x + 12, y + 20);
+            ctx.restore();
+          });
+        }
+
+        function drawHUD() {
+          const feat = Object.keys(branches).filter((n) => n !== "main").length;
+          const line = `COMMITS ${statCommits}   BRANCHES ${1 + feat}   MERGES ${statMerges}`;
+          ctx.save();
+          ctx.globalAlpha = 0.38;
+          ctx.fillStyle = C_MAIN;
+          ctx.font = '10px "Courier New", monospace';
+          ctx.textAlign = "left";
+          ctx.fillText(line, 20, H - 20);
+          ctx.restore();
+        }
+
+        // ── Main loop ─────────────────────────────────────────────────────────────────
+        function tick(nowMs) {
+          requestAnimationFrame(tick);
+
+          if (t0 === null) {
+            t0 = nowMs;
+            lastTickMs = nowMs;
+          }
+          const dt = Math.min((nowMs - (prevT ?? nowMs)) / 1000, 0.05);
+          prevT = nowMs;
+          simT = (nowMs - t0) / 1000;
+
+          // Purge commits that scrolled far off left (keep a buffer for connections)
+          commits = commits.filter((c) => cX(c) > -300);
+
+          simTick(nowMs);
+          tickParts(dt);
+          tickPulses(dt);
+
+          drawBg();
+          drawEdges();
+          drawPulses();
+          drawParts();
+          drawCommits();
+          drawLabels();
+          drawHUD();
+        }
+
+        init();
+        requestAnimationFrame(tick);
+      })();
+    </script>
+  </body>
+</html>

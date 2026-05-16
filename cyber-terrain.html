@@ -1,0 +1,473 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Cyber Terrain — OBS Browser Source</title>
+    <style>
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+      html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
+      canvas { display: block; position: fixed; inset: 0; }
+    </style>
+  </head>
+  <body>
+    <canvas id="c"></canvas>
+    <script>
+      'use strict';
+
+      const canvas = document.getElementById('c');
+      const ctx    = canvas.getContext('2d');
+      let W, H;
+
+      function resize() {
+        W = canvas.width  = window.innerWidth;
+        H = canvas.height = window.innerHeight;
+      }
+      window.addEventListener('resize', resize);
+      resize();
+
+      // ── Math ─────────────────────────────────────────────────────────────────
+      const { sin, cos, abs, floor, ceil, min, max, PI, exp, sqrt } = Math;
+      const lerp  = (a, b, t) => a + (b - a) * t;
+      const clamp = (v, lo, hi) => min(max(v, lo), hi);
+      const ss    = (a, b, x) => { x = clamp((x - a) / (b - a), 0, 1); return x * x * (3 - 2 * x); };
+
+      // ── Noise ─────────────────────────────────────────────────────────────────
+      function h2(x, y) {
+        let v = sin(x * 127.1 + y * 311.7) * 43758.5453;
+        return v - floor(v);
+      }
+      function sn(x, y) {
+        const ix = floor(x), iy = floor(y);
+        const fx = x - ix, fy = y - iy;
+        const ux = fx * fx * (3 - 2 * fx), uy = fy * fy * (3 - 2 * fy);
+        return lerp(lerp(h2(ix, iy), h2(ix+1, iy), ux),
+                    lerp(h2(ix, iy+1), h2(ix+1, iy+1), ux), uy);
+      }
+      function fbm(x, y, oct = 4) {
+        let v = 0, a = 0.5, f = 1;
+        for (let i = 0; i < oct; i++) { v += a * sn(x * f, y * f); a *= 0.5; f *= 2; }
+        return v;
+      }
+
+      // ── Perspective projection ─────────────────────────────────────────────────
+      // World: x in [-XHALF, XHALF], z in [Z_NEAR, Z_FAR], y = height (ground = 0)
+      // Camera at (0, EYE_H, 0) looking toward +z
+      const HORIZ_Y = 0.355;  // horizon as fraction of H from top
+      const EYE_H   = 0.50;   // camera height above ground (world units)
+      const FOC     = 1.25;   // focal length
+      const FX      = 0.44;   // x-scale factor
+      const FY      = 0.50;   // y-scale factor
+
+      function project(wx, wy, wz) {
+        if (wz <= 0) return null;
+        const sx = W * 0.5 + (wx / wz) * FOC * W * FX;
+        const sy = H * HORIZ_Y + ((EYE_H - wy) / wz) * FOC * H * FY;
+        return [sx, sy];
+      }
+
+      // ── Terrain grid ──────────────────────────────────────────────────────────
+      const GX     = 30;   // columns
+      const GZ     = 25;   // depth slices
+      const Z_NEAR = 0.58;
+      const Z_FAR  = 4.50;
+      const XHALF  = 1.80;
+
+      function wz(zi) { return Z_NEAR + (Z_FAR - Z_NEAR) * (zi / GZ); }
+      function wx(xi) { return -XHALF + 2 * XHALF * (xi / GX); }
+
+      // Mountain definitions: world-x center, peak height, x-spread, z-center
+      const MTNS = [
+        { px: -1.10, ht: 0.78, sx: 0.65, zc: 2.2 },
+        { px:  0.25, ht: 1.05, sx: 0.80, zc: 2.6 },
+        { px:  1.30, ht: 0.68, sx: 0.60, zc: 2.0 },
+      ];
+
+      function terrainH(x, z, t) {
+        const nx = x * 0.75, nz = z * 0.40 - t * 0.022;
+        let h = fbm(nx, nz, 4) * 0.38;
+        for (const m of MTNS) {
+          const dx = abs(x - m.px) / m.sx;
+          const dz = abs(z - m.zc) / 0.90;
+          h += m.ht * exp(-dx * dx * 1.1 - dz * dz * 0.55);
+        }
+        const edgeFade  = ss(0, 0.16, 1 - abs(x) / XHALF);
+        const depthFade = ss(0, 0.12, z / Z_FAR) * ss(1.0, 0.78, z / Z_FAR);
+        return clamp(h * edgeFade * depthFade * 0.68, 0, 1.6);
+      }
+
+      // Pre-computed grid per frame
+      let grid = [];  // grid[zi][xi] = { p: [sx,sy]|null, h }
+
+      function buildGrid(t) {
+        grid = [];
+        for (let zi = 0; zi <= GZ; zi++) {
+          const row = [];
+          const z3  = wz(zi);
+          for (let xi = 0; xi <= GX; xi++) {
+            const x3 = wx(xi);
+            const h  = terrainH(x3, z3, t);
+            row.push({ p: project(x3, h, z3), h });
+          }
+          grid.push(row);
+        }
+      }
+
+      function drawTerrain() {
+        // Back-to-front (painter's algorithm)
+        for (let zi = GZ; zi >= 1; zi--) {
+          const zf = zi / GZ;  // 1 = far, 0 = near
+
+          // Horizontal row line
+          {
+            ctx.beginPath();
+            let mv = false;
+            for (let xi = 0; xi <= GX; xi++) {
+              const { p } = grid[zi][xi];
+              if (!p) continue;
+              if (!mv) { ctx.moveTo(p[0], p[1]); mv = true; }
+              else       ctx.lineTo(p[0], p[1]);
+            }
+            const a = 0.055 + zf * 0.035;
+            ctx.strokeStyle = `rgba(0,185,225,${a})`;
+            ctx.lineWidth = 0.5;
+            ctx.stroke();
+          }
+
+          // Column segments, face fills, peak highlights
+          for (let xi = 0; xi < GX; xi++) {
+            const c00 = grid[zi-1][xi],   c10 = grid[zi-1][xi+1];
+            const c01 = grid[zi][xi],     c11 = grid[zi][xi+1];
+            const { p: p00, h: h00 } = c00, { p: p10, h: h10 } = c10;
+            const { p: p01, h: h01 } = c11, { p: p11, h: h11 } = c11;
+            if (!p00 || !p10 || !p01 || !grid[zi][xi+1].p) continue;
+            const p01r = grid[zi][xi].p;   // actual p01
+            const p11r = grid[zi][xi+1].p; // actual p11
+            if (!p01r || !p11r) continue;
+
+            const h = (h00 + h10 + h01 + h11) * 0.25;
+
+            // Quad fill on elevated terrain
+            if (h > 0.055) {
+              const fA = min(0.06, h * 0.11);
+              const g  = floor(175 + h * 55), b = floor(215 + h * 30);
+              ctx.beginPath();
+              ctx.moveTo(p00[0], p00[1]);
+              ctx.lineTo(p10[0], p10[1]);
+              ctx.lineTo(p11r[0], p11r[1]);
+              ctx.lineTo(p01r[0], p01r[1]);
+              ctx.closePath();
+              ctx.fillStyle = `rgba(3,${g},${b},${fA})`;
+              ctx.fill();
+            }
+
+            // Column line
+            const vA = 0.045 + h * 0.20;
+            ctx.beginPath();
+            ctx.moveTo(p00[0], p00[1]);
+            ctx.lineTo(p01r[0], p01r[1]);
+            ctx.strokeStyle = `rgba(0,${floor(165 + h*85)},${floor(212 + h*35)},${vA})`;
+            ctx.lineWidth = 0.35 + h * 0.55;
+            ctx.stroke();
+
+            // Peak edge glow: front face of ridge visible above the row behind it
+            if (h00 > h01 + 0.038 && h00 > 0.08) {
+              const pa = floor(min(0.75, (h00 - h01) * 3.8 + h00 * 0.45));
+              ctx.save();
+              ctx.shadowColor = '#00e5ff';
+              ctx.shadowBlur  = 6;
+              ctx.beginPath();
+              ctx.moveTo(p00[0], p00[1]);
+              ctx.lineTo(p10[0], p10[1]);
+              ctx.strokeStyle = `rgba(0,228,255,${min(0.72, pa)})`;
+              ctx.lineWidth   = 0.9 + pa * 0.55;
+              ctx.stroke();
+              ctx.restore();
+            }
+          }
+
+          // Last column of the row
+          {
+            const pa = grid[zi-1][GX].p, pb = grid[zi][GX].p;
+            if (pa && pb) {
+              ctx.beginPath();
+              ctx.moveTo(pa[0], pa[1]); ctx.lineTo(pb[0], pb[1]);
+              ctx.strokeStyle = 'rgba(0,175,215,0.04)';
+              ctx.lineWidth = 0.35; ctx.stroke();
+            }
+          }
+        }
+
+        // Nearest row line (foreground edge)
+        ctx.beginPath();
+        let mv = false;
+        for (let xi = 0; xi <= GX; xi++) {
+          const { p } = grid[0][xi];
+          if (!p) continue;
+          if (!mv) { ctx.moveTo(p[0], p[1]); mv = true; }
+          else       ctx.lineTo(p[0], p[1]);
+        }
+        ctx.strokeStyle = 'rgba(0,195,235,0.14)';
+        ctx.lineWidth = 1.1; ctx.stroke();
+      }
+
+      // ── Data rivers ───────────────────────────────────────────────────────────
+      const RIVERS = [
+        { cx: -1.48, amp: 0.10, ph: 0.00, freq: 2.8 },
+        { cx: -0.08, amp: 0.07, ph: 2.09, freq: 3.4 },
+        { cx:  1.28, amp: 0.09, ph: 4.19, freq: 3.1 },
+      ];
+      const RV_STEPS = 32;
+
+      function riverPt(rv, ti, t) {
+        // ti: 0=far, 1=near
+        const z3 = lerp(Z_FAR, Z_NEAR, ti);
+        const x3 = rv.cx + sin(ti * rv.freq + rv.ph + t * 0.14) * rv.amp;
+        const h  = max(0, terrainH(x3, z3, t) - 0.018);
+        return project(x3, h, z3);
+      }
+
+      function drawRivers(t) {
+        for (const rv of RIVERS) {
+          ctx.save();
+          ctx.shadowColor = '#0096c7';
+          ctx.shadowBlur  = 5;
+          ctx.strokeStyle = 'rgba(0,165,215,0.24)';
+          ctx.lineWidth   = 1.3;
+          ctx.beginPath();
+          let mv = false;
+          for (let s = 0; s <= RV_STEPS; s++) {
+            const p = riverPt(rv, s / RV_STEPS, t);
+            if (!p) continue;
+            if (!mv) { ctx.moveTo(p[0], p[1]); mv = true; }
+            else       ctx.lineTo(p[0], p[1]);
+          }
+          ctx.stroke();
+          ctx.restore();
+        }
+      }
+
+      // ── Packet particles ──────────────────────────────────────────────────────
+      const PKT_N = 58;
+      const pkts  = [];
+      for (let i = 0; i < PKT_N; i++) {
+        pkts.push({
+          ri:     i % RIVERS.length,
+          ti:     Math.random(),
+          speed:  0.08 + Math.random() * 0.19,
+          tlen:   5 + (i % 9),
+          trail:  [],
+          sz:     1.3 + Math.random() * 1.3,
+          violet: Math.random() < 0.26,
+        });
+      }
+
+      function drawPackets(t, dt) {
+        for (const p of pkts) {
+          p.ti += p.speed * dt;
+          if (p.ti >= 1) { p.ti = 0; p.trail = []; p.ri = floor(Math.random() * RIVERS.length); }
+
+          const pos = riverPt(RIVERS[p.ri], p.ti, t);
+          if (!pos) continue;
+
+          p.trail.push([pos[0], pos[1]]);
+          if (p.trail.length > p.tlen) p.trail.shift();
+
+          const col = p.violet ? '110,75,250' : '0,215,255';
+
+          // Trail
+          for (let j = 1; j < p.trail.length; j++) {
+            const f = j / p.trail.length;
+            ctx.globalAlpha = f * f * 0.52;
+            ctx.fillStyle   = `rgb(${col})`;
+            ctx.beginPath();
+            ctx.arc(p.trail[j][0], p.trail[j][1], p.sz * f * 0.62, 0, PI * 2);
+            ctx.fill();
+          }
+          ctx.globalAlpha = 1;
+
+          // Head
+          ctx.save();
+          ctx.shadowColor = p.violet ? '#a78bfa' : '#00e5ff';
+          ctx.shadowBlur  = 11;
+          ctx.fillStyle   = p.violet ? '#cdbfff' : '#c0eeff';
+          ctx.beginPath();
+          ctx.arc(pos[0], pos[1], p.sz, 0, PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+      }
+
+      // ── Network constellation ─────────────────────────────────────────────────
+      const STAR_N = 40;
+      const COND   = 0.235;   // max connection distance (normalized)
+      const STARS  = [];
+
+      for (let i = 0; i < STAR_N; i++) {
+        STARS.push({
+          nx:  Math.random(),
+          ny:  Math.random() * (HORIZ_Y - 0.025) + 0.012,
+          r:   0.85 + Math.random() * 1.4,
+          ph:  Math.random() * PI * 2,
+          fr:  0.45 + Math.random() * 0.80,
+          on:  Math.random() > 0.22,
+        });
+      }
+
+      // Pre-compute edges
+      const EDGES = [];
+      for (let i = 0; i < STAR_N; i++) {
+        for (let j = i + 1; j < STAR_N; j++) {
+          if (!STARS[i].on || !STARS[j].on) continue;
+          const d = sqrt((STARS[i].nx - STARS[j].nx) ** 2 + (STARS[i].ny - STARS[j].ny) ** 2);
+          if (d < COND) EDGES.push({ a: i, b: j, d });
+        }
+      }
+
+      // Signal traces
+      const traces = [];
+      function spawnTrace() {
+        if (traces.length >= 8 || !EDGES.length) return;
+        const ei = floor(Math.random() * EDGES.length);
+        traces.push({ ei, ti: 0, sp: 0.45 + Math.random() * 0.90 });
+      }
+
+      function drawConstellation(t, dt) {
+        // Edges
+        for (const { a, b, d } of EDGES) {
+          const sa = STARS[a], sb = STARS[b];
+          const alpha = (1 - d / COND) * 0.11;
+          ctx.beginPath();
+          ctx.moveTo(sa.nx * W, sa.ny * H);
+          ctx.lineTo(sb.nx * W, sb.ny * H);
+          ctx.strokeStyle = `rgba(0,205,238,${alpha})`;
+          ctx.lineWidth = 0.5;
+          ctx.stroke();
+        }
+
+        // Spawn + draw signal traces
+        if (Math.random() < 0.024) spawnTrace();
+        for (let i = traces.length - 1; i >= 0; i--) {
+          const tr = traces[i];
+          tr.ti += tr.sp * dt;
+          const { a, b } = EDGES[tr.ei];
+          const sa = STARS[a], sb = STARS[b];
+          const px = lerp(sa.nx * W, sb.nx * W, tr.ti);
+          const py = lerp(sa.ny * H, sb.ny * H, tr.ti);
+          const ev = 1 - tr.ti;
+
+          ctx.save();
+          ctx.shadowColor = '#fff';
+          ctx.shadowBlur  = 16;
+          ctx.fillStyle   = `rgba(225,248,255,${ev * 0.92})`;
+          ctx.beginPath();
+          ctx.arc(px, py, 2.2, 0, PI * 2);
+          ctx.fill();
+          ctx.restore();
+
+          if (tr.ti >= 1) traces.splice(i, 1);
+        }
+
+        // Star nodes
+        for (const s of STARS) {
+          if (!s.on) continue;
+          const pulse = 0.68 + sin(t * s.fr + s.ph) * 0.32;
+          const sx = s.nx * W, sy = s.ny * H;
+
+          ctx.save();
+          ctx.globalAlpha = 0.20 * pulse;
+          ctx.shadowColor = '#00e5ff';
+          ctx.shadowBlur  = 10;
+          ctx.fillStyle   = '#00c4e0';
+          ctx.beginPath();
+          ctx.arc(sx, sy, s.r * 2.9, 0, PI * 2);
+          ctx.fill();
+          ctx.restore();
+
+          ctx.fillStyle = `rgba(195,238,255,${0.88 * pulse})`;
+          ctx.beginPath();
+          ctx.arc(sx, sy, s.r, 0, PI * 2);
+          ctx.fill();
+        }
+      }
+
+      // ── Atmosphere overlays ───────────────────────────────────────────────────
+      function drawAtmosphere() {
+        const hy = H * HORIZ_Y;
+
+        // Violet fog band around horizon
+        const fog = ctx.createLinearGradient(0, hy - H * 0.13, 0, hy + H * 0.16);
+        fog.addColorStop(0,    'rgba(75,18,175,0)');
+        fog.addColorStop(0.35, 'rgba(58,14,132,0.052)');
+        fog.addColorStop(0.55, 'rgba(88,38,195,0.058)');
+        fog.addColorStop(1,    'rgba(8,0,38,0)');
+        ctx.fillStyle = fog;
+        ctx.fillRect(0, hy - H * 0.13, W, H * 0.29);
+
+        // Distant ridge glow at horizon
+        const mg = ctx.createLinearGradient(0, hy - H * 0.09, 0, hy + H * 0.02);
+        mg.addColorStop(0, 'rgba(0,175,215,0)');
+        mg.addColorStop(1, 'rgba(0,140,178,0.028)');
+        ctx.fillStyle = mg;
+        ctx.fillRect(0, hy - H * 0.09, W, H * 0.11);
+
+        // Sky-to-horizon gradient
+        const sky = ctx.createLinearGradient(0, 0, 0, hy);
+        sky.addColorStop(0, 'rgba(1,4,18,0)');
+        sky.addColorStop(1, 'rgba(3,10,30,0)');
+        ctx.fillStyle = sky;
+        ctx.fillRect(0, 0, W, hy);
+      }
+
+      // ── Post-processing ───────────────────────────────────────────────────────
+      function drawPost() {
+        // Scanlines
+        ctx.save();
+        ctx.globalAlpha = 0.022;
+        for (let y = 0; y < H; y += 3) {
+          ctx.fillStyle = '#000';
+          ctx.fillRect(0, y, W, 1);
+        }
+        ctx.restore();
+
+        // Vignette
+        const v = ctx.createRadialGradient(W / 2, H / 2, H * 0.22, W / 2, H / 2, H * 0.84);
+        v.addColorStop(0, 'rgba(0,0,0,0)');
+        v.addColorStop(1, 'rgba(0,0,0,0.52)');
+        ctx.fillStyle = v;
+        ctx.fillRect(0, 0, W, H);
+      }
+
+      // ── Render loop ───────────────────────────────────────────────────────────
+      let t0 = null, tPrev = 0;
+
+      function frame(ts) {
+        if (!t0) t0 = ts;
+        const t  = (ts - t0) * 0.001;
+        const dt = min(t - tPrev, 0.05);
+        tPrev = t;
+
+        buildGrid(t);
+
+        // Background
+        const bg = ctx.createLinearGradient(0, 0, 0, H);
+        bg.addColorStop(0,    '#030b1c');
+        bg.addColorStop(0.36, '#040f27');
+        bg.addColorStop(1,    '#010307');
+        ctx.fillStyle = bg;
+        ctx.fillRect(0, 0, W, H);
+
+        drawConstellation(t, dt);
+        drawAtmosphere();
+        drawTerrain();
+        drawRivers(t);
+        drawPackets(t, dt);
+        drawPost();
+
+        requestAnimationFrame(frame);
+      }
+
+      requestAnimationFrame(frame);
+    </script>
+  </body>
+</html>

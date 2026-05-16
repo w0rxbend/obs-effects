@@ -1,0 +1,362 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Synthwave Sunset — worxbend</title>
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #000;
+      }
+      canvas {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <script src="https://cdn.jsdelivr.net/npm/pixi.js@7.4.2/dist/pixi.min.js"></script>
+    <script>
+      /* global PIXI */
+      (function () {
+        "use strict";
+
+        // ── App ────────────────────────────────────────────────────────────────
+        const app = new PIXI.Application({
+          width: window.innerWidth,
+          height: window.innerHeight,
+          backgroundColor: 0x000000,
+          resolution: Math.min(window.devicePixelRatio || 1, 2),
+          autoDensity: true,
+          antialias: true,
+        });
+        document.body.appendChild(app.view);
+
+        function layout() {
+          const W = app.screen.width;
+          const H = app.screen.height;
+          const CX = W * 0.5;
+          const HY = H * 0.55;
+          return { W, H, CX, HY };
+        }
+
+        // ── Shaders ────────────────────────────────────────────────────────────
+        const SKY_FRAG = `
+        varying vec2 vTextureCoord;
+        uniform sampler2D uSampler;
+        uniform float uHorizon;
+
+        void main() {
+          float y = vTextureCoord.y;
+
+          vec3 top = vec3(0.04, 0.00, 0.17);
+          vec3 mid = vec3(0.33, 0.04, 0.44);
+          vec3 hor = vec3(0.96, 0.38, 0.05);
+          vec3 gnd = vec3(0.04, 0.00, 0.10);
+
+          vec3 col;
+          if (y < uHorizon) {
+            float t = y / uHorizon;
+            col = t < 0.55
+              ? mix(top, mid, t / 0.55)
+              : mix(mid, hor, (t - 0.55) / 0.45);
+          } else {
+            col = gnd;
+          }
+
+          gl_FragColor = vec4(col, 1.0);
+        }
+      `;
+
+        const POST_FRAG = `
+        varying vec2 vTextureCoord;
+        uniform sampler2D uSampler;
+        uniform float uTime;
+
+        float hash(vec2 p) {
+          return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+        }
+
+        void main() {
+          vec2 uv = vTextureCoord;
+
+          float ca = 0.0022;
+          float r  = texture2D(uSampler, uv + vec2( ca, 0.0)).r;
+          float g  = texture2D(uSampler, uv               ).g;
+          float b  = texture2D(uSampler, uv - vec2( ca, 0.0)).b;
+          float a  = texture2D(uSampler, uv               ).a;
+          vec3 col = vec3(r, g, b);
+
+          col += hash(uv + fract(uTime * 0.07)) * 0.055 - 0.027;
+          col *= 0.989 + sin(uv.y * 680.0) * 0.011;
+
+          vec2 vig = uv - 0.5;
+          col *= clamp(1.0 - dot(vig, vig) * 1.65, 0.0, 1.0);
+
+          gl_FragColor = vec4(clamp(col, 0.0, 1.0), a);
+        }
+      `;
+
+        // ── Containers ─────────────────────────────────────────────────────────
+        const scene = new PIXI.Container();
+        const skyGfx = new PIXI.Graphics();
+        const sunGfx = new PIXI.Graphics();
+        const cloudCont = new PIXI.Container();
+        const mtnFar = new PIXI.Graphics();
+        const mtnNear = new PIXI.Graphics();
+        const groundGfx = new PIXI.Graphics();
+        const gridGfx = new PIXI.Graphics();
+        const dashGfx = new PIXI.Graphics();
+
+        scene.addChild(
+          skyGfx,
+          sunGfx,
+          cloudCont,
+          mtnFar,
+          mtnNear,
+          groundGfx,
+          gridGfx,
+          dashGfx,
+        );
+        app.stage.addChild(scene);
+
+        // ── Filters ────────────────────────────────────────────────────────────
+        const skyFilter = new PIXI.Filter(null, SKY_FRAG, { uHorizon: 0.55 });
+        const postFilter = new PIXI.Filter(null, POST_FRAG, { uTime: 0.0 });
+        postFilter.padding = 2;
+
+        skyGfx.filters = [skyFilter];
+        scene.filters = [postFilter];
+
+        // ── Mountain data (normalized x 0–1, y = fraction of HY) ──────────────
+        const FAR_PEAKS = [
+          [0.0, 0.0],
+          [0.05, 0.14],
+          [0.12, 0.05],
+          [0.21, 0.23],
+          [0.3, 0.09],
+          [0.39, 0.19],
+          [0.49, 0.27],
+          [0.57, 0.11],
+          [0.66, 0.21],
+          [0.74, 0.06],
+          [0.83, 0.17],
+          [0.92, 0.08],
+          [1.0, 0.0],
+        ];
+        const NEAR_PEAKS = [
+          [0.0, 0.0],
+          [0.04, 0.21],
+          [0.1, 0.09],
+          [0.18, 0.33],
+          [0.27, 0.13],
+          [0.35, 0.28],
+          [0.45, 0.4],
+          [0.53, 0.16],
+          [0.62, 0.31],
+          [0.72, 0.11],
+          [0.81, 0.25],
+          [0.9, 0.09],
+          [0.96, 0.19],
+          [1.0, 0.0],
+        ];
+
+        // ── Cloud descriptors ──────────────────────────────────────────────────
+        const CLOUD_DEFS = [
+          { fx: 0.12, fy: 0.2, s: 0.9, spd: 13 },
+          { fx: 0.45, fy: 0.33, s: 0.65, spd: 9 },
+          { fx: 0.76, fy: 0.17, s: 1.1, spd: 15 },
+          { fx: 0.62, fy: 0.28, s: 0.75, spd: 10 },
+          { fx: 0.28, fy: 0.4, s: 0.55, spd: 8 },
+        ];
+
+        const clouds = CLOUD_DEFS.map((def) => {
+          const g = new PIXI.Graphics();
+          cloudCont.addChild(g);
+          return { gfx: g, ...def };
+        });
+
+        function drawCloud(g, s) {
+          g.clear();
+          g.beginFill(0xcc44bb, 0.2);
+          g.drawEllipse(0, 0, 72 * s, 23 * s);
+          g.drawEllipse(-36 * s, -7 * s, 46 * s, 17 * s);
+          g.drawEllipse(30 * s, -11 * s, 54 * s, 21 * s);
+          g.endFill();
+          g.beginFill(0xff88dd, 0.07);
+          g.drawEllipse(0, 0, 100 * s, 34 * s);
+          g.endFill();
+        }
+
+        // ── Mountain helper ────────────────────────────────────────────────────
+        function drawMountains(gfx, peaks, W, HY, color, alpha, yScale) {
+          const pts = peaks.map(([px, py]) => [px * W, HY - py * HY * yScale]);
+          gfx.clear();
+          gfx.beginFill(color, alpha);
+          gfx.moveTo(0, HY);
+          gfx.lineTo(pts[0][0], pts[0][1]);
+          for (let i = 1; i < pts.length - 1; i++) {
+            const [x, y] = pts[i];
+            const [nx, ny] = pts[i + 1];
+            gfx.quadraticCurveTo(x, y, (x + nx) * 0.5, (y + ny) * 0.5);
+          }
+          gfx.lineTo(pts[pts.length - 1][0], pts[pts.length - 1][1]);
+          gfx.lineTo(W, HY);
+          gfx.closePath();
+          gfx.endFill();
+        }
+
+        // ── Static redraw (init + resize) ──────────────────────────────────────
+        function drawStatic() {
+          const { W, H, CX, HY } = layout();
+
+          skyFilter.uniforms.uHorizon = HY / H;
+
+          // Sky quad (gradient applied by filter)
+          skyGfx.clear();
+          skyGfx.beginFill(0xffffff);
+          skyGfx.drawRect(0, 0, W, H);
+          skyGfx.endFill();
+
+          // Sun
+          sunGfx.clear();
+          const SR = H * 0.095;
+
+          // Glow rings (drawn back-to-front so inner overwrites outer)
+          const rings = [
+            [3.9, 0.06, 0xff6600],
+            [2.8, 0.1, 0xff3399],
+            [2.0, 0.15, 0xff0088],
+            [1.5, 0.21, 0xff4466],
+          ];
+          for (const [m, a, c] of rings) {
+            sunGfx.beginFill(c, a);
+            sunGfx.drawCircle(CX, HY, SR * m);
+            sunGfx.endFill();
+          }
+
+          // Striped sun body — alternating filled bands over the glow
+          const BANDS = 12;
+          const BH = (2 * SR) / BANDS;
+          for (let i = 0; i < BANDS; i++) {
+            if (i % 2 === 1) continue; // odd = transparent gap
+            const yTop = HY - SR + i * BH;
+            const dy = yTop + BH * 0.5 - HY;
+            const cw = 2 * Math.sqrt(Math.max(0, SR * SR - dy * dy));
+            if (cw < 1) continue;
+            const t = i / (BANDS - 1);
+            const Rv = 255;
+            const Gv = Math.round((0.9 - t * 0.66) * 255);
+            const Bv = Math.round((0.1 + t * 0.62) * 255);
+            sunGfx.beginFill((Rv << 16) | (Gv << 8) | Bv, 1.0);
+            sunGfx.drawRect(CX - cw * 0.5, yTop, cw, BH);
+            sunGfx.endFill();
+          }
+
+          // Horizon haze
+          sunGfx.beginFill(0xff9900, 0.1);
+          sunGfx.drawRect(0, HY - 10, W, 30);
+          sunGfx.endFill();
+          sunGfx.beginFill(0xffcc44, 0.04);
+          sunGfx.drawRect(0, HY - 26, W, 60);
+          sunGfx.endFill();
+
+          // Mountains
+          drawMountains(mtnFar, FAR_PEAKS, W, HY, 0x3a0860, 0.88, 0.54);
+          drawMountains(mtnNear, NEAR_PEAKS, W, HY, 0x150028, 1.0, 0.78);
+
+          // Ground fill + horizon line
+          groundGfx.clear();
+          groundGfx.beginFill(0x05000e);
+          groundGfx.drawRect(0, HY, W, H - HY);
+          groundGfx.endFill();
+          groundGfx.lineStyle(1, 0xff7733, 0.32);
+          groundGfx.moveTo(0, HY).lineTo(W, HY);
+          groundGfx.lineStyle(0);
+
+          // Perspective grid
+          gridGfx.clear();
+          const HLINES = 14;
+          for (let i = 1; i <= HLINES; i++) {
+            const t = Math.pow(i / HLINES, 1.7);
+            const y = HY + t * (H - HY);
+            const halfW = t * W * 0.5;
+            const alpha = 0.13 + t * 0.47;
+            gridGfx.lineStyle(0.5 + t, 0xff00cc, alpha);
+            gridGfx.moveTo(CX - halfW, y).lineTo(CX + halfW, y);
+          }
+          const VLINES = 14;
+          for (let i = 0; i <= VLINES; i++) {
+            const t = i / VLINES;
+            const xBot = CX + (t - 0.5) * W;
+            const alpha = 0.16 + (0.5 - Math.abs(t - 0.5)) * 0.32;
+            gridGfx.lineStyle(0.7, 0xff00cc, alpha);
+            gridGfx.moveTo(CX, HY).lineTo(xBot, H);
+          }
+
+          // Clouds (position reset on resize)
+          for (const c of clouds) {
+            c.gfx.x = c.fx * W;
+            c.gfx.y = HY * c.fy;
+            drawCloud(c.gfx, c.s);
+          }
+        }
+
+        // ── Animated dashes ────────────────────────────────────────────────────
+        let dashOff = 0;
+        const NDASHES = 14;
+        const DSPEED = 0.28; // t-units per second
+
+        function updateDashes(dtSec, W, H, CX, HY) {
+          dashOff = (dashOff + DSPEED * dtSec) % 1;
+          dashGfx.clear();
+          dashGfx.beginFill(0xffffff, 0.82);
+          for (let i = 0; i < NDASHES; i++) {
+            const t = (i / NDASHES + dashOff) % 1;
+            if (t < 0.04) continue;
+            const y = HY + Math.pow(t, 1.6) * (H - HY);
+            const dh = Math.max(1, Math.pow(t, 1.4) * 24);
+            const dw = Math.max(0.5, t * 5.5);
+            dashGfx.drawRect(CX - dw * 0.5, y - dh * 0.5, dw, dh);
+          }
+          dashGfx.endFill();
+        }
+
+        // ── Boot ───────────────────────────────────────────────────────────────
+        drawStatic();
+
+        window.addEventListener("resize", () => {
+          app.renderer.resize(window.innerWidth, window.innerHeight);
+          drawStatic();
+        });
+
+        // ── Tick ───────────────────────────────────────────────────────────────
+        app.ticker.maxFPS = 60;
+        app.ticker.add((delta) => {
+          const dtSec = delta / 60;
+          const { W, H, CX, HY } = layout();
+          const time = app.ticker.lastTime / 1000;
+
+          postFilter.uniforms.uTime = time;
+
+          for (const c of clouds) {
+            c.gfx.x -= c.spd * dtSec;
+            if (c.gfx.x < -180) c.gfx.x = W + 140;
+          }
+
+          updateDashes(dtSec, W, H, CX, HY);
+        });
+      })();
+    </script>
+  </body>
+</html>

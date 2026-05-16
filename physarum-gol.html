@@ -1,0 +1,374 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Physarum GOL — OBS Browser Source</title>
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: transparent;
+      }
+      canvas {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <script src="https://cdn.jsdelivr.net/npm/pixi.js@8.18.1/dist/pixi.min.js"></script>
+    <script>
+      (async () => {
+        "use strict";
+
+        const {
+          Application,
+          BlurFilter,
+          Filter,
+          GlProgram,
+          RenderTexture,
+          Sprite,
+          Texture,
+          UniformGroup,
+        } = PIXI;
+
+        const SIM_W = 512,
+          SIM_H = 512;
+
+        // ── Standard PixiJS v8 filter vertex (matches FluidPaintScreen pattern) ────────
+        const VERT = `in vec2 aPosition;
+out vec2 vTextureCoord;
+uniform vec4 uInputSize;
+uniform vec4 uOutputFrame;
+uniform vec4 uOutputTexture;
+vec4 filterVertexPosition(void){
+  vec2 position=aPosition*uOutputFrame.zw+uOutputFrame.xy;
+  position.x=position.x*(2.0/uOutputTexture.x)-1.0;
+  position.y=position.y*(2.0*uOutputTexture.z/uOutputTexture.y)-uOutputTexture.z;
+  return vec4(position,0.0,1.0);
+}
+vec2 filterTextureCoord(void){
+  return aPosition*(uOutputFrame.zw*uInputSize.zw);
+}
+void main(void){
+  gl_Position=filterVertexPosition();
+  vTextureCoord=filterTextureCoord();
+}`;
+
+        // ── Init: seed random cell state from UV hash, no texture read needed ──────────
+        const INIT_FRAG = `#version 300 es
+precision highp float;
+in vec2 vTextureCoord;
+out vec4 fragColor;
+uniform float uSeed;
+
+float hash21(vec2 p){
+  p=fract(p*vec2(127.1+uSeed*0.031,311.7+uSeed*0.073));
+  p+=dot(p,p+74.39);
+  return fract(p.x*p.y);
+}
+
+void main(){
+  vec2 uv=vTextureCoord;
+  // Three-scale noise → natural scattered clusters
+  float r1=hash21(uv*512.0);
+  float r2=hash21(uv*64.0+vec2(17.3,31.7));
+  float r3=hash21(uv*16.0+vec2(53.1,79.4));
+  float rand=r1*0.5+r2*0.3+r3*0.2;
+  float cell=step(0.74,rand);
+  float phero=cell*(0.08+0.22*hash21(uv*128.0+vec2(11.1,22.2)));
+  fragColor=vec4(cell,phero,0.0,1.0);
+}`;
+
+        // ── Cell update: GoL rules + pheromone gradient sensing ───────────────────────
+        const CELL_FRAG = `#version 300 es
+precision highp float;
+in vec2 vTextureCoord;
+out vec4 fragColor;
+uniform sampler2D uTexture;
+uniform vec2 uTexelSize;
+uniform float uTime;
+
+float hash21(vec2 p){
+  p=fract(p*vec2(127.1,311.7));
+  p+=dot(p,p+74.39);
+  return fract(p.x*p.y);
+}
+
+void main(){
+  vec2 uv=vTextureCoord;
+  vec4 ctr=texture(uTexture,uv);
+  float cell=step(0.5,ctr.r);
+  float phero=ctr.g;
+
+  float aliveF=0.0,pheroSum=0.0,gx=0.0,gy=0.0;
+  for(int dx=-1;dx<=1;dx++){
+    for(int dy=-1;dy<=1;dy++){
+      if(dx==0&&dy==0) continue;
+      vec4 s=texture(uTexture,uv+vec2(float(dx),float(dy))*uTexelSize);
+      float nc=step(0.5,s.r);
+      aliveF+=nc;
+      pheroSum+=s.g;
+      gx+=s.g*float(dx);
+      gy+=s.g*float(dy);
+    }
+  }
+  int alive=int(round(aliveF));
+  float avgPhero=pheroSum/8.0;
+  // Normalize gradient to 0-1; max magnitude is when all 8 pheromone values
+  // are 1 on one side and 0 on the other → length up to ~4
+  float gradMag=clamp(length(vec2(gx,gy))/4.0,0.0,1.0);
+
+  // Standard Game of Life
+  float newCell=0.0;
+  if(cell>0.5){
+    if(alive==2||alive==3) newCell=1.0;
+  } else {
+    if(alive==3) newCell=1.0;
+  }
+
+  // Pheromone gradient modulation → slime-mold transport networks
+  if(cell>0.5&&alive==1&&avgPhero>0.35) newCell=1.0;  // trail persistence
+  if(cell<0.5&&alive==2&&gradMag>0.20)  newCell=1.0;  // gradient-guided birth
+  if(cell>0.5&&alive==4&&avgPhero>0.45) newCell=1.0;  // highway formation
+  if(alive>=6)                           newCell=0.0;  // overcrowding dissolved
+
+  // Heartbeat: seed a small patch every ~20 s to resist collapse
+  float tCycle=fract(uTime*0.05);
+  if(tCycle<0.017&&length(uv-vec2(0.5))<0.07){
+    if(hash21(uv+vec2(uTime*0.001))>0.62) newCell=1.0;
+  }
+
+  // Spontaneous repair near existing trails
+  float noise=hash21(uv+vec2(uTime*0.00037,uTime*0.00023));
+  if(cell<0.5&&alive==0&&avgPhero>0.22&&noise>0.9998) newCell=1.0;
+
+  // Pheromone: alive cells secrete, dead cells lose nothing (diffuse pass handles decay)
+  float newPhero=phero;
+  if(newCell>0.5) newPhero=min(1.0,phero+0.12);
+
+  fragColor=vec4(newCell,newPhero,gradMag,1.0);
+}`;
+
+        // ── Pheromone diffusion + evaporation (G channel only; R and B pass through) ──
+        const DIFFUSE_FRAG = `#version 300 es
+precision highp float;
+in vec2 vTextureCoord;
+out vec4 fragColor;
+uniform sampler2D uTexture;
+uniform vec2 uTexelSize;
+
+void main(){
+  vec2 uv=vTextureCoord;
+  vec4 ctr=texture(uTexture,uv);
+  // Weighted blur: centre×4, cardinal×2, diagonal×1 → smooth isotropic spread
+  float pSum=ctr.g*4.0,wSum=4.0;
+  for(int dx=-1;dx<=1;dx++){
+    for(int dy=-1;dy<=1;dy++){
+      if(dx==0&&dy==0) continue;
+      float w=(abs(dx)+abs(dy)==1)?2.0:1.0;
+      pSum+=texture(uTexture,uv+vec2(float(dx),float(dy))*uTexelSize).g*w;
+      wSum+=w;
+    }
+  }
+  // 1.5 % evaporation per frame → trails decay in ~4 s at 60 fps
+  float evaporated=(pSum/wSum)*0.985;
+  fragColor=vec4(ctr.r,evaporated,ctr.b,1.0);
+}`;
+
+        // ── Display: navy background, cyan trails, magenta junctions, alive-cell core ─
+        const DISPLAY_FRAG = `#version 300 es
+precision highp float;
+in vec2 vTextureCoord;
+out vec4 fragColor;
+uniform sampler2D uTexture;
+uniform vec2 uTexelSize;
+uniform float uTime;
+
+void main(){
+  vec2 uv=vTextureCoord;
+  vec4 state=texture(uTexture,uv);
+  float cell=step(0.5,state.r);
+  float phero=state.g;
+  float grad=state.b;
+
+  // Two-ring near-field glow: samples adjacent simulation cells
+  float nearGlow=0.0;
+  vec2 t1=uTexelSize*2.0,t2=uTexelSize*4.0;
+  nearGlow+=texture(uTexture,uv+vec2( t1.x, 0.0)).g;
+  nearGlow+=texture(uTexture,uv+vec2(-t1.x, 0.0)).g;
+  nearGlow+=texture(uTexture,uv+vec2( 0.0, t1.y)).g;
+  nearGlow+=texture(uTexture,uv+vec2( 0.0,-t1.y)).g;
+  nearGlow+=texture(uTexture,uv+vec2( t2.x, 0.0)).g*0.5;
+  nearGlow+=texture(uTexture,uv+vec2(-t2.x, 0.0)).g*0.5;
+  nearGlow+=texture(uTexture,uv+vec2( 0.0, t2.y)).g*0.5;
+  nearGlow+=texture(uTexture,uv+vec2( 0.0,-t2.y)).g*0.5;
+  nearGlow/=6.0;
+
+  vec3 col=vec3(0.0,0.018,0.075);                             // deep navy
+
+  col=mix(col,vec3(0.0,0.72,1.0),pow(phero,0.55)*0.88);       // cyan trails
+  col+=vec3(0.0,0.30,0.55)*pow(nearGlow,1.7)*0.52;            // halo glow
+  col=mix(col,vec3(0.95,0.08,0.88),pow(grad,2.2)*0.65);       // magenta junctions
+
+  if(cell>0.5){
+    col=mix(col,vec3(0.82,1.0,1.0),0.93);                     // bright alive core
+    col+=vec3(0.0,0.16,0.24)*pow(phero,0.8)*0.38;             // micro-bloom
+  }
+
+  // Subtle pulse modulated by local pheromone
+  float pulse=0.965+0.035*sin(uTime*1.7+phero*6.2832);
+  col*=pulse;
+
+  fragColor=vec4(clamp(col,0.0,1.0),1.0);
+}`;
+
+        // ── Glow layer: boosted signal for the additive blur overlay ──────────────────
+        const GLOW_FRAG = `#version 300 es
+precision highp float;
+in vec2 vTextureCoord;
+out vec4 fragColor;
+uniform sampler2D uTexture;
+
+void main(){
+  vec4 state=texture(uTexture,vTextureCoord);
+  float cell=step(0.5,state.r);
+  float phero=state.g;
+  float grad=state.b;
+  float bright=pow(phero,0.42)*1.9+cell*2.2;
+  vec3 col=vec3(0.0,0.62,1.0)*bright;
+  col+=vec3(0.55,0.0,0.82)*pow(grad,1.6)*1.3;
+  fragColor=vec4(clamp(col,0.0,1.0),1.0);
+}`;
+
+        // ── App ───────────────────────────────────────────────────────────────────────
+        const app = new Application();
+        await app.init({
+          resizeTo: window,
+          backgroundAlpha: 0,
+          preference: "webgl",
+          antialias: false,
+          resolution: Math.min(devicePixelRatio || 1, 2),
+          autoDensity: true,
+        });
+        document.body.appendChild(app.canvas);
+
+        // Float render textures for precise pheromone accumulation
+        const rtOpts = { width: SIM_W, height: SIM_H, format: "rgba16float" };
+        let stateA = RenderTexture.create(rtOpts);
+        let stateB = RenderTexture.create(rtOpts);
+
+        // Offscreen compute sprite — never added to stage
+        const simSprite = new Sprite(Texture.WHITE);
+        simSprite.width = SIM_W;
+        simSprite.height = SIM_H;
+
+        // ── Uniform groups ────────────────────────────────────────────────────────────
+        const texelSize = new Float32Array([1 / SIM_W, 1 / SIM_H]);
+
+        const initUG = new UniformGroup({
+          uSeed: { value: Math.random() * 99 + 1, type: "f32" },
+        });
+        const cellUG = new UniformGroup({
+          uTexelSize: { value: texelSize, type: "vec2<f32>" },
+          uTime: { value: 0.0, type: "f32" },
+        });
+        const diffUG = new UniformGroup({
+          uTexelSize: { value: texelSize, type: "vec2<f32>" },
+        });
+        const dispUG = new UniformGroup({
+          uTexelSize: { value: texelSize, type: "vec2<f32>" },
+          uTime: { value: 0.0, type: "f32" },
+        });
+
+        // ── Filters ───────────────────────────────────────────────────────────────────
+        const initFilter = new Filter({
+          glProgram: new GlProgram({ vertex: VERT, fragment: INIT_FRAG }),
+          resources: { initUG },
+        });
+        const cellFilter = new Filter({
+          glProgram: new GlProgram({ vertex: VERT, fragment: CELL_FRAG }),
+          resources: { cellUG },
+        });
+        const diffuseFilter = new Filter({
+          glProgram: new GlProgram({ vertex: VERT, fragment: DIFFUSE_FRAG }),
+          resources: { diffUG },
+        });
+        const displayFilter = new Filter({
+          glProgram: new GlProgram({ vertex: VERT, fragment: DISPLAY_FRAG }),
+          resources: { dispUG },
+        });
+        const glowFilter = new Filter({
+          glProgram: new GlProgram({ vertex: VERT, fragment: GLOW_FRAG }),
+          resources: {},
+        });
+
+        // ── Seed the simulation: render random cells into stateA ──────────────────────
+        simSprite.filters = [initFilter];
+        app.renderer.render({ container: simSprite, target: stateA });
+        simSprite.filters = [];
+
+        // ── Display layer: simulation state → colour-mapped output ───────────────────
+        const displaySprite = new Sprite(stateA);
+        displaySprite.filters = [displayFilter];
+        app.stage.addChild(displaySprite);
+
+        // ── Glow layer: same state, boosted + blurred, added on top ──────────────────
+        const glowSprite = new Sprite(stateA);
+        glowSprite.blendMode = "add";
+        glowSprite.alpha = 0.36;
+        glowSprite.filters = [
+          glowFilter,
+          new BlurFilter({ strength: 14, quality: 3 }),
+        ];
+        app.stage.addChild(glowSprite);
+
+        // ── Layout ────────────────────────────────────────────────────────────────────
+        function layout() {
+          const w = app.screen.width,
+            h = app.screen.height;
+          displaySprite.width = w;
+          displaySprite.height = h;
+          glowSprite.width = w;
+          glowSprite.height = h;
+        }
+        layout();
+        window.addEventListener("resize", layout);
+
+        // ── Simulation loop ───────────────────────────────────────────────────────────
+        const r = app.renderer;
+
+        app.ticker.add((ticker) => {
+          const t = ticker.lastTime * 0.001;
+          cellUG.uniforms.uTime = t;
+          dispUG.uniforms.uTime = t;
+
+          // Pass 1: cell update + pheromone secretion
+          simSprite.texture = stateA;
+          simSprite.filters = [cellFilter];
+          r.render({ container: simSprite, target: stateB });
+          [stateA, stateB] = [stateB, stateA];
+
+          // Pass 2: pheromone diffusion + evaporation
+          simSprite.texture = stateA;
+          simSprite.filters = [diffuseFilter];
+          r.render({ container: simSprite, target: stateB });
+          [stateA, stateB] = [stateB, stateA];
+
+          // Sync display sprites to current front buffer
+          displaySprite.texture = stateA;
+          glowSprite.texture = stateA;
+        });
+      })();
+    </script>
+  </body>
+</html>

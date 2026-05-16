@@ -1,0 +1,400 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Cyberpunk Particles — OBS Browser Source</title>
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #000;
+      }
+      canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="c"></canvas>
+    <script>
+      (function () {
+        "use strict";
+
+        // ─── CONFIG ──────────────────────────────────────────────────────────────────
+        const LARGE_N = 80; // aurora atmosphere blobs
+        const MAIN_N = 1900; // drifting core particles
+        const SPARK_N = 320; // bright foreground sparks
+        const N = LARGE_N + MAIN_N + SPARK_N; // 2300 total
+
+        // GPU buffer layout per particle: [x, y, r, g, b, a, size]  7 floats = 28 bytes
+        const STRIDE = 7;
+        const BYTES = STRIDE * 4;
+
+        // Neon cyberpunk palette [r, g, b] in 0-1 range
+        const PALETTE = [
+          [0.0, 1.0, 1.0], // cyan
+          [1.0, 0.0, 1.0], // magenta
+          [0.0, 0.37, 1.0], // electric blue
+          [0.0, 1.0, 0.5], // neon green
+          [1.0, 0.0, 0.5], // hot pink
+          [0.5, 0.0, 1.0], // violet
+          [0.0, 0.78, 1.0], // sky blue
+          [1.0, 0.55, 0.0], // amber
+        ];
+
+        // ─── CANVAS + GL ─────────────────────────────────────────────────────────────
+        const canvas = document.getElementById("c");
+        let gl = canvas.getContext("webgl2", {
+          antialias: false,
+          alpha: false,
+          premultipliedAlpha: false,
+          preserveDrawingBuffer: false,
+          powerPreference: "high-performance",
+        });
+        const isGL2 = !!gl;
+        if (!gl) {
+          gl = canvas.getContext("webgl", {
+            antialias: false,
+            alpha: false,
+            premultipliedAlpha: false,
+            preserveDrawingBuffer: false,
+            powerPreference: "high-performance",
+          });
+        }
+        if (!gl) {
+          document.body.style.background = "#020814";
+          return;
+        }
+
+        // ─── SHADERS ─────────────────────────────────────────────────────────────────
+        const VS = isGL2
+          ? `#version 300 es
+precision highp float;
+in  vec2  a_pos;
+in  vec4  a_col;
+in  float a_sz;
+out vec4  v_col;
+uniform vec2 u_res;
+void main(){
+  vec2 ndc = a_pos / u_res * 2.0 - 1.0;
+  gl_Position  = vec4(ndc.x, -ndc.y, 0.0, 1.0);
+  gl_PointSize = a_sz;
+  v_col = a_col;
+}`
+          : `precision highp float;
+attribute vec2  a_pos;
+attribute vec4  a_col;
+attribute float a_sz;
+varying   vec4  v_col;
+uniform   vec2  u_res;
+void main(){
+  vec2 ndc = a_pos / u_res * 2.0 - 1.0;
+  gl_Position  = vec4(ndc.x, -ndc.y, 0.0, 1.0);
+  gl_PointSize = a_sz;
+  v_col = a_col;
+}`;
+
+        const FS = isGL2
+          ? `#version 300 es
+precision mediump float;
+in  vec4 v_col;
+out vec4 o;
+void main(){
+  vec2  uv   = gl_PointCoord - 0.5;
+  float d    = length(uv) * 2.0;
+  if (d > 1.0) discard;
+  float core = 1.0 - smoothstep(0.00, 0.18, d);
+  float mid  = (1.0 - smoothstep(0.18, 0.62, d)) * 0.46;
+  float halo = (1.0 - smoothstep(0.62, 1.00, d)) * 0.13;
+  o = vec4(v_col.rgb, v_col.a * (core + mid + halo));
+}`
+          : `precision mediump float;
+varying vec4 v_col;
+void main(){
+  vec2  uv   = gl_PointCoord - 0.5;
+  float d    = length(uv) * 2.0;
+  if (d > 1.0) discard;
+  float core = 1.0 - smoothstep(0.00, 0.18, d);
+  float mid  = (1.0 - smoothstep(0.18, 0.62, d)) * 0.46;
+  float halo = (1.0 - smoothstep(0.62, 1.00, d)) * 0.13;
+  gl_FragColor = vec4(v_col.rgb, v_col.a * (core + mid + halo));
+}`;
+
+        function mkShader(type, src) {
+          const s = gl.createShader(type);
+          gl.shaderSource(s, src);
+          gl.compileShader(s);
+          return s;
+        }
+
+        const prog = gl.createProgram();
+        gl.attachShader(prog, mkShader(gl.VERTEX_SHADER, VS));
+        gl.attachShader(prog, mkShader(gl.FRAGMENT_SHADER, FS));
+        gl.linkProgram(prog);
+        gl.useProgram(prog);
+
+        const LOC = {
+          pos: gl.getAttribLocation(prog, "a_pos"),
+          col: gl.getAttribLocation(prog, "a_col"),
+          sz: gl.getAttribLocation(prog, "a_sz"),
+          res: gl.getUniformLocation(prog, "u_res"),
+        };
+
+        // ─── VBO ─────────────────────────────────────────────────────────────────────
+        const gpuBuf = new Float32Array(N * STRIDE);
+        const vbo = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
+        gl.bufferData(gl.ARRAY_BUFFER, gpuBuf.byteLength, gl.DYNAMIC_DRAW);
+
+        function bindAttribs() {
+          gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
+          gl.enableVertexAttribArray(LOC.pos);
+          gl.vertexAttribPointer(LOC.pos, 2, gl.FLOAT, false, BYTES, 0); // x,y  @ byte 0
+          gl.enableVertexAttribArray(LOC.col);
+          gl.vertexAttribPointer(LOC.col, 4, gl.FLOAT, false, BYTES, 8); // rgba @ byte 8
+          gl.enableVertexAttribArray(LOC.sz);
+          gl.vertexAttribPointer(LOC.sz, 1, gl.FLOAT, false, BYTES, 24); // size @ byte 24
+        }
+
+        let vao = null;
+        if (isGL2) {
+          vao = gl.createVertexArray();
+          gl.bindVertexArray(vao);
+          bindAttribs();
+          gl.bindVertexArray(null);
+        } else {
+          bindAttribs();
+        }
+
+        // ─── GL STATE ────────────────────────────────────────────────────────────────
+        gl.clearColor(0.008, 0.016, 0.033, 1.0); // deep navy-black (#020408 ish)
+        gl.enable(gl.BLEND);
+        gl.blendFunc(gl.SRC_ALPHA, gl.ONE); // additive — neon glows layer naturally
+        gl.disable(gl.DEPTH_TEST);
+        gl.disable(gl.CULL_FACE);
+
+        // ─── PARTICLE STATE — flat typed arrays, zero GC in loop ─────────────────────
+        const px = new Float32Array(N); // pixel position
+        const py = new Float32Array(N);
+        const pvx = new Float32Array(N); // velocity
+        const pvy = new Float32Array(N);
+        const pr = new Float32Array(N); // base color
+        const pg = new Float32Array(N);
+        const pb = new Float32Array(N);
+        const pa = new Float32Array(N); // base alpha
+        const psz = new Float32Array(N); // point size
+        const pspd = new Float32Array(N); // flow responsiveness
+        const pph = new Float32Array(N); // brightness pulse phase
+        const pphv = new Float32Array(N); // pulse phase velocity
+
+        let W = 0,
+          H = 0;
+
+        function rnd() {
+          return Math.random();
+        }
+        function rndS() {
+          return Math.random() * 2.0 - 1.0;
+        }
+
+        function initParticle(i, layer) {
+          px[i] = rnd() * W;
+          py[i] = rnd() * H;
+
+          const c = PALETTE[(Math.random() * PALETTE.length) | 0];
+          pr[i] = c[0];
+          pg[i] = c[1];
+          pb[i] = c[2];
+
+          pph[i] = rnd() * 6.2832;
+          pphv[i] = rndS() * 0.7;
+
+          if (layer === 0) {
+            // aurora blobs — large, wispy, slow
+            psz[i] = 52 + rnd() * 72;
+            pa[i] = 0.012 + rnd() * 0.038;
+            pspd[i] = 0.12 + rnd() * 0.22;
+            pvx[i] = rndS() * 0.35;
+            pvy[i] = rndS() * 0.35;
+          } else if (layer === 1) {
+            // core particles
+            psz[i] = 2.2 + rnd() * 6.5;
+            pa[i] = 0.22 + rnd() * 0.58;
+            pspd[i] = 0.45 + rnd() * 1.1;
+            pvx[i] = rndS() * 1.3;
+            pvy[i] = rndS() * 1.3;
+          } else {
+            // sparks — tiny, bright, rapid
+            psz[i] = 1.1 + rnd() * 2.8;
+            pa[i] = 0.6 + rnd() * 0.4;
+            pspd[i] = 1.4 + rnd() * 2.8;
+            pvx[i] = rndS() * 2.8;
+            pvy[i] = rndS() * 2.8;
+          }
+        }
+
+        function initAll() {
+          for (let i = 0; i < LARGE_N; i++) initParticle(i, 0);
+          for (let i = LARGE_N; i < LARGE_N + MAIN_N; i++) initParticle(i, 1);
+          for (let i = LARGE_N + MAIN_N; i < N; i++) initParticle(i, 2);
+        }
+
+        // ─── FLOW FIELD — layered sinusoidal, no allocation, smooth organic swirls ────
+        // Spatial freqs chosen so patterns feel large-scale, not grid-like
+        function ffx(x, y, t) {
+          return (
+            Math.sin(y * 0.0038 + t * 0.44) * 0.55 +
+            Math.sin(x * 0.0028 + y * 0.0019 + t * 0.26) * 0.38 +
+            Math.cos(x * 0.0011 + t * 0.17) * 0.18
+          );
+        }
+        function ffy(x, y, t) {
+          return (
+            Math.cos(x * 0.0038 - t * 0.37) * 0.55 +
+            Math.cos(y * 0.0028 - x * 0.0019 + t * 0.2) * 0.38 +
+            Math.sin(y * 0.0011 - t * 0.14) * 0.18
+          );
+        }
+
+        // ─── ANIMATION LOOP ──────────────────────────────────────────────────────────
+        let raf = 0,
+          prevT = 0.0,
+          elapsed = 0.0,
+          paused = false;
+
+        function frame(ts) {
+          raf = requestAnimationFrame(frame);
+          if (paused) {
+            prevT = ts;
+            return;
+          }
+
+          let dt = (ts - prevT) * 0.001;
+          prevT = ts;
+          if (dt > 0.1 || dt <= 0.0) dt = 0.016; // clamp: handles tab return spike
+
+          elapsed += dt;
+          const t = elapsed;
+          const damp = Math.pow(0.983, dt * 60.0); // frame-rate-independent damping
+
+          for (let i = 0; i < N; i++) {
+            const spd = pspd[i];
+            const fx = ffx(px[i], py[i], t) * spd;
+            const fy = ffy(px[i], py[i], t) * spd;
+
+            // Semi-implicit Euler: damp first, then accelerate
+            pvx[i] = pvx[i] * damp + fx * dt;
+            pvy[i] = pvy[i] * damp + fy * dt;
+
+            // Velocity cap (squared compare avoids sqrt in common case)
+            const v2 = pvx[i] * pvx[i] + pvy[i] * pvy[i];
+            const cap = spd * spd * 9.0;
+            if (v2 > cap) {
+              const inv = (spd * 3.0) / Math.sqrt(v2);
+              pvx[i] *= inv;
+              pvy[i] *= inv;
+            }
+
+            px[i] += pvx[i] * 60.0 * dt;
+            py[i] += pvy[i] * 60.0 * dt;
+
+            // Toroidal wrap — seamless, no edge artifacts
+            if (px[i] < 0) px[i] += W;
+            else if (px[i] >= W) px[i] -= W;
+            if (py[i] < 0) py[i] += H;
+            else if (py[i] >= H) py[i] -= H;
+
+            // Brightness pulse — each particle breathes at its own rate
+            pph[i] += pphv[i] * dt;
+            const pulse = 0.7 + 0.3 * Math.sin(pph[i]);
+
+            // Pack into GPU buffer (no object allocation)
+            const o = i * STRIDE;
+            gpuBuf[o] = px[i];
+            gpuBuf[o + 1] = py[i];
+            gpuBuf[o + 2] = pr[i] * pulse;
+            gpuBuf[o + 3] = pg[i] * pulse;
+            gpuBuf[o + 4] = pb[i] * pulse;
+            gpuBuf[o + 5] = pa[i];
+            gpuBuf[o + 6] = psz[i];
+          }
+
+          // Single upload, single draw call
+          gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
+          gl.bufferSubData(gl.ARRAY_BUFFER, 0, gpuBuf);
+
+          gl.clear(gl.COLOR_BUFFER_BIT);
+          if (isGL2) gl.bindVertexArray(vao);
+          else bindAttribs();
+          gl.drawArrays(gl.POINTS, 0, N);
+        }
+
+        // ─── RESIZE ──────────────────────────────────────────────────────────────────
+        let rW = 0,
+          rH = 0;
+        function resize() {
+          const dpr = Math.min(window.devicePixelRatio || 1, 2);
+          const dW = (canvas.clientWidth || window.innerWidth) | 0;
+          const dH = (canvas.clientHeight || window.innerHeight) | 0;
+          const newW = Math.round(dW * dpr);
+          const newH = Math.round(dH * dpr);
+          if (newW === rW && newH === rH) return;
+          rW = newW;
+          rH = newH;
+
+          canvas.width = newW;
+          canvas.height = newH;
+          W = newW;
+          H = newH;
+
+          gl.viewport(0, 0, newW, newH);
+          gl.useProgram(prog);
+          gl.uniform2f(LOC.res, newW, newH);
+        }
+
+        const ro = new ResizeObserver(resize);
+        ro.observe(canvas);
+
+        // ─── PAGE VISIBILITY — prevents stale dt spike on tab return ─────────────────
+        function onVis() {
+          paused = document.hidden;
+          if (!paused) prevT = performance.now();
+        }
+        document.addEventListener("visibilitychange", onVis);
+
+        // ─── BOOT ────────────────────────────────────────────────────────────────────
+        resize();
+        if (W === 0) {
+          W = 1920;
+          H = 1080;
+        } // OBS default if layout not ready
+        initAll();
+        prevT = performance.now();
+        raf = requestAnimationFrame(frame);
+
+        // ─── CLEANUP ─────────────────────────────────────────────────────────────────
+        function dispose() {
+          cancelAnimationFrame(raf);
+          ro.disconnect();
+          document.removeEventListener("visibilitychange", onVis);
+          gl.deleteBuffer(vbo);
+          if (vao) gl.deleteVertexArray(vao);
+          gl.deleteProgram(prog);
+        }
+        window.__obsDispose = dispose;
+      })();
+    </script>
+  </body>
+</html>

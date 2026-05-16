@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rain on Glass</title>
+  <style>
+    * { margin: 0; padding: 0; }
+    html, body { width: 100%; height: 100%; background: transparent; overflow: hidden; }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+const canvas = document.getElementById('c');
+let W = canvas.width  = window.innerWidth;
+let H = canvas.height = window.innerHeight;
+
+// WebGL with premultiplied alpha for correct OBS transparency
+const gl = canvas.getContext('webgl', { alpha: true, premultipliedAlpha: true });
+if (!gl) { document.body.style.background = 'red'; throw new Error('WebGL not supported'); }
+
+// ── Shaders ──────────────────────────────────────────────────────────────────
+const VS = `
+  attribute vec2 a_pos;
+  void main() { gl_Position = vec4(a_pos, 0.0, 1.0); }
+`;
+
+const FS = `
+precision highp float;
+
+uniform vec2  u_res;
+uniform float u_t;
+
+// ── Pseudo-random ─────────────────────────────────────────────────────────────
+float h1(float n) { return fract(sin(n) * 58973.4132); }
+vec2  h2(vec2  n) {
+  return fract(sin(vec2(dot(n, vec2(127.1, 311.7)),
+                        dot(n, vec2(269.5, 183.3)))) * 43758.5453);
+}
+
+// ── Teardrop shape (bottom-heavy, slight squash) ──────────────────────────────
+// d: normalized coords relative to droplet center, returns coverage [0,1]
+float beadCoverage(vec2 d) {
+  d.y -= 0.12;                            // shift center upward → bottom-heavy
+  float r = length(d * vec2(1.0, 0.88)); // slight y squash
+  return 1.0 - smoothstep(0.50, 1.0, r);
+}
+
+// ── Lighting for a glass-droplet (premultiplied output) ───────────────────────
+// d: normalized coords, cov: coverage mask
+vec4 glassShade(vec2 d, float cov, float baseAlpha) {
+  if (cov < 0.005) return vec4(0.0);
+
+  // Specular highlight: offset toward top-left (light from above-behind glass)
+  float spec = pow(max(0.0, 1.0 - length(d + vec2(-0.30, -0.40))), 7.0);
+
+  // Subtle rim brightening at droplet edge
+  float rim  = smoothstep(0.48, 0.90, length(d)) * cov * 0.22;
+
+  // Cool glass color with highlight
+  vec3 col = mix(vec3(0.58, 0.71, 0.87), vec3(1.0), spec * 0.88 + rim);
+
+  float a = cov * baseAlpha;
+  return vec4(col * a, a); // premultiplied
+}
+
+// ── Layer 1 – Condensation (tiny static beads across the whole pane) ──────────
+vec4 condensation(vec2 uv) {
+  const float CX = 70.0, CY = 44.0;
+  vec2 cell = floor(uv * vec2(CX, CY));
+  vec2 loc  = fract(uv * vec2(CX, CY));
+
+  vec2  rnd = h2(cell);
+  float rad = 0.06 + rnd.x * 0.09;
+  vec2  ctr = rnd * 0.66 + 0.17;       // keep away from cell edges
+  vec2  d   = (loc - ctr) / rad;
+
+  float cov = beadCoverage(d);
+  return glassShade(d, cov, 0.10 + rnd.y * 0.12);
+}
+
+// ── Layer 2 – Falling droplets + wet trails ───────────────────────────────────
+vec4 rainDrops(vec2 uv) {
+  const float COLS  = 14.0;
+  const int   DROPS = 3;     // drops per column slot
+
+  float colI  = floor(uv.x * COLS);
+  vec4  accum = vec4(0.0);
+
+  // Check current column and immediate neighbors to avoid seam artifacts
+  for (int dc = -1; dc <= 1; dc++) {
+    float c = colI + float(dc);
+    if (c < 0.0 || c >= COLS) continue;
+
+    for (int di = 0; di < DROPS; di++) {
+      vec2  seed  = vec2(c, float(di) * 17.31 + 3.7);
+      vec2  rnd   = h2(seed);
+      float rn1   = h1(c * 3.17 + float(di) * 11.9);
+
+      // Per-drop properties
+      float xCtr  = (c + rnd.x * 0.72 + 0.14) / COLS;
+      float speed = 0.045 + rnd.y * 0.095;
+      float delay = rn1 * 8.0;
+      float rad   = 0.011 + rnd.x * 0.011;
+
+      // Looping fall: starts at top, resets with delay
+      float phase = mod(u_t * speed + delay, 1.35);
+      float dropY = 1.0 - phase;
+      if (dropY < -0.06 || dropY > 1.06) continue;
+
+      // ── Droplet body ─────────────────────────────────────────────────────
+      // Correct x for aspect ratio so drops are circular, not oval
+      vec2 dp  = vec2((uv.x - xCtr) * (u_res.x / u_res.y), uv.y - dropY) / rad;
+      float cov = beadCoverage(dp);
+
+      // ── Wet trail / streak above the droplet head ─────────────────────────
+      float sX   = abs(uv.x - xCtr);
+      float sY   = uv.y - dropY;
+      float sLen = 0.055 + rnd.y * 0.10;
+      float streak = 0.0;
+      if (sY > 0.001 && sY < sLen && sX < rad * 0.55) {
+        float along  = 1.0 - sY / sLen;
+        float across = smoothstep(rad * 0.55, rad * 0.06, sX);
+        streak = along * across * 0.27;
+      }
+
+      if (cov < 0.005 && streak < 0.005) continue;
+
+      vec4 shade = glassShade(dp, cov, 0.58);
+
+      // Blend streak under the droplet shade
+      float ta = max(shade.a, streak);
+      if (shade.a < streak) {
+        vec3 streakCol = vec3(0.60, 0.72, 0.87) * streak;
+        shade = vec4(streakCol, streak);
+      }
+      shade.a = ta;
+
+      // Over-composite onto accumulation (premultiplied)
+      accum = shade + accum * (1.0 - shade.a);
+    }
+  }
+
+  return clamp(accum, 0.0, 1.0);
+}
+
+// ── Layer 3 – Rivulets (slow wide streaks, different grid) ───────────────────
+vec4 rivulets(vec2 uv) {
+  const float COLS = 6.0;
+  float colI = floor(uv.x * COLS);
+  vec4  accum = vec4(0.0);
+
+  for (int dc = 0; dc <= 1; dc++) {
+    float c  = colI + float(dc);
+    if (c < 0.0 || c >= COLS) continue;
+
+    vec2  rnd   = h2(vec2(c, 99.1));
+    float xCtr  = (c + rnd.x * 0.60 + 0.20) / COLS;
+    float speed = 0.018 + rnd.y * 0.025;
+    float delay = h1(c * 7.91) * 12.0;
+    float w     = 0.003 + rnd.x * 0.003; // half-width
+
+    float phase = mod(u_t * speed + delay, 1.5);
+    float headY = 1.0 - phase;
+    float tailY = headY + 0.20 + rnd.y * 0.18;
+
+    if (headY > 1.05 || tailY < -0.05) continue;
+
+    float sX = abs(uv.x - xCtr);
+    float sY = uv.y;
+    if (sX > w * 2.5 || sY < headY || sY > tailY) continue;
+
+    float along  = 1.0 - clamp((sY - headY) / (tailY - headY), 0.0, 1.0);
+    float across = smoothstep(w * 2.5, w * 0.5, sX);
+    float a      = along * across * 0.22;
+
+    vec3 col = vec3(0.62, 0.74, 0.89) * a;
+    accum = vec4(col, a) + accum * (1.0 - a);
+  }
+
+  return clamp(accum, 0.0, 1.0);
+}
+
+// ── Layer 4 – Frosted glass edges ─────────────────────────────────────────────
+vec4 edgeFrost(vec2 uv) {
+  float l = smoothstep(0.16, 0.0, uv.x);
+  float r = smoothstep(0.84, 1.0, uv.x);
+  float t = smoothstep(0.10, 0.0, uv.y);
+  float b = smoothstep(0.90, 1.0, uv.y);
+
+  // Corners accumulate more
+  float h   = max(l, r);
+  float v   = max(t, b);
+  float fog = clamp(h + v + h * v * 2.0, 0.0, 1.0) * 0.18;
+
+  // Subtle noise-like variation (using uv as seed, very coarse)
+  float grain = h1(floor(uv.x * 40.0) + floor(uv.y * 40.0) * 97.0) * 0.04;
+
+  fog = clamp(fog + grain * fog, 0.0, 1.0);
+  vec3 col = vec3(0.78, 0.83, 0.92);
+  return vec4(col * fog, fog);
+}
+
+// ── Compose all layers ────────────────────────────────────────────────────────
+void main() {
+  vec2 uv = gl_FragCoord.xy / u_res;
+  uv.y = 1.0 - uv.y; // Y-flip so rain falls downward
+
+  vec4 out_c = vec4(0.0);
+
+  // Condensation sits underneath everything
+  vec4 cond = condensation(uv);
+  out_c = cond + out_c * (1.0 - cond.a);
+
+  // Rivulets (wide slow streaks)
+  vec4 riv = rivulets(uv);
+  out_c = riv + out_c * (1.0 - riv.a);
+
+  // Falling droplets on top
+  vec4 drops = rainDrops(uv);
+  out_c = drops + out_c * (1.0 - drops.a);
+
+  // Frosted edges as topmost overlay
+  vec4 frost = edgeFrost(uv);
+  out_c = frost + out_c * (1.0 - frost.a);
+
+  gl_FragColor = clamp(out_c, 0.0, 1.0);
+}
+`;
+
+// ── Compile & link ────────────────────────────────────────────────────────────
+function compileShader(type, src) {
+  const s = gl.createShader(type);
+  gl.shaderSource(s, src);
+  gl.compileShader(s);
+  if (!gl.getShaderParameter(s, gl.COMPILE_STATUS))
+    throw new Error(gl.getShaderInfoLog(s));
+  return s;
+}
+
+const prog = gl.createProgram();
+gl.attachShader(prog, compileShader(gl.VERTEX_SHADER,   VS));
+gl.attachShader(prog, compileShader(gl.FRAGMENT_SHADER, FS));
+gl.linkProgram(prog);
+if (!gl.getProgramParameter(prog, gl.LINK_STATUS))
+  throw new Error(gl.getProgramInfoLog(prog));
+gl.useProgram(prog);
+
+// Full-screen quad (two triangles as a TRIANGLE_STRIP)
+const vbo = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
+gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+
+const aPos = gl.getAttribLocation(prog, 'a_pos');
+gl.enableVertexAttribArray(aPos);
+gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+
+const uRes = gl.getUniformLocation(prog, 'u_res');
+const uT   = gl.getUniformLocation(prog, 'u_t');
+
+// ── Resize ────────────────────────────────────────────────────────────────────
+function resize() {
+  W = canvas.width  = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+  gl.viewport(0, 0, W, H);
+}
+window.addEventListener('resize', resize);
+
+// ── Render loop ───────────────────────────────────────────────────────────────
+let t    = 0;
+let last = performance.now();
+
+(function frame(now) {
+  const dt = Math.min((now - last) / 1000, 0.05);
+  last = now;
+  t   += dt;
+
+  gl.clearColor(0, 0, 0, 0);
+  gl.clear(gl.COLOR_BUFFER_BIT);
+  gl.uniform2f(uRes, W, H);
+  gl.uniform1f(uT,   t);
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+  requestAnimationFrame(frame);
+})(last);
+</script>
+</body>
+</html>

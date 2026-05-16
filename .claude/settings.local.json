@@ -49,7 +49,37 @@
       "Bash(grep -v \"^index\\\\.html$\\\\|^map\\\\.html$\")",
       "Bash([ -f \"/home/worxbend/Workspace/obs-effects/$f\" ])",
       "Bash(rg -l \"AudioContext\\\\|analyser\\\\|getByteFrequency\\\\|microphone\\\\|getUserMedia\" /home/worxbend/Workspace/obs-effects/src --include=\"*.ts\")",
-      "Bash(rg \"BlurFilter|Text\" /home/worxbend/Workspace/obs-effects/src/app/screens/ --include=\"*.ts\" -l)"
+      "Bash(rg \"BlurFilter|Text\" /home/worxbend/Workspace/obs-effects/src/app/screens/ --include=\"*.ts\" -l)",
+      "Bash(node -e \"const p=require\\('/home/worxbend/Workspace/obs-effects/node_modules/pixi.js'\\); console.log\\(Object.keys\\(p\\).filter\\(k=>k.includes\\('Blur'\\)||k.includes\\('Gradient'\\)\\).join\\('\\\\n'\\)\\)\")",
+      "Bash(rg -l \"AudioContext\\\\|AnalyserNode\\\\|getByteFrequencyData\\\\|MediaDevices\" /home/worxbend/Workspace/obs-effects/src/ --include=\"*.ts\")",
+      "Bash(rg -l \"AudioContext\\\\|getUserMedia\\\\|analyser\\\\|AnalyserNode\" /home/worxbend/Workspace/obs-effects/src --include=\"*.ts\")",
+      "Bash(rg -l \"AudioContext\\\\|getByteFrequencyData\\\\|analyser\\\\|AnalyserNode\" /home/worxbend/Workspace/obs-effects/src --include=\"*.ts\")",
+      "Bash(grep -E \"\\\\.ts$|\\\\.ts \")",
+      "Bash(grep -v \"^$\")",
+      "Bash(rm /home/worxbend/Workspace/obs-effects/slime-mold.html \\\\ *)",
+      "Bash(rg \"Filter\\\\|filter\\\\|RenderTexture\" /home/worxbend/Workspace/obs-effects/src/app/screens/ --include=\"*.ts\" -l)",
+      "Bash(npm install *)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\(d.get\\('exports',{}\\).get\\('.',{}\\), indent=2\\)\\)\")",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(d['version']\\)\")",
+      "Bash(grep -E \"^[A-Za-z_][A-Za-z0-9_]*$\")",
+      "Bash(grep -E \"^[A-Za-z][A-Za-z0-9_:]{3,40}$\")",
+      "Bash(grep -E \"^[a-zA-Z][a-zA-Z0-9_]{2,35}$\")",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); exports=d.get\\('exports',{}\\); print\\(json.dumps\\({k:v for k,v in exports.items\\(\\) if 'addons' in k or 'examples' in k}, indent=2\\)\\)\")",
+      "Bash(node -e \"const {FBXLoader} = require\\('./node_modules/three/examples/jsm/loaders/FBXLoader.js'\\); console.log\\('ok'\\)\")",
+      "Bash(node -e \"const r = require; const {resolve} = require\\('path'\\); console.log\\(resolve\\(__dirname ?? process.cwd\\(\\), 'code-ocean.html'\\)\\)\")",
+      "Bash(python3 -)",
+      "Bash(grep -E \"^[a-zA-Z][a-zA-Z0-9_:]{3,40}$\")",
+      "Bash(grep -E \"^[a-zA-Z][a-zA-Z0-9_: ]{3,50}$\")",
+      "Bash(grep -E \"^mixamorig:[A-Za-z0-9_]+$\")",
+      "Bash(rg -l \"Madara_Uchiha|BobaFett|rogue_all\" --no-ignore-vcs /home/worxbend/Workspace/obs-effects)",
+      "Bash(rg -l \"rogue.avatar|boba.fett|madara\" --iglob \"!node_modules\" /home/worxbend/Workspace/obs-effects)",
+      "Bash(rg -l \"BobaFett|boba\" --iglob \"!node_modules\" /home/worxbend/Workspace/obs-effects)",
+      "Bash(rm \"/home/worxbend/Workspace/obs-effects/raw-assets/main{m}/Madara_Uchiha.obj\" \\\\ *)",
+      "Bash(python3 -m json.tool /home/worxbend/Workspace/obs-effects/src/manifest.json)"
+    ],
+    "additionalDirectories": [
+      "/home/worxbend/Workspace/obs-effects",
+      "/home/worxbend/Workspace/obs-effects/raw-assets/main{m}"
     ]
   }
 }

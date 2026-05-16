@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Crystal Growth — DLA</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #000;
+      }
+      canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="c"></canvas>
+    <script>
+      "use strict";
+      (function () {
+        const canvas = document.getElementById("c");
+        const gl = canvas.getContext("webgl2");
+        if (!gl) {
+          document.body.style.background = "#000510";
+          return;
+        }
+
+        // Simulation grid — square, upscaled to fill any display
+        const W = 512,
+          H = 512;
+
+        // ── GL helpers ─────────────────────────────────────────────────────────────
+        function mkShader(type, src) {
+          const s = gl.createShader(type);
+          gl.shaderSource(s, src);
+          gl.compileShader(s);
+          if (!gl.getShaderParameter(s, gl.COMPILE_STATUS))
+            throw new Error(gl.getShaderInfoLog(s));
+          return s;
+        }
+        function mkProg(vs, fs) {
+          const p = gl.createProgram();
+          gl.attachShader(p, mkShader(gl.VERTEX_SHADER, vs));
+          gl.attachShader(p, mkShader(gl.FRAGMENT_SHADER, fs));
+          gl.linkProgram(p);
+          if (!gl.getProgramParameter(p, gl.LINK_STATUS))
+            throw new Error(gl.getProgramInfoLog(p));
+          return p;
+        }
+        function mkTex(data, filter) {
+          const t = gl.createTexture();
+          gl.bindTexture(gl.TEXTURE_2D, t);
+          gl.texImage2D(
+            gl.TEXTURE_2D,
+            0,
+            gl.RGBA,
+            W,
+            H,
+            0,
+            gl.RGBA,
+            gl.UNSIGNED_BYTE,
+            data,
+          );
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, filter);
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filter);
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+          return t;
+        }
+        function mkFBO(tex) {
+          const f = gl.createFramebuffer();
+          gl.bindFramebuffer(gl.FRAMEBUFFER, f);
+          gl.framebufferTexture2D(
+            gl.FRAMEBUFFER,
+            gl.COLOR_ATTACHMENT0,
+            gl.TEXTURE_2D,
+            tex,
+            0,
+          );
+          return f;
+        }
+
+        // ── Full-screen quad ───────────────────────────────────────────────────────
+        const vao = gl.createVertexArray();
+        gl.bindVertexArray(vao);
+        const buf = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+        gl.bufferData(
+          gl.ARRAY_BUFFER,
+          new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]),
+          gl.STATIC_DRAW,
+        );
+        gl.enableVertexAttribArray(0);
+        gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+
+        // ── Shared vertex shader ───────────────────────────────────────────────────
+        const VS = `#version 300 es
+layout(location=0) in vec2 a;
+out vec2 v;
+void main() { v = a * 0.5 + 0.5; gl_Position = vec4(a, 0.0, 1.0); }`;
+
+        // ── DLA update pass ────────────────────────────────────────────────────────
+        // Texture layout: R=crystal(0/1), G=generation(0–1, decays outward), B/A unused
+        const UPDATE_FS = `#version 300 es
+precision highp float;
+in vec2 v;
+out vec4 o;
+uniform sampler2D u_s;
+uniform float u_seed;   // changes every frame for stochastic growth
+uniform float u_rate;   // crystallisation probability per unit neighbour weight
+
+// GPU hash — gl_FragCoord gives per-pixel uniqueness; u_seed drives temporal variety
+float rng(vec2 fc) {
+  return fract(sin(dot(fc + u_seed * 17.391, vec2(127.1, 311.7))) * 43758.5453);
+}
+
+void main() {
+  vec4 s = texture(u_s, v);
+
+  // Already crystal — preserve forever
+  if (s.r > 0.5) { o = s; return; }
+
+  vec2 px = 1.0 / vec2(${W}.0, ${H}.0);
+  float cWeight = 0.0;
+  float genSum  = 0.0;
+  float genCnt  = 0.0;
+
+  // 8-connected neighbourhood
+  for (int dy = -1; dy <= 1; dy++) {
+    for (int dx = -1; dx <= 1; dx++) {
+      if (dx == 0 && dy == 0) continue;
+      vec4 n = texture(u_s, v + vec2(float(dx), float(dy)) * px);
+      if (n.r > 0.5) {
+        // Axis-aligned neighbours have higher coupling than diagonal ones
+        float w = (dx == 0 || dy == 0) ? 1.0 : 0.707;
+        cWeight += w;
+        genSum  += n.g;
+        genCnt  += 1.0;
+      }
+    }
+  }
+
+  if (cWeight > 0.0) {
+    float r = rng(gl_FragCoord.xy);
+    if (r < cWeight * u_rate) {
+      // Generation decays slightly each hop — encodes distance from seed
+      float gen = (genSum / genCnt) * 0.992;
+      o = vec4(1.0, gen, 0.0, 1.0);
+      return;
+    }
+  }
+
+  o = s; // unchanged
+}`;
+
+        // ── Render pass ────────────────────────────────────────────────────────────
+        // Maps crystal state to ice-blue palette with radial bloom glow.
+        const RENDER_FS = `#version 300 es
+precision highp float;
+in vec2 v;
+out vec4 o;
+uniform sampler2D u_s;
+uniform float u_t;
+
+void main() {
+  vec4  s       = texture(u_s, v);
+  float crystal = s.r;
+  float gen     = s.g;
+
+  // Radial bloom — 8 directions × 8 radii; linear-filtered tex gives smooth halos
+  vec2  px    = 1.0 / vec2(${W}.0, ${H}.0);
+  float bloom = 0.0;
+  float bTot  = 0.0;
+
+  for (int i = 0; i < 8; i++) {
+    float a   = float(i) * 0.7854;          // π/4 steps
+    vec2  dir = vec2(cos(a), sin(a));
+    for (int r = 1; r <= 8; r++) {
+      float rad = float(r) * 2.5;
+      float w   = 1.0 / (float(r * r));
+      vec4  ns  = texture(u_s, v + dir * rad * px);
+      bloom    += ns.r * ns.g * w;
+      bTot     += w;
+    }
+  }
+  bloom = (bTot > 0.0) ? bloom / bTot : 0.0;
+  bloom = pow(bloom, 0.55) * 0.9;
+
+  // Deep near-black background
+  vec3 bg = vec3(0.004, 0.007, 0.018);
+
+  if (crystal > 0.5) {
+    // Palette: deep-blue tips → bright ice-blue → near-white core
+    vec3 tip  = vec3(0.03, 0.16, 0.62);
+    vec3 mid  = vec3(0.22, 0.62, 1.00);
+    vec3 core = vec3(0.88, 0.96, 1.00);
+
+    vec3 col = (gen > 0.55)
+      ? mix(mid, core, (gen - 0.55) / 0.45)
+      : mix(tip,  mid, gen / 0.55);
+
+    // Subtle organic shimmer — faster near tips, calmer at core
+    float shimmer = 1.0 + 0.07 * sin(u_t * 1.6 + gen * 28.0 + v.x * 42.0 + v.y * 31.0);
+    col *= shimmer;
+
+    // Bloom backscatter on crystal surface
+    col += vec3(0.08, 0.38, 0.85) * bloom * 0.28;
+
+    // Specular-like core brightening
+    col += vec3(0.6, 0.85, 1.0) * pow(gen, 3.0) * 0.4;
+
+    o = vec4(col, 1.0);
+  } else {
+    // Background halo from nearby crystals
+    vec3 glow = vec3(0.03, 0.20, 0.55) * pow(bloom, 1.6) * 2.2;
+    o = vec4(bg + glow, 1.0);
+  }
+}`;
+
+        // ── Compile programs ───────────────────────────────────────────────────────
+        const updateProg = mkProg(VS, UPDATE_FS);
+        const renderProg = mkProg(VS, RENDER_FS);
+
+        const uSeed = gl.getUniformLocation(updateProg, "u_seed");
+        const uRate = gl.getUniformLocation(updateProg, "u_rate");
+        const uSimS = gl.getUniformLocation(updateProg, "u_s");
+        const rSimS = gl.getUniformLocation(renderProg, "u_s");
+        const rTime = gl.getUniformLocation(renderProg, "u_t");
+
+        // ── Initial state — 3×3 crystal seed at centre ─────────────────────────────
+        function initSeed() {
+          const d = new Uint8Array(W * H * 4);
+          const cx = W >> 1;
+          const cy = H >> 1;
+          for (let dy = -1; dy <= 1; dy++) {
+            for (let dx = -1; dx <= 1; dx++) {
+              const i = ((cy + dy) * W + (cx + dx)) * 4;
+              d[i] = 255; // crystal = 1
+              d[i + 1] = 255; // generation = 1.0
+              d[i + 3] = 255;
+            }
+          }
+          return d;
+        }
+
+        // State textures — use LINEAR so the 512→screen upscale is smooth
+        let tA = mkTex(initSeed(), gl.LINEAR);
+        let tB = mkTex(new Uint8Array(W * H * 4), gl.LINEAR);
+        let fA = mkFBO(tA);
+        let fB = mkFBO(tB);
+
+        // ── Resize ─────────────────────────────────────────────────────────────────
+        function resize() {
+          canvas.width = window.innerWidth;
+          canvas.height = window.innerHeight;
+        }
+        resize();
+        window.addEventListener("resize", resize);
+
+        // ── Animation loop ─────────────────────────────────────────────────────────
+        let frame = 0;
+        let seed = Math.random() * 99991;
+
+        function tick(t) {
+          requestAnimationFrame(tick);
+
+          // Run more update steps in early frames so the crystal reaches mid-screen quickly
+          const steps = frame < 600 ? 3 : 1;
+
+          for (let i = 0; i < steps; i++) {
+            gl.bindFramebuffer(gl.FRAMEBUFFER, fB);
+            gl.viewport(0, 0, W, H);
+            gl.useProgram(updateProg);
+            gl.activeTexture(gl.TEXTURE0);
+            gl.bindTexture(gl.TEXTURE_2D, tA);
+            gl.uniform1i(uSimS, 0);
+            gl.uniform1f(uSeed, seed);
+            gl.uniform1f(uRate, 0.028);
+            gl.bindVertexArray(vao);
+            gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+            // Ping-pong
+            [tA, tB] = [tB, tA];
+            [fA, fB] = [fB, fA];
+            seed = (seed + Math.PI * 7.3) % 99991;
+          }
+
+          // Render to screen
+          gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+          gl.viewport(0, 0, canvas.width, canvas.height);
+          gl.useProgram(renderProg);
+          gl.activeTexture(gl.TEXTURE0);
+          gl.bindTexture(gl.TEXTURE_2D, tA);
+          gl.uniform1i(rSimS, 0);
+          gl.uniform1f(rTime, t * 0.001);
+          gl.bindVertexArray(vao);
+          gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+          frame++;
+        }
+
+        requestAnimationFrame(tick);
+      })();
+    </script>
+  </body>
+</html>

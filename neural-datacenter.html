@@ -1,0 +1,776 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>AI Datacenter — worxbend</title>
+    <style>
+      *,
+      *::before,
+      *::after {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #00000a;
+      }
+      canvas {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <script src="https://cdn.jsdelivr.net/npm/pixi.js@7.4.2/dist/pixi.min.js"></script>
+    <script>
+      (function () {
+        "use strict";
+
+        // ── App ──────────────────────────────────────────────────────────────────
+        const app = new PIXI.Application({
+          width: window.innerWidth,
+          height: window.innerHeight,
+          backgroundColor: 0x00000a,
+          antialias: false,
+          resolution: 1,
+          autoDensity: false,
+          powerPreference: "high-performance",
+        });
+        document.body.appendChild(app.view);
+
+        let W = window.innerWidth,
+          H = window.innerHeight;
+        window.addEventListener(
+          "resize",
+          () => {
+            W = window.innerWidth;
+            H = window.innerHeight;
+            app.renderer.resize(W, H);
+            rebuildStatic();
+          },
+          { passive: true },
+        );
+
+        // ── Perspective projection ────────────────────────────────────────────────
+        // xN ∈ [-1,1]  yN ∈ [-1,1] (ceiling=-1, floor=+1)  z ∈ [0,1] (near=0, far=1)
+        function proj(xN, yN, z) {
+          const vpX = W * 0.5,
+            vpY = H * 0.29;
+          const t = Math.pow(z, 0.52);
+          const nearX = vpX + xN * W * 0.46;
+          const nearY = yN < 0 ? vpY + yN * vpY : vpY + yN * (H - vpY);
+          return {
+            x: nearX + (vpX - nearX) * t,
+            y: nearY + (vpY - nearY) * t,
+            s: 1 - t * 0.96,
+            z,
+          };
+        }
+
+        // ── Scene layers ──────────────────────────────────────────────────────────
+        const bgGfx = new PIXI.Graphics();
+        const glowGfx = new PIXI.Graphics();
+        const rackGfx = new PIXI.Graphics();
+        const ceilGfx = new PIXI.Graphics();
+        const cableGfx = new PIXI.Graphics();
+        const rackPulse = new PIXI.Graphics();
+        const ledGfx = new PIXI.Graphics();
+        const fogGfx = new PIXI.Graphics();
+        const pktGfx = new PIXI.Graphics();
+        const dustGfx = new PIXI.Graphics();
+
+        const glowWrap = new PIXI.Container();
+        glowWrap.addChild(glowGfx);
+        glowWrap.filters = [new PIXI.filters.BlurFilter(26, 2)];
+        glowWrap.alpha = 0.52;
+
+        const fogWrap = new PIXI.Container();
+        fogWrap.addChild(fogGfx);
+        fogWrap.filters = [new PIXI.filters.BlurFilter(30, 2)];
+        fogWrap.alpha = 0.88;
+
+        app.stage.addChild(bgGfx);
+        app.stage.addChild(glowWrap);
+        app.stage.addChild(rackGfx);
+        app.stage.addChild(ceilGfx);
+        app.stage.addChild(cableGfx);
+        app.stage.addChild(rackPulse);
+        app.stage.addChild(ledGfx);
+        app.stage.addChild(fogWrap);
+        app.stage.addChild(pktGfx);
+        app.stage.addChild(dustGfx);
+
+        // ── Constants ────────────────────────────────────────────────────────────
+        const N_SLOTS = 22;
+        const INNER_X = 0.705;
+        const N_UNITS = 12;
+
+        // Rack face anchors per slot for animation (built by buildCables)
+        let slotFaces = []; // { lTN, lBN, rTN, rBN, depth }
+        let cables = [];
+        let leds = [];
+
+        // Data packets
+        const MAX_PKTS = 90;
+        const pAct = new Uint8Array(MAX_PKTS);
+        const pProg = new Float32Array(MAX_PKTS);
+        const pSpd = new Float32Array(MAX_PKTS);
+        const pCab = new Int32Array(MAX_PKTS);
+        const pCol = new Uint32Array(MAX_PKTS);
+        const pDir = new Int8Array(MAX_PKTS);
+
+        // Fog
+        const N_FOG = 22;
+        const fX = new Float32Array(N_FOG),
+          fY = new Float32Array(N_FOG);
+        const fVX = new Float32Array(N_FOG),
+          fVY = new Float32Array(N_FOG);
+        const fW = new Float32Array(N_FOG),
+          fH2 = new Float32Array(N_FOG);
+        const fA = new Float32Array(N_FOG);
+
+        // Dust
+        const N_DUST = 170;
+        const dX = new Float32Array(N_DUST),
+          dY = new Float32Array(N_DUST);
+        const dVX = new Float32Array(N_DUST),
+          dVY = new Float32Array(N_DUST);
+        const dA = new Float32Array(N_DUST),
+          dR = new Float32Array(N_DUST);
+        const dH = new Float32Array(N_DUST); // hue: 0=cyan, 1=violet
+
+        // ── Init dynamic pools ───────────────────────────────────────────────────
+        function initFog() {
+          for (let i = 0; i < N_FOG; i++) {
+            fX[i] = Math.random() * W;
+            fY[i] = H * 0.55 + Math.random() * H * 0.45;
+            fVX[i] = (Math.random() - 0.5) * 0.24;
+            fVY[i] = -(0.05 + Math.random() * 0.14);
+            fW[i] = 180 + Math.random() * 480;
+            fH2[i] = 55 + Math.random() * 130;
+            fA[i] = 0.03 + Math.random() * 0.075;
+          }
+        }
+
+        function initDust() {
+          for (let i = 0; i < N_DUST; i++) {
+            dX[i] = Math.random() * W;
+            dY[i] = Math.random() * H;
+            dVX[i] = (Math.random() - 0.5) * 0.2;
+            dVY[i] = -(0.05 + Math.random() * 0.25);
+            dA[i] = 0.07 + Math.random() * 0.32;
+            dR[i] = 0.4 + Math.random() * 2.1;
+            dH[i] = Math.random();
+          }
+        }
+
+        // ── Build cable paths ────────────────────────────────────────────────────
+        function buildCables() {
+          cables = [];
+          slotFaces = [];
+
+          for (let si = 0; si < N_SLOTS; si++) {
+            const z0 = si / N_SLOTS;
+            const depth = 1 - (z0 + 0.5 / N_SLOTS);
+            slotFaces.push({
+              lTN: proj(-INNER_X, -1, z0),
+              lBN: proj(-INNER_X, 1, z0),
+              rTN: proj(INNER_X, -1, z0),
+              rBN: proj(INNER_X, 1, z0),
+              depth,
+            });
+          }
+
+          // Ceiling cable tray – outer runs
+          const cL = [],
+            cR = [],
+            fL = [],
+            fR = [];
+          for (let i = 0; i <= N_SLOTS; i++) {
+            const z = i / N_SLOTS;
+            cL.push(proj(-INNER_X - 0.07, -0.94, z));
+            cR.push(proj(INNER_X + 0.07, -0.94, z));
+            fL.push(proj(-INNER_X - 0.07, 0.97, z));
+            fR.push(proj(INNER_X + 0.07, 0.97, z));
+          }
+          cables.push(cL, cR, fL, fR);
+
+          // Inner ceiling runs (narrower, closer to aisle center)
+          const cLi = [],
+            cRi = [];
+          for (let i = 0; i <= N_SLOTS; i++) {
+            const z = i / N_SLOTS;
+            cLi.push(proj(-0.25, -0.97, z));
+            cRi.push(proj(0.25, -0.97, z));
+          }
+          cables.push(cLi, cRi);
+
+          // Cross cables at regular depth intervals
+          for (let i = 2; i < N_SLOTS; i += 3) {
+            const z = i / N_SLOTS;
+            cables.push([proj(-INNER_X, -0.65, z), proj(INNER_X, -0.65, z)]);
+            cables.push([proj(-INNER_X, 0.55, z), proj(INNER_X, 0.55, z)]);
+          }
+        }
+
+        // ── Build LED positions ──────────────────────────────────────────────────
+        function buildLeds() {
+          leds = [];
+          const LED_C = [
+            0x00e5ff, 0x00ff7a, 0xff9900, 0xc77dff, 0x00b4d8, 0xffffff,
+            0xff3060,
+          ];
+          const TYPES = ["solid", "pulse", "blink"];
+          for (let si = 0; si < N_SLOTS; si++) {
+            const z = si / N_SLOTS;
+            const depth = 1 - z;
+            for (let side = -1; side <= 1; side += 2) {
+              const rowCount = si < 3 ? 16 : si < 10 ? 14 : 10;
+              for (let row = 0; row < rowCount; row++) {
+                const yN = -0.87 + (row / (rowCount - 1)) * 1.74;
+                const pt = proj(side * INNER_X, yN, z);
+                leds.push({
+                  x: pt.x,
+                  y: pt.y,
+                  c: LED_C[Math.floor(Math.random() * LED_C.length)],
+                  phi: Math.random() * Math.PI * 2,
+                  rate: 0.3 + Math.random() * 5.0,
+                  d: depth,
+                  type: TYPES[Math.floor(Math.random() * TYPES.length)],
+                });
+              }
+            }
+          }
+        }
+
+        // ── Draw static geometry ─────────────────────────────────────────────────
+        function drawStatic() {
+          bgGfx.clear();
+          glowGfx.clear();
+          rackGfx.clear();
+          ceilGfx.clear();
+          cableGfx.clear();
+
+          const vpX = W * 0.5,
+            vpY = H * 0.29;
+
+          // Background fill + horizon glow
+          bgGfx.beginFill(0x00000a, 1);
+          bgGfx.drawRect(0, 0, W, H);
+          bgGfx.endFill();
+          for (let r = 10; r >= 0; r--) {
+            const rad = Math.max(W, H) * 0.55 * (r / 10);
+            bgGfx.beginFill(0x001840, 0.06 * Math.pow(1 - r / 10, 1.8));
+            bgGfx.drawEllipse(vpX, vpY, rad, rad * 0.42);
+            bgGfx.endFill();
+          }
+
+          // ── Server rack walls – far to near (painter's algo) ──
+          for (let si = N_SLOTS - 1; si >= 0; si--) {
+            const z0 = si / N_SLOTS;
+            const z1 = (si + 1) / N_SLOTS;
+            const midZ = (z0 + z1) * 0.5;
+            const depth = 1 - midZ;
+            const fa = Math.pow(depth, 0.52) * 0.97;
+
+            // Corner projections
+            const lFN = proj(-INNER_X, -1, z0),
+              lFF = proj(-INNER_X, -1, z1);
+            const lBN = proj(-INNER_X, 1, z0),
+              lBF = proj(-INNER_X, 1, z1);
+            const lwFN = proj(-1, -1, z0),
+              lwFF = proj(-1, -1, z1);
+            const lwBN = proj(-1, 1, z0),
+              lwBF = proj(-1, 1, z1);
+
+            const rFN = proj(INNER_X, -1, z0),
+              rFF = proj(INNER_X, -1, z1);
+            const rBN = proj(INNER_X, 1, z0),
+              rBF = proj(INNER_X, 1, z1);
+            const rwFN = proj(1, -1, z0),
+              rwFF = proj(1, -1, z1);
+            const rwBN = proj(1, 1, z0),
+              rwBF = proj(1, 1, z1);
+
+            // ─ Left rack ─
+            rackGfx.lineStyle(0);
+            rackGfx.beginFill(0x020e1f, fa * 0.97);
+            rackGfx.drawPolygon([
+              lFN.x,
+              lFN.y,
+              lFF.x,
+              lFF.y,
+              lBF.x,
+              lBF.y,
+              lBN.x,
+              lBN.y,
+            ]);
+            rackGfx.endFill();
+
+            rackGfx.beginFill(0x00070e, fa * 0.9);
+            rackGfx.drawPolygon([
+              lwFN.x,
+              lwFN.y,
+              lFN.x,
+              lFN.y,
+              lFF.x,
+              lFF.y,
+              lwFF.x,
+              lwFF.y,
+            ]);
+            rackGfx.endFill();
+            rackGfx.beginFill(0x00070e, fa * 0.9);
+            rackGfx.drawPolygon([
+              lwBN.x,
+              lwBN.y,
+              lBN.x,
+              lBN.y,
+              lBF.x,
+              lBF.y,
+              lwBF.x,
+              lwBF.y,
+            ]);
+            rackGfx.endFill();
+
+            // Rack edge highlight (near vertical edge)
+            const eW = fa * (0.6 + depth * 2.2);
+            rackGfx.lineStyle(eW, 0x0e3358, fa * 0.85);
+            rackGfx.moveTo(lFN.x, lFN.y);
+            rackGfx.lineTo(lBN.x, lBN.y);
+            rackGfx.lineStyle(fa * 0.7, 0x091c34, fa * 0.55);
+            rackGfx.moveTo(lFN.x, lFN.y);
+            rackGfx.lineTo(lFF.x, lFF.y);
+
+            // Rack unit dividers (horizontal scan lines on front face)
+            for (let u = 1; u < N_UNITS; u++) {
+              const yN = -1 + (u / N_UNITS) * 2;
+              const pN = proj(-INNER_X, yN, z0),
+                pF = proj(-INNER_X, yN, z1);
+              rackGfx.lineStyle(0.5, 0x061a2e, fa * 0.42);
+              rackGfx.moveTo(pN.x, pN.y);
+              rackGfx.lineTo(pF.x, pF.y);
+            }
+
+            // Cable management bar (top 1U, darker)
+            const cmbYN = -1 + (1.6 / N_UNITS) * 2;
+            const cmbTN = proj(-INNER_X, -1, z0),
+              cmbTF = proj(-INNER_X, -1, z1);
+            const cmbBN = proj(-INNER_X, cmbYN, z0),
+              cmbBF = proj(-INNER_X, cmbYN, z1);
+            rackGfx.lineStyle(0);
+            rackGfx.beginFill(0x000a16, fa * 0.65);
+            rackGfx.drawPolygon([
+              cmbTN.x,
+              cmbTN.y,
+              cmbTF.x,
+              cmbTF.y,
+              cmbBF.x,
+              cmbBF.y,
+              cmbBN.x,
+              cmbBN.y,
+            ]);
+            rackGfx.endFill();
+
+            // Rack ambient glow (blurred layer)
+            glowGfx.beginFill(0x001840, depth * 0.52 * fa);
+            glowGfx.drawPolygon([
+              lFN.x,
+              lFN.y,
+              lFF.x,
+              lFF.y,
+              lBF.x,
+              lBF.y,
+              lBN.x,
+              lBN.y,
+            ]);
+            glowGfx.endFill();
+
+            // ─ Right rack (mirror) ─
+            rackGfx.lineStyle(0);
+            rackGfx.beginFill(0x020e1f, fa * 0.97);
+            rackGfx.drawPolygon([
+              rFN.x,
+              rFN.y,
+              rFF.x,
+              rFF.y,
+              rBF.x,
+              rBF.y,
+              rBN.x,
+              rBN.y,
+            ]);
+            rackGfx.endFill();
+
+            rackGfx.beginFill(0x00070e, fa * 0.9);
+            rackGfx.drawPolygon([
+              rFN.x,
+              rFN.y,
+              rwFN.x,
+              rwFN.y,
+              rwFF.x,
+              rwFF.y,
+              rFF.x,
+              rFF.y,
+            ]);
+            rackGfx.endFill();
+            rackGfx.beginFill(0x00070e, fa * 0.9);
+            rackGfx.drawPolygon([
+              rBN.x,
+              rBN.y,
+              rwBN.x,
+              rwBN.y,
+              rwBF.x,
+              rwBF.y,
+              rBF.x,
+              rBF.y,
+            ]);
+            rackGfx.endFill();
+
+            rackGfx.lineStyle(eW, 0x0e3358, fa * 0.85);
+            rackGfx.moveTo(rFN.x, rFN.y);
+            rackGfx.lineTo(rBN.x, rBN.y);
+            rackGfx.lineStyle(fa * 0.7, 0x091c34, fa * 0.55);
+            rackGfx.moveTo(rFN.x, rFN.y);
+            rackGfx.lineTo(rFF.x, rFF.y);
+
+            for (let u = 1; u < N_UNITS; u++) {
+              const yN = -1 + (u / N_UNITS) * 2;
+              const pN = proj(INNER_X, yN, z0),
+                pF = proj(INNER_X, yN, z1);
+              rackGfx.lineStyle(0.5, 0x061a2e, fa * 0.42);
+              rackGfx.moveTo(pN.x, pN.y);
+              rackGfx.lineTo(pF.x, pF.y);
+            }
+
+            const cmbTNr = proj(INNER_X, -1, z0),
+              cmbTFr = proj(INNER_X, -1, z1);
+            const cmbBNr = proj(INNER_X, cmbYN, z0),
+              cmbBFr = proj(INNER_X, cmbYN, z1);
+            rackGfx.lineStyle(0);
+            rackGfx.beginFill(0x000a16, fa * 0.65);
+            rackGfx.drawPolygon([
+              cmbTNr.x,
+              cmbTNr.y,
+              cmbTFr.x,
+              cmbTFr.y,
+              cmbBFr.x,
+              cmbBFr.y,
+              cmbBNr.x,
+              cmbBNr.y,
+            ]);
+            rackGfx.endFill();
+
+            glowGfx.beginFill(0x001840, depth * 0.52 * fa);
+            glowGfx.drawPolygon([
+              rFN.x,
+              rFN.y,
+              rFF.x,
+              rFF.y,
+              rBF.x,
+              rBF.y,
+              rBN.x,
+              rBN.y,
+            ]);
+            glowGfx.endFill();
+          }
+
+          // ── Floor (cold aisle) ──
+          const flNL = proj(-INNER_X, 1, 0),
+            flNR = proj(INNER_X, 1, 0);
+          const flFL = proj(-INNER_X, 1, 1),
+            flFR = proj(INNER_X, 1, 1);
+          rackGfx.lineStyle(0);
+          rackGfx.beginFill(0x010910, 0.97);
+          rackGfx.drawPolygon([
+            flNL.x,
+            flNL.y,
+            flNR.x,
+            flNR.y,
+            flFR.x,
+            flFR.y,
+            flFL.x,
+            flFL.y,
+          ]);
+          rackGfx.endFill();
+          // Floor tile grid
+          for (let gi = 1; gi <= 14; gi++) {
+            const z = gi / 14;
+            const fl = proj(-INNER_X, 1, z),
+              fr = proj(INNER_X, 1, z);
+            rackGfx.lineStyle(0.5, 0x04152a, 0.28 * (1 - z));
+            rackGfx.moveTo(fl.x, fl.y);
+            rackGfx.lineTo(fr.x, fr.y);
+          }
+          // Ceiling light reflection on floor
+          const frlNL = proj(-0.12, 1, 0),
+            frlNR = proj(0.12, 1, 0);
+          const frlFL = proj(-0.02, 1, 1),
+            frlFR = proj(0.02, 1, 1);
+          rackGfx.beginFill(0x003355, 0.12);
+          rackGfx.drawPolygon([
+            frlNL.x,
+            frlNL.y,
+            frlNR.x,
+            frlNR.y,
+            frlFR.x,
+            frlFR.y,
+            frlFL.x,
+            frlFL.y,
+          ]);
+          rackGfx.endFill();
+
+          // ── Ceiling ──
+          const ceNL = proj(-INNER_X, -1, 0),
+            ceNR = proj(INNER_X, -1, 0);
+          const ceFL = proj(-INNER_X, -1, 1),
+            ceFR = proj(INNER_X, -1, 1);
+          rackGfx.beginFill(0x00060e, 0.96);
+          rackGfx.drawPolygon([
+            ceNL.x,
+            ceNL.y,
+            ceNR.x,
+            ceNR.y,
+            ceFR.x,
+            ceFR.y,
+            ceFL.x,
+            ceFL.y,
+          ]);
+          rackGfx.endFill();
+
+          // ── Ceiling light strips ──
+          const lsLN = proj(-0.14, -0.99, 0),
+            lsRN = proj(0.14, -0.99, 0);
+          const lsLF = proj(-0.02, -0.99, 1),
+            lsRF = proj(0.02, -0.99, 1);
+          ceilGfx.beginFill(0x00e5ff, 0.065);
+          ceilGfx.drawPolygon([
+            lsLN.x,
+            lsLN.y,
+            lsRN.x,
+            lsRN.y,
+            lsRF.x,
+            lsRF.y,
+            lsLF.x,
+            lsLF.y,
+          ]);
+          ceilGfx.endFill();
+          ceilGfx.lineStyle(2.8, 0x00ccff, 0.38);
+          ceilGfx.moveTo(lsLN.x, lsLN.y);
+          ceilGfx.lineTo(lsLF.x, lsLF.y);
+          ceilGfx.moveTo(lsRN.x, lsRN.y);
+          ceilGfx.lineTo(lsRF.x, lsRF.y);
+          // Ceiling glow contribution
+          glowGfx.beginFill(0x0099cc, 0.28);
+          glowGfx.drawPolygon([
+            lsLN.x,
+            lsLN.y,
+            lsRN.x,
+            lsRN.y,
+            lsRF.x,
+            lsRF.y,
+            lsLF.x,
+            lsLF.y,
+          ]);
+          glowGfx.endFill();
+
+          // ── Cable trays ──
+          for (let ci = 0; ci < cables.length; ci++) {
+            const cab = cables[ci];
+            for (let pi = 0; pi < cab.length - 1; pi++) {
+              const p0 = cab[pi],
+                p1 = cab[pi + 1];
+              const d = 1 - (p0.z + p1.z) * 0.5;
+              const w = 1.0 + d * 2.8;
+              cableGfx.lineStyle(w, 0x003a55, 0.28 + d * 0.52);
+              cableGfx.moveTo(p0.x, p0.y);
+              cableGfx.lineTo(p1.x, p1.y);
+              cableGfx.lineStyle(w * 0.65, 0x280050, 0.14 + d * 0.25);
+              cableGfx.moveTo(p0.x + 2.5 * d, p0.y + 1);
+              cableGfx.lineTo(p1.x + 2.5 * d, p1.y + 1);
+            }
+          }
+        }
+
+        function rebuildStatic() {
+          buildCables();
+          buildLeds();
+          drawStatic();
+        }
+
+        // ── Post-processing shader ────────────────────────────────────────────────
+        const FRAG = `
+    varying vec2 vTextureCoord;
+    uniform sampler2D uSampler;
+    uniform float uTime;
+    uniform vec4 filterArea;
+    float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+    void main() {
+      vec2 uv  = vTextureCoord;
+      vec4 c   = texture2D(uSampler, uv);
+      vec2 v   = (uv - 0.5) * 2.0;
+      c.rgb   *= clamp(1.0 - dot(v, v) * 0.54, 0.0, 1.0);
+      float py = uv.y * filterArea.y;
+      c.rgb   *= 0.92 + 0.08 * step(1.5, mod(py, 3.0));
+      float il = mod(py + floor(uTime * 11.0), 100.0);
+      c.rgb   *= 1.0 - 0.016 * step(99.0, il);
+      c.rgb   += (hash(uv + fract(uTime * 0.019)) - 0.5) * 0.017;
+      gl_FragColor = vec4(clamp(c.rgb, 0.0, 1.0), c.a);
+    }
+  `;
+        const postFilt = new PIXI.Filter(null, FRAG, { uTime: 0 });
+        app.stage.filters = [postFilt];
+
+        // ── Packet helpers ───────────────────────────────────────────────────────
+        const PKT_COLORS = [0x00e5ff, 0xc77dff, 0x00ff88, 0x4488ff, 0xffffff];
+
+        function spawnPkt() {
+          for (let k = 0; k < MAX_PKTS; k++) {
+            if (pAct[k]) continue;
+            const ci = (Math.random() * cables.length) | 0;
+            if (!cables[ci] || cables[ci].length < 2) continue;
+            pAct[k] = 1;
+            pDir[k] = Math.random() < 0.5 ? 1 : -1;
+            pProg[k] = pDir[k] > 0 ? 0 : 1;
+            pSpd[k] = 0.04 + Math.random() * 0.2;
+            pCab[k] = ci;
+            pCol[k] = PKT_COLORS[(Math.random() * PKT_COLORS.length) | 0];
+            return;
+          }
+        }
+
+        // ── Initialize ───────────────────────────────────────────────────────────
+        initFog();
+        initDust();
+        rebuildStatic();
+
+        // ── Main loop ────────────────────────────────────────────────────────────
+        let time = 0;
+        app.ticker.maxFPS = 60;
+
+        app.ticker.add((delta) => {
+          const dt = Math.min(delta, 3);
+          time += dt * 0.016;
+          postFilt.uniforms.uTime = time;
+
+          // ── Rack breath pulse (slow ambient glow on front panels) ──
+          rackPulse.clear();
+          for (let si = 0; si < slotFaces.length; si++) {
+            const f = slotFaces[si];
+            const pulse = 0.5 + 0.5 * Math.sin(time * 0.4 + si * 0.55);
+            const alpha = f.depth * pulse * 0.055;
+            rackPulse.beginFill(0x002255, alpha);
+            rackPulse.drawPolygon([
+              f.lTN.x,
+              f.lTN.y,
+              f.rTN.x,
+              f.rTN.y,
+              f.rBN.x,
+              f.rBN.y,
+              f.lBN.x,
+              f.lBN.y,
+            ]);
+            rackPulse.endFill();
+          }
+
+          // ── Fog drift ──
+          fogGfx.clear();
+          for (let i = 0; i < N_FOG; i++) {
+            fX[i] += fVX[i] * dt;
+            fY[i] += fVY[i] * dt;
+            if (fY[i] < H * 0.18) {
+              fY[i] = H + 65;
+              fX[i] = Math.random() * W;
+            }
+            if (fX[i] < -fW[i]) fX[i] = W + fW[i];
+            if (fX[i] > W + fW[i]) fX[i] = -fW[i];
+            fogGfx.beginFill(0x071829, fA[i]);
+            fogGfx.drawEllipse(fX[i], fY[i], fW[i], fH2[i]);
+            fogGfx.endFill();
+          }
+
+          // ── Floating dust ──
+          dustGfx.clear();
+          for (let i = 0; i < N_DUST; i++) {
+            dX[i] += dVX[i] * dt;
+            dY[i] += dVY[i] * dt;
+            if (dY[i] < -6) {
+              dY[i] = H + 6;
+              dX[i] = Math.random() * W;
+            }
+            const flicker = 0.55 + 0.45 * Math.sin(time * 1.7 + i * 0.61);
+            dustGfx.beginFill(
+              dH[i] > 0.5 ? 0x9d4edd : 0x00b4d8,
+              dA[i] * flicker,
+            );
+            dustGfx.drawCircle(dX[i], dY[i], dR[i]);
+            dustGfx.endFill();
+          }
+
+          // ── LED indicators ──
+          ledGfx.clear();
+          for (let i = 0; i < leds.length; i++) {
+            const l = leds[i];
+            let alpha;
+            if (l.type === "blink") {
+              alpha = Math.sin(time * l.rate + l.phi) > 0.25 ? 0.95 : 0.04;
+            } else if (l.type === "pulse") {
+              alpha =
+                0.38 + 0.62 * (0.5 + 0.5 * Math.sin(time * l.rate + l.phi));
+            } else {
+              alpha = 0.72 + 0.28 * Math.sin(time * 0.45 + l.phi);
+            }
+            alpha *= 0.22 + l.d * 0.78;
+            const r = 0.9 + l.d * 3.5;
+            ledGfx.beginFill(l.c, alpha);
+            ledGfx.drawCircle(l.x, l.y, r);
+            ledGfx.endFill();
+            if (l.d > 0.5) {
+              ledGfx.beginFill(l.c, alpha * 0.11);
+              ledGfx.drawCircle(l.x, l.y, r * 5.5);
+              ledGfx.endFill();
+            }
+          }
+
+          // ── Data packets ──
+          if (Math.random() < 0.13) spawnPkt();
+          pktGfx.clear();
+          for (let k = 0; k < MAX_PKTS; k++) {
+            if (!pAct[k]) continue;
+            pProg[k] += pSpd[k] * pDir[k] * dt * 0.016;
+            if (pProg[k] > 1 || pProg[k] < 0) {
+              pAct[k] = 0;
+              continue;
+            }
+            const cab = cables[pCab[k]];
+            if (!cab || cab.length < 2) {
+              pAct[k] = 0;
+              continue;
+            }
+            const t = pProg[k];
+            const seg = Math.min((t * (cab.length - 1)) | 0, cab.length - 2);
+            const lt = t * (cab.length - 1) - seg;
+            const p0 = cab[seg],
+              p1 = cab[seg + 1];
+            const px = p0.x + (p1.x - p0.x) * lt;
+            const py = p0.y + (p1.y - p0.y) * lt;
+            const d = 1 - (p0.z + p1.z) * 0.5;
+            // Glow halo
+            pktGfx.beginFill(pCol[k], 0.18 * d);
+            pktGfx.drawCircle(px, py, 11 * d);
+            pktGfx.endFill();
+            // Colored core
+            pktGfx.beginFill(pCol[k], 0.88);
+            pktGfx.drawCircle(px, py, 2.8 * d);
+            pktGfx.endFill();
+            // White-hot center
+            pktGfx.beginFill(0xffffff, 0.96);
+            pktGfx.drawCircle(px, py, 1.3 * d);
+            pktGfx.endFill();
+          }
+        });
+      })();
+    </script>
+  </body>
+</html>

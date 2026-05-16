@@ -1,0 +1,403 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cellular Slime</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        background: transparent;
+        overflow: hidden;
+      }
+      canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="c"></canvas>
+    <script>
+      const canvas = document.getElementById("c");
+      const gl = canvas.getContext("webgl2", {
+        alpha: true,
+        premultipliedAlpha: false,
+      });
+      if (!gl) {
+        document.body.innerHTML =
+          '<p style="color:red;padding:20px">WebGL2 required</p>';
+        throw 0;
+      }
+
+      const floatExt = gl.getExtension("EXT_color_buffer_float");
+      if (!floatExt) {
+        document.body.innerHTML =
+          '<p style="color:red;padding:20px">EXT_color_buffer_float required</p>';
+        throw 0;
+      }
+
+      // Simulation grid resolution (fixed, independent of display)
+      const SIM_W = 512,
+        SIM_H = 512;
+
+      function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      }
+      window.addEventListener("resize", resize);
+      resize();
+
+      // ── Shaders ──────────────────────────────────────────────────────────────────
+
+      const QUAD_VS = `#version 300 es
+in vec2 a_pos;
+out vec2 v_uv;
+void main() {
+  v_uv = a_pos * 0.5 + 0.5;
+  gl_Position = vec4(a_pos, 0.0, 1.0);
+}`;
+
+      // Continuous Game-of-Life with pheromone-adjusted thresholds.
+      // Cell state in R channel, range [0,1].
+      const SIM_FS = `#version 300 es
+precision highp float;
+uniform sampler2D u_cells;
+uniform sampler2D u_phero;
+uniform vec2 u_res;
+uniform float u_time;
+in vec2 v_uv;
+out vec4 fragColor;
+
+float hash(vec2 p) {
+  p = fract(p * vec2(443.897, 441.423));
+  p += dot(p, p.yx + 19.19);
+  return fract(p.x * p.y);
+}
+
+void main() {
+  vec2 px = 1.0 / u_res;
+  float cell = texture(u_cells, v_uv).r;
+  float phero = texture(u_phero, v_uv).r;
+
+  // 8-neighbor sum (values 0..8 when all alive)
+  float n = 0.0;
+  n += texture(u_cells, v_uv + vec2(-px.x, -px.y)).r;
+  n += texture(u_cells, v_uv + vec2( 0.0,  -px.y)).r;
+  n += texture(u_cells, v_uv + vec2( px.x, -px.y)).r;
+  n += texture(u_cells, v_uv + vec2(-px.x,  0.0 )).r;
+  n += texture(u_cells, v_uv + vec2( px.x,  0.0 )).r;
+  n += texture(u_cells, v_uv + vec2(-px.x,  px.y)).r;
+  n += texture(u_cells, v_uv + vec2( 0.0,   px.y)).r;
+  n += texture(u_cells, v_uv + vec2( px.x,  px.y)).r;
+
+  // Birth: Gaussian peak near n=3; pheromone shifts it slightly lower
+  float bCenter = 3.0 - phero * 0.6;
+  float bWidth  = 0.55 + phero * 0.25;
+  float birthP  = exp(-pow((n - bCenter) / bWidth, 2.0));
+
+  // Survival: smooth window [survMin, survMax]; pheromone widens upper bound
+  float survMin = 1.7;
+  float survMax = 3.7 + phero * 0.9;
+  float survP = smoothstep(survMin, survMin + 0.35, n)
+              * (1.0 - smoothstep(survMax - 0.35, survMax, n));
+
+  // Blend birth/survival by how alive the cell already is
+  float target = mix(birthP * 0.85, survP, smoothstep(0.08, 0.45, cell));
+
+  // Slime-trail seeding: new growth spawns near high-pheromone areas
+  float seedProb = step(0.988, hash(v_uv + fract(u_time * 0.071)));
+  float seedAmount = phero * seedProb * 0.55 * (1.0 - cell);
+  target = min(1.0, target + seedAmount);
+
+  // Smooth approach toward target
+  float next = cell + (target - cell) * 0.13;
+
+  // Micro-noise to prevent crystallization into static attractors
+  float noise = (hash(v_uv + fract(u_time * 0.037)) - 0.5) * 0.012;
+  next = clamp(next + noise, 0.0, 1.0);
+
+  fragColor = vec4(next, 0.0, 0.0, 1.0);
+}`;
+
+      // Pheromone deposit + Gaussian diffusion + exponential decay.
+      // Pheromone in R channel, range [0,1].
+      const PHERO_FS = `#version 300 es
+precision highp float;
+uniform sampler2D u_phero;
+uniform sampler2D u_cells;
+uniform vec2 u_res;
+in vec2 v_uv;
+out vec4 fragColor;
+
+void main() {
+  vec2 px = 1.0 / u_res;
+  float phero = texture(u_phero, v_uv).r;
+  float cell  = texture(u_cells, v_uv).r;
+
+  // Gaussian 3x3 diffusion kernel (weights sum = 1.0 for conservation)
+  float d = 0.0;
+  d += texture(u_phero, v_uv + vec2(-px.x, -px.y)).r * 0.0625;
+  d += texture(u_phero, v_uv + vec2( 0.0,  -px.y)).r * 0.125;
+  d += texture(u_phero, v_uv + vec2( px.x, -px.y)).r * 0.0625;
+  d += texture(u_phero, v_uv + vec2(-px.x,  0.0 )).r * 0.125;
+  d += phero                                           * 0.25;
+  d += texture(u_phero, v_uv + vec2( px.x,  0.0 )).r * 0.125;
+  d += texture(u_phero, v_uv + vec2(-px.x,  px.y)).r * 0.0625;
+  d += texture(u_phero, v_uv + vec2( 0.0,   px.y)).r * 0.125;
+  d += texture(u_phero, v_uv + vec2( px.x,  px.y)).r * 0.0625;
+
+  float deposit = cell * 0.045;
+  float next = clamp(d * 0.965 + deposit, 0.0, 1.0);
+  fragColor = vec4(next, 0.0, 0.0, 1.0);
+}`;
+
+      // Render: cells (cyan-green core) + pheromone (violet trails) + bloom glow.
+      // Alpha is 0 where dark so OBS sees a transparent background.
+      const DISPLAY_FS = `#version 300 es
+precision highp float;
+uniform sampler2D u_cells;
+uniform sampler2D u_phero;
+uniform vec2 u_simRes;
+uniform float u_time;
+in vec2 v_uv;
+out vec4 fragColor;
+
+float bloomTap(sampler2D tex, vec2 uv, float r) {
+  vec2 px = r / u_simRes;
+  float total = 0.0, w = 0.0;
+  for (int i = -2; i <= 2; i++) {
+    for (int j = -2; j <= 2; j++) {
+      float d = length(vec2(float(i), float(j)));
+      float weight = exp(-d * 0.45);
+      total += texture(tex, uv + vec2(float(i), float(j)) * px).r * weight;
+      w += weight;
+    }
+  }
+  return total / w;
+}
+
+void main() {
+  float cell  = texture(u_cells, v_uv).r;
+  float phero = texture(u_phero, v_uv).r;
+
+  // Bloom glow from nearby cells and pheromone
+  float cellGlow  = bloomTap(u_cells, v_uv, 2.0);
+  float pheroGlow = bloomTap(u_phero, v_uv, 3.5);
+
+  // Filament: high co-activity of cell + pheromone creates bright threads
+  float filament = smoothstep(0.25, 0.85, cell * phero * 4.5);
+
+  // Color layers
+  vec3 core      = vec3(0.05, 1.00, 0.55) * cell * 1.3;
+  vec3 trail     = vec3(0.50, 0.08, 1.00) * phero * 0.65;
+  vec3 glow      = vec3(0.00, 0.75, 0.55) * max(0.0, cellGlow - cell) * 1.1;
+  vec3 phGlow    = vec3(0.35, 0.05, 0.80) * pheroGlow * 0.22;
+  vec3 thread    = vec3(0.95, 1.00, 0.60) * filament * 0.55;
+
+  vec3 color = core + trail + glow + phGlow + thread;
+
+  // Filmic tone-map
+  color = pow(color / (color + 0.55), vec3(0.82));
+
+  // Transparent background for OBS: alpha follows luminance
+  float lum = dot(color, vec3(0.299, 0.587, 0.114));
+  float alpha = clamp(lum * 2.8, 0.0, 1.0);
+
+  fragColor = vec4(color * alpha, alpha); // premultiply for correct blending
+}`;
+
+      // ── Compile helpers ──────────────────────────────────────────────────────────
+
+      function makeShader(type, src) {
+        const s = gl.createShader(type);
+        gl.shaderSource(s, src);
+        gl.compileShader(s);
+        if (!gl.getShaderParameter(s, gl.COMPILE_STATUS))
+          throw new Error(gl.getShaderInfoLog(s));
+        return s;
+      }
+
+      function makeProgram(vs, fs) {
+        const p = gl.createProgram();
+        gl.attachShader(p, makeShader(gl.VERTEX_SHADER, vs));
+        gl.attachShader(p, makeShader(gl.FRAGMENT_SHADER, fs));
+        gl.linkProgram(p);
+        if (!gl.getProgramParameter(p, gl.LINK_STATUS))
+          throw new Error(gl.getProgramInfoLog(p));
+        return p;
+      }
+
+      const simProg = makeProgram(QUAD_VS, SIM_FS);
+      const pheroProg = makeProgram(QUAD_VS, PHERO_FS);
+      const displayProg = makeProgram(QUAD_VS, DISPLAY_FS);
+
+      // ── Geometry (shared full-screen quad) ───────────────────────────────────────
+
+      const vao = gl.createVertexArray();
+      gl.bindVertexArray(vao);
+      const quadBuf = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, quadBuf);
+      gl.bufferData(
+        gl.ARRAY_BUFFER,
+        new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]),
+        gl.STATIC_DRAW,
+      );
+
+      function bindQuad(prog) {
+        const loc = gl.getAttribLocation(prog, "a_pos");
+        gl.bindBuffer(gl.ARRAY_BUFFER, quadBuf);
+        gl.enableVertexAttribArray(loc);
+        gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+      }
+
+      // ── Textures + FBOs ──────────────────────────────────────────────────────────
+
+      function makeTex(data) {
+        const t = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, t);
+        gl.texImage2D(
+          gl.TEXTURE_2D,
+          0,
+          gl.R32F,
+          SIM_W,
+          SIM_H,
+          0,
+          gl.RED,
+          gl.FLOAT,
+          data ? new Float32Array(data) : null,
+        );
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        return t;
+      }
+
+      function makeFBO(tex) {
+        const f = gl.createFramebuffer();
+        gl.bindFramebuffer(gl.FRAMEBUFFER, f);
+        gl.framebufferTexture2D(
+          gl.FRAMEBUFFER,
+          gl.COLOR_ATTACHMENT0,
+          gl.TEXTURE_2D,
+          tex,
+          0,
+        );
+        return f;
+      }
+
+      // Initial sparse random cell state (~28% density, slight clusters)
+      const initCells = new Array(SIM_W * SIM_H).fill(0).map((_, i) => {
+        const x = (i % SIM_W) / SIM_W;
+        const y = Math.floor(i / SIM_W) / SIM_H;
+        const base = Math.random() < 0.28 ? Math.random() * 0.7 + 0.3 : 0;
+        return base;
+      });
+
+      const cellTex = [makeTex(initCells), makeTex(null)];
+      const pheroTex = [makeTex(null), makeTex(null)];
+      const cellFBO = [makeFBO(cellTex[0]), makeFBO(cellTex[1])];
+      const pheroFBO = [makeFBO(pheroTex[0]), makeFBO(pheroTex[1])];
+
+      // ── Uniform location cache ───────────────────────────────────────────────────
+
+      function uloc(prog, name) {
+        return gl.getUniformLocation(prog, name);
+      }
+
+      const simU = {
+        cells: uloc(simProg, "u_cells"),
+        phero: uloc(simProg, "u_phero"),
+        res: uloc(simProg, "u_res"),
+        time: uloc(simProg, "u_time"),
+      };
+      const pheroU = {
+        phero: uloc(pheroProg, "u_phero"),
+        cells: uloc(pheroProg, "u_cells"),
+        res: uloc(pheroProg, "u_res"),
+      };
+      const dispU = {
+        cells: uloc(displayProg, "u_cells"),
+        phero: uloc(displayProg, "u_phero"),
+        simRes: uloc(displayProg, "u_simRes"),
+        time: uloc(displayProg, "u_time"),
+      };
+
+      // ── Render loop ──────────────────────────────────────────────────────────────
+
+      let read = 0;
+      let t0 = null;
+
+      function step(time) {
+        const write = 1 - read;
+
+        // Cell simulation pass
+        gl.bindFramebuffer(gl.FRAMEBUFFER, cellFBO[write]);
+        gl.viewport(0, 0, SIM_W, SIM_H);
+        gl.useProgram(simProg);
+        bindQuad(simProg);
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, cellTex[read]);
+        gl.activeTexture(gl.TEXTURE1);
+        gl.bindTexture(gl.TEXTURE_2D, pheroTex[read]);
+        gl.uniform1i(simU.cells, 0);
+        gl.uniform1i(simU.phero, 1);
+        gl.uniform2f(simU.res, SIM_W, SIM_H);
+        gl.uniform1f(simU.time, time);
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+        // Pheromone diffusion pass
+        gl.bindFramebuffer(gl.FRAMEBUFFER, pheroFBO[write]);
+        gl.useProgram(pheroProg);
+        bindQuad(pheroProg);
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, pheroTex[read]);
+        gl.activeTexture(gl.TEXTURE1);
+        gl.bindTexture(gl.TEXTURE_2D, cellTex[read]);
+        gl.uniform1i(pheroU.phero, 0);
+        gl.uniform1i(pheroU.cells, 1);
+        gl.uniform2f(pheroU.res, SIM_W, SIM_H);
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+        read = write;
+      }
+
+      function display(time) {
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        gl.viewport(0, 0, canvas.width, canvas.height);
+        gl.clearColor(0, 0, 0, 0);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        gl.useProgram(displayProg);
+        bindQuad(displayProg);
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, cellTex[read]);
+        gl.activeTexture(gl.TEXTURE1);
+        gl.bindTexture(gl.TEXTURE_2D, pheroTex[read]);
+        gl.uniform1i(dispU.cells, 0);
+        gl.uniform1i(dispU.phero, 1);
+        gl.uniform2f(dispU.simRes, SIM_W, SIM_H);
+        gl.uniform1f(dispU.time, time);
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+      }
+
+      function frame(ts) {
+        if (!t0) t0 = ts;
+        const time = (ts - t0) * 0.001;
+        step(time);
+        display(time);
+        requestAnimationFrame(frame);
+      }
+
+      requestAnimationFrame(frame);
+    </script>
+  </body>
+</html>

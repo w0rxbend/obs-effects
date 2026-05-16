@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Cyberpunk Spectrum</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        background: transparent;
+        overflow: hidden;
+      }
+      canvas {
+        position: fixed;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+      }
+      #tap {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: opacity 0.5s;
+      }
+      #tap.hidden {
+        opacity: 0;
+        pointer-events: none;
+      }
+      .ring {
+        width: 72px;
+        height: 72px;
+        border-radius: 50%;
+        border: 1.5px solid rgba(0, 229, 255, 0.55);
+        box-shadow: 0 0 18px rgba(0, 229, 255, 0.3);
+        animation: breathe 2.2s ease-in-out infinite;
+      }
+      @keyframes breathe {
+        0%,
+        100% {
+          transform: scale(1);
+          opacity: 0.45;
+        }
+        50% {
+          transform: scale(1.2);
+          opacity: 1;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="c"></canvas>
+    <div id="tap"><div class="ring"></div></div>
+    <script>
+      "use strict";
+
+      const canvas = document.getElementById("c");
+      const ctx = canvas.getContext("2d");
+      const tapEl = document.getElementById("tap");
+
+      const BARS = 180; // bars around the circle
+      const LRSP = 0.13; // lerp speed per frame
+
+      let W, H, cx, cy, iR, oR;
+      let analyser = null,
+        rawBuf = null,
+        smooth = null;
+      let bassSmooth = 0;
+
+      /* ── resize ─────────────────────────────────────────── */
+      function onResize() {
+        W = canvas.width = window.innerWidth;
+        H = canvas.height = window.innerHeight;
+        cx = W / 2;
+        cy = H / 2;
+        const m = Math.min(W, H);
+        iR = m * 0.13; // base ring radius
+        oR = m * 0.44; // max bar tip radius
+      }
+      window.addEventListener("resize", onResize);
+      onResize();
+
+      /* ── audio ───────────────────────────────────────────── */
+      async function initAudio() {
+        let stream;
+        const audioOpts = {
+          audio: {
+            echoCancellation: false,
+            noiseSuppression: false,
+            autoGainControl: false,
+          },
+          video: false,
+        };
+
+        try {
+          // OBS browser source pipes audio through getUserMedia when configured
+          stream = await navigator.mediaDevices.getUserMedia(audioOpts);
+        } catch (_) {
+          try {
+            // Fallback: screen capture with system audio
+            stream = await navigator.mediaDevices.getDisplayMedia({
+              audio: true,
+              video: { width: 1, height: 1, frameRate: 1 },
+            });
+          } catch (__) {
+            return false;
+          }
+        }
+
+        const actx = new (window.AudioContext || window.webkitAudioContext)();
+        const src = actx.createMediaStreamSource(stream);
+
+        analyser = actx.createAnalyser();
+        analyser.fftSize = 4096;
+        analyser.smoothingTimeConstant = 0.8;
+        analyser.minDecibels = -85;
+        analyser.maxDecibels = -10;
+
+        src.connect(analyser);
+        rawBuf = new Uint8Array(analyser.frequencyBinCount);
+        smooth = new Float32Array(BARS);
+        return true;
+      }
+
+      /* ── colour ──────────────────────────────────────────── */
+      // Symmetric purple→cyan→purple sweep around the ring
+      function hueAt(t) {
+        // t: 0..1 → hue: 275 (purple) → 185 (cyan) → 275 (purple)
+        return t < 0.5 ? 275 - t * 2 * 90 : 185 + (t - 0.5) * 2 * 90;
+      }
+
+      function barColor(t, L) {
+        return `hsl(${hueAt(t) | 0},100%,${L | 0}%)`;
+      }
+
+      /* ── draw ────────────────────────────────────────────── */
+      function draw() {
+        requestAnimationFrame(draw);
+        ctx.clearRect(0, 0, W, H);
+
+        /* sample + smooth frequency data */
+        let avg = 0;
+        let bass = 0;
+
+        if (analyser) {
+          analyser.getByteFrequencyData(rawBuf);
+          const bc = analyser.frequencyBinCount;
+
+          for (let i = 0; i < BARS; i++) {
+            const t = i / BARS;
+            // Power-curve index concentrates resolution toward bass
+            const idx = Math.floor(Math.pow(t, 0.62) * bc * 0.7);
+            const val = rawBuf[Math.min(idx, bc - 1)] / 255;
+            smooth[i] += (val - smooth[i]) * LRSP;
+            avg += smooth[i];
+          }
+          avg /= BARS;
+
+          // Bass: average of lowest ~4 % of bins
+          const bassEnd = Math.floor(bc * 0.04);
+          for (let i = 0; i < bassEnd; i++) bass += rawBuf[i] / 255;
+          bass /= bassEnd;
+          bassSmooth += (bass - bassSmooth) * 0.18;
+        }
+
+        /* ── bars ── two-pass: glow then sharp core */
+        for (let pass = 0; pass < 2; pass++) {
+          ctx.save();
+          if (pass === 0) {
+            ctx.globalAlpha = 0.32;
+            ctx.shadowBlur = 30;
+          } else {
+            ctx.globalAlpha = 1.0;
+            ctx.shadowBlur = 7;
+          }
+
+          for (let i = 0; i < BARS; i++) {
+            const t = i / BARS;
+            const angle = t * Math.PI * 2 - Math.PI / 2;
+            const amp = smooth[i];
+            const barH = amp * (oR - iR);
+
+            const L = pass === 0 ? 62 : 68 + amp * 22;
+            const color = barColor(t, L);
+
+            ctx.shadowColor = color;
+            ctx.strokeStyle = color;
+            ctx.lineWidth = pass === 0 ? 4 : 1.8;
+            ctx.lineCap = "round";
+
+            const cosA = Math.cos(angle);
+            const sinA = Math.sin(angle);
+
+            ctx.beginPath();
+            ctx.moveTo(cx + cosA * iR, cy + sinA * iR);
+            ctx.lineTo(cx + cosA * (iR + barH), cy + sinA * (iR + barH));
+            ctx.stroke();
+          }
+
+          ctx.restore();
+        }
+
+        /* ── bar-tip dots when amplitude high */
+        ctx.save();
+        ctx.shadowBlur = 10;
+        for (let i = 0; i < BARS; i++) {
+          const amp = smooth[i];
+          if (amp < 0.35) continue;
+          const t = i / BARS;
+          const angle = t * Math.PI * 2 - Math.PI / 2;
+          const tipR = iR + amp * (oR - iR);
+          const color = barColor(t, 82);
+          ctx.shadowColor = color;
+          ctx.fillStyle = color;
+          ctx.globalAlpha = (amp - 0.35) * 1.5;
+          ctx.beginPath();
+          ctx.arc(
+            cx + Math.cos(angle) * tipR,
+            cy + Math.sin(angle) * tipR,
+            1.5,
+            0,
+            Math.PI * 2,
+          );
+          ctx.fill();
+        }
+        ctx.restore();
+
+        /* ── base ring ── */
+        const ringR = iR * (0.93 + avg * 0.1);
+        ctx.save();
+
+        // Glow halo
+        ctx.shadowBlur = 28;
+        ctx.shadowColor = "rgba(0,229,255,.9)";
+        ctx.strokeStyle = `rgba(0,229,255,${0.28 + avg * 0.5})`;
+        ctx.lineWidth = 1.4;
+        ctx.beginPath();
+        ctx.arc(cx, cy, ringR, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // Bright white-cyan core line
+        ctx.shadowBlur = 4;
+        ctx.shadowColor = "rgba(200,245,255,.8)";
+        ctx.strokeStyle = `rgba(200,245,255,${0.55 + avg * 0.4})`;
+        ctx.lineWidth = 0.5;
+        ctx.beginPath();
+        ctx.arc(cx, cy, ringR, 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.restore();
+
+        /* ── centre dot, pulses with bass ── */
+        ctx.save();
+        const dotR = 2.5 + bassSmooth * 9;
+        const dotHue = 235 + bassSmooth * 40;
+        ctx.shadowBlur = 22 + bassSmooth * 12;
+        ctx.shadowColor = `hsl(${dotHue},100%,65%)`;
+        ctx.fillStyle = `hsl(${dotHue},100%,82%)`;
+        ctx.globalAlpha = 0.82 + bassSmooth * 0.18;
+        ctx.beginPath();
+        ctx.arc(cx, cy, dotR, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+
+        /* ── subtle outer boundary ring ── */
+        ctx.save();
+        ctx.shadowBlur = 0;
+        ctx.strokeStyle = `rgba(160,0,255,${0.08 + avg * 0.07})`;
+        ctx.lineWidth = 0.6;
+        ctx.beginPath();
+        ctx.arc(cx, cy, oR, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      draw();
+
+      /* ── start / tap logic ── */
+      async function tryStart() {
+        const ok = await initAudio();
+        if (ok) tapEl.classList.add("hidden");
+      }
+
+      tapEl.addEventListener("click", tryStart);
+      // Auto-start — succeeds in OBS browser source without a user gesture
+      tryStart();
+    </script>
+  </body>
+</html>
