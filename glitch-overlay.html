@@ -1,276 +1,332 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Glitch Overlay</title>
-  <style>
-    * { margin: 0; padding: 0; }
-    html, body { width: 100%; height: 100%; background: transparent; overflow: hidden; }
-    canvas { display: block; }
-  </style>
-</head>
-<body>
-<script type="module">
-import * as PIXI from 'https://cdn.jsdelivr.net/npm/pixi.js@8/dist/pixi.mjs';
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Glitch Overlay</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+      }
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        background: transparent;
+        overflow: hidden;
+      }
+      canvas {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import * as PIXI from "https://cdn.jsdelivr.net/npm/pixi.js@8/dist/pixi.mjs";
 
-const { Application, Graphics } = PIXI;
+      const { Application, Graphics } = PIXI;
 
-// ── Init ──────────────────────────────────────────────────────────────────────
-let W = window.innerWidth;
-let H = window.innerHeight;
+      // ── Init ──────────────────────────────────────────────────────────────────────
+      let W = window.innerWidth;
+      let H = window.innerHeight;
 
-const app = new Application();
-await app.init({
-  width: W,
-  height: H,
-  backgroundAlpha: 0,
-  antialias: false,
-  powerPreference: 'high-performance',
-  hello: false,
-});
-document.body.appendChild(app.canvas);
+      const app = new Application();
+      await app.init({
+        width: W,
+        height: H,
+        backgroundAlpha: 0,
+        antialias: false,
+        powerPreference: "high-performance",
+        hello: false,
+      });
+      document.body.appendChild(app.canvas);
 
-// ── Layers ────────────────────────────────────────────────────────────────────
-const scanGfx    = new Graphics(); // CRT scanlines — static
-const edgeGfx    = new Graphics(); // Always-on chromatic edge fringe
-const glitchGfx  = new Graphics(); // Horizontal band displacement / corruption
-const rgbGfx     = new Graphics(); // RGB channel split
-const noiseGfx   = new Graphics(); // Digital noise clusters
-const flickerGfx = new Graphics(); // CRT brightness flicker
+      // ── Layers ────────────────────────────────────────────────────────────────────
+      const scanGfx = new Graphics(); // CRT scanlines — static
+      const edgeGfx = new Graphics(); // Always-on chromatic edge fringe
+      const glitchGfx = new Graphics(); // Horizontal band displacement / corruption
+      const rgbGfx = new Graphics(); // RGB channel split
+      const noiseGfx = new Graphics(); // Digital noise clusters
+      const flickerGfx = new Graphics(); // CRT brightness flicker
 
-app.stage.addChild(scanGfx, edgeGfx, glitchGfx, rgbGfx, noiseGfx, flickerGfx);
+      app.stage.addChild(
+        scanGfx,
+        edgeGfx,
+        glitchGfx,
+        rgbGfx,
+        noiseGfx,
+        flickerGfx,
+      );
 
-// ── Palette ───────────────────────────────────────────────────────────────────
-const C = {
-  cyan:    0x00ffff,
-  magenta: 0xff00ff,
-  green:   0x00ff41,
-  red:     0xff1a1a,
-  white:   0xffffff,
-  yellow:  0xffff00,
-};
+      // ── Palette ───────────────────────────────────────────────────────────────────
+      const C = {
+        cyan: 0x00ffff,
+        magenta: 0xff00ff,
+        green: 0x00ff41,
+        red: 0xff1a1a,
+        white: 0xffffff,
+        yellow: 0xffff00,
+      };
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-const rnd  = (lo, hi) => lo + Math.random() * (hi - lo);
-const rndI = (lo, hi) => Math.floor(rnd(lo, hi + 1));
-const pick = (...a)   => a[Math.floor(Math.random() * a.length)];
+      // ── Helpers ───────────────────────────────────────────────────────────────────
+      const rnd = (lo, hi) => lo + Math.random() * (hi - lo);
+      const rndI = (lo, hi) => Math.floor(rnd(lo, hi + 1));
+      const pick = (...a) => a[Math.floor(Math.random() * a.length)];
 
-// ── Scanlines — drawn once, refreshed on resize ───────────────────────────────
-function buildScanlines() {
-  scanGfx.clear();
-  for (let y = 0; y < H; y += 3) {
-    scanGfx.rect(0, y, W, 1).fill({ color: 0x000000, alpha: 0.10 });
-  }
-}
-buildScanlines();
+      // ── Scanlines — drawn once, refreshed on resize ───────────────────────────────
+      function buildScanlines() {
+        scanGfx.clear();
+        for (let y = 0; y < H; y += 3) {
+          scanGfx.rect(0, y, W, 1).fill({ color: 0x000000, alpha: 0.1 });
+        }
+      }
+      buildScanlines();
 
-// ── Edge chromatic aberration — subtle VHS tape-edge bleed ────────────────────
-function buildEdgeFringe() {
-  edgeGfx.clear();
-  for (let i = 0; i < 5; i++) {
-    const a = (5 - i) * 0.013;
-    // top
-    edgeGfx.rect(0,  i * 2,      W, 2).fill({ color: C.cyan,    alpha: a });
-    edgeGfx.rect(2,  i * 2,      W, 2).fill({ color: C.magenta, alpha: a * 0.5 });
-    // bottom
-    edgeGfx.rect(0,  H - i * 2 - 2, W, 2).fill({ color: C.red,  alpha: a * 0.9 });
-    edgeGfx.rect(-2, H - i * 2 - 2, W, 2).fill({ color: C.cyan, alpha: a * 0.4 });
-  }
-}
-buildEdgeFringe();
+      // ── Edge chromatic aberration — subtle VHS tape-edge bleed ────────────────────
+      function buildEdgeFringe() {
+        edgeGfx.clear();
+        for (let i = 0; i < 5; i++) {
+          const a = (5 - i) * 0.013;
+          // top
+          edgeGfx.rect(0, i * 2, W, 2).fill({ color: C.cyan, alpha: a });
+          edgeGfx
+            .rect(2, i * 2, W, 2)
+            .fill({ color: C.magenta, alpha: a * 0.5 });
+          // bottom
+          edgeGfx
+            .rect(0, H - i * 2 - 2, W, 2)
+            .fill({ color: C.red, alpha: a * 0.9 });
+          edgeGfx
+            .rect(-2, H - i * 2 - 2, W, 2)
+            .fill({ color: C.cyan, alpha: a * 0.4 });
+        }
+      }
+      buildEdgeFringe();
 
-// ── State ─────────────────────────────────────────────────────────────────────
-let time = 0;
+      // ── State ─────────────────────────────────────────────────────────────────────
+      let time = 0;
 
-let glitchTimer    = rnd(1.5, 4.0);
-let glitchActive   = false;
-let glitchEnd      = 0;
-let glitchStrength = 1;
+      let glitchTimer = rnd(1.5, 4.0);
+      let glitchActive = false;
+      let glitchEnd = 0;
+      let glitchStrength = 1;
 
-let rgbTimer    = rnd(2.0, 5.5);
-let rgbActive   = false;
-let rgbEnd      = 0;
-let rgbStrength = 1;
+      let rgbTimer = rnd(2.0, 5.5);
+      let rgbActive = false;
+      let rgbEnd = 0;
+      let rgbStrength = 1;
 
-let noiseTimer  = rnd(0.8, 2.5);
-let noiseActive = false;
-let noiseEnd    = 0;
+      let noiseTimer = rnd(0.8, 2.5);
+      let noiseActive = false;
+      let noiseEnd = 0;
 
-// VHS tape head scan — a bright line that occasionally sweeps top-to-bottom
-let headTimer  = rnd(5, 12);
-let headActive = false;
-let headY      = 0;
+      // VHS tape head scan — a bright line that occasionally sweeps top-to-bottom
+      let headTimer = rnd(5, 12);
+      let headActive = false;
+      let headY = 0;
 
-// ── Draw: horizontal band displacement + scan corruption ──────────────────────
-function drawGlitch(s) {
-  glitchGfx.clear();
-  const bands = rndI(2, Math.ceil(8 * s));
+      // ── Draw: horizontal band displacement + scan corruption ──────────────────────
+      function drawGlitch(s) {
+        glitchGfx.clear();
+        const bands = rndI(2, Math.ceil(8 * s));
 
-  for (let i = 0; i < bands; i++) {
-    const y   = rnd(0, H);
-    const bh  = rnd(1, 10 + 22 * s);
-    const xo  = rnd(-30, 30) * s;
-    const col = pick(C.cyan, C.green, C.white, C.magenta);
-    const a   = rnd(0.03, 0.22 * s);
+        for (let i = 0; i < bands; i++) {
+          const y = rnd(0, H);
+          const bh = rnd(1, 10 + 22 * s);
+          const xo = rnd(-30, 30) * s;
+          const col = pick(C.cyan, C.green, C.white, C.magenta);
+          const a = rnd(0.03, 0.22 * s);
 
-    // Displaced translucent strip
-    glitchGfx.rect(xo, y, W, bh).fill({ color: col, alpha: a });
+          // Displaced translucent strip
+          glitchGfx.rect(xo, y, W, bh).fill({ color: col, alpha: a });
 
-    // Interior static pixels — simulates scan-line corruption
-    const n = Math.floor(bh * 5 * s);
-    for (let p = 0; p < n; p++) {
-      const px = rnd(0, W);
-      const py = y + rnd(0, bh);
-      const ps = rnd(1, 2.5);
-      glitchGfx
-        .rect(px, py, ps, ps)
-        .fill({ color: pick(C.white, C.cyan, C.green, 0x000000), alpha: rnd(0.4, 1.0) });
-    }
-  }
+          // Interior static pixels — simulates scan-line corruption
+          const n = Math.floor(bh * 5 * s);
+          for (let p = 0; p < n; p++) {
+            const px = rnd(0, W);
+            const py = y + rnd(0, bh);
+            const ps = rnd(1, 2.5);
+            glitchGfx
+              .rect(px, py, ps, ps)
+              .fill({
+                color: pick(C.white, C.cyan, C.green, 0x000000),
+                alpha: rnd(0.4, 1.0),
+              });
+          }
+        }
 
-  // Head-switch artifact: faint bright stripe near bottom ~40% of the time
-  if (Math.random() < 0.4) {
-    const ly = H * rnd(0.86, 0.98);
-    glitchGfx.rect(0, ly, W, rnd(1, 3)).fill({ color: C.white, alpha: rnd(0.15, 0.5) });
-  }
-}
+        // Head-switch artifact: faint bright stripe near bottom ~40% of the time
+        if (Math.random() < 0.4) {
+          const ly = H * rnd(0.86, 0.98);
+          glitchGfx
+            .rect(0, ly, W, rnd(1, 3))
+            .fill({ color: C.white, alpha: rnd(0.15, 0.5) });
+        }
+      }
 
-// ── Draw: RGB channel separation ──────────────────────────────────────────────
-function drawRGBSplit(s) {
-  rgbGfx.clear();
-  const bands = rndI(1, Math.ceil(5 * s));
+      // ── Draw: RGB channel separation ──────────────────────────────────────────────
+      function drawRGBSplit(s) {
+        rgbGfx.clear();
+        const bands = rndI(1, Math.ceil(5 * s));
 
-  for (let i = 0; i < bands; i++) {
-    const y  = rnd(0, H);
-    const bh = rnd(2, 32 * s);
-    const sh = rnd(3, 15 * s);
+        for (let i = 0; i < bands; i++) {
+          const y = rnd(0, H);
+          const bh = rnd(2, 32 * s);
+          const sh = rnd(3, 15 * s);
 
-    rgbGfx.rect( sh, y,     W, bh).fill({ color: 0xff0000, alpha: rnd(0.05, 0.18) });
-    rgbGfx.rect(-sh, y,     W, bh).fill({ color: 0x0000ff, alpha: rnd(0.05, 0.18) });
-    rgbGfx.rect(  0, y - 1, W, bh).fill({ color: 0x00ff00, alpha: rnd(0.03, 0.10) });
-  }
-}
+          rgbGfx
+            .rect(sh, y, W, bh)
+            .fill({ color: 0xff0000, alpha: rnd(0.05, 0.18) });
+          rgbGfx
+            .rect(-sh, y, W, bh)
+            .fill({ color: 0x0000ff, alpha: rnd(0.05, 0.18) });
+          rgbGfx
+            .rect(0, y - 1, W, bh)
+            .fill({ color: 0x00ff00, alpha: rnd(0.03, 0.1) });
+        }
+      }
 
-// ── Draw: clustered digital noise burst ───────────────────────────────────────
-function drawNoise() {
-  noiseGfx.clear();
-  const clusters = rndI(2, 6);
+      // ── Draw: clustered digital noise burst ───────────────────────────────────────
+      function drawNoise() {
+        noiseGfx.clear();
+        const clusters = rndI(2, 6);
 
-  for (let c = 0; c < clusters; c++) {
-    const cx = rnd(0, W);
-    const cy = rnd(0, H);
-    const rx = rnd(20, 140);
-    const ry = rnd(4,  40);
-    const n  = rndI(80, 420);
+        for (let c = 0; c < clusters; c++) {
+          const cx = rnd(0, W);
+          const cy = rnd(0, H);
+          const rx = rnd(20, 140);
+          const ry = rnd(4, 40);
+          const n = rndI(80, 420);
 
-    for (let i = 0; i < n; i++) {
-      const px  = cx + rnd(-rx, rx);
-      const py  = cy + rnd(-ry, ry);
-      const ps  = rnd(1, 3);
-      const col = pick(C.cyan, C.green, C.white, C.magenta, C.red, C.yellow);
-      noiseGfx.rect(px, py, ps, ps).fill({ color: col, alpha: rnd(0.4, 1.0) });
-    }
-  }
-}
+          for (let i = 0; i < n; i++) {
+            const px = cx + rnd(-rx, rx);
+            const py = cy + rnd(-ry, ry);
+            const ps = rnd(1, 3);
+            const col = pick(
+              C.cyan,
+              C.green,
+              C.white,
+              C.magenta,
+              C.red,
+              C.yellow,
+            );
+            noiseGfx
+              .rect(px, py, ps, ps)
+              .fill({ color: col, alpha: rnd(0.4, 1.0) });
+          }
+        }
+      }
 
-// ── Draw: CRT brightness flicker ──────────────────────────────────────────────
-function drawFlicker(t) {
-  flickerGfx.clear();
+      // ── Draw: CRT brightness flicker ──────────────────────────────────────────────
+      function drawFlicker(t) {
+        flickerGfx.clear();
 
-  const slow  = Math.sin(t * 4.7)  * 0.5 + 0.5; // slow swell
-  const fast  = Math.sin(t * 53.1) * 0.5 + 0.5; // high-freq shimmer
-  const spike = Math.random() < 0.015 ? rnd(0.08, 0.28) : 0;
-  const a     = slow * 0.025 + fast * 0.005 + spike;
+        const slow = Math.sin(t * 4.7) * 0.5 + 0.5; // slow swell
+        const fast = Math.sin(t * 53.1) * 0.5 + 0.5; // high-freq shimmer
+        const spike = Math.random() < 0.015 ? rnd(0.08, 0.28) : 0;
+        const a = slow * 0.025 + fast * 0.005 + spike;
 
-  if (a > 0.003) {
-    flickerGfx.rect(0, 0, W, H).fill({ color: 0xffffff, alpha: a });
-  }
+        if (a > 0.003) {
+          flickerGfx.rect(0, 0, W, H).fill({ color: 0xffffff, alpha: a });
+        }
 
-  // Stray electron-beam artifact — random single horizontal line
-  if (Math.random() < 0.07) {
-    flickerGfx.rect(0, rnd(0, H), W, 1).fill({ color: C.white, alpha: rnd(0.04, 0.18) });
-  }
-}
+        // Stray electron-beam artifact — random single horizontal line
+        if (Math.random() < 0.07) {
+          flickerGfx
+            .rect(0, rnd(0, H), W, 1)
+            .fill({ color: C.white, alpha: rnd(0.04, 0.18) });
+        }
+      }
 
-// ── Draw: VHS tape-head scan line ─────────────────────────────────────────────
-function drawTapeHead(y) {
-  glitchGfx.clear();
-  glitchGfx.rect(0, y, W, 2).fill({ color: C.white, alpha: 0.55 });
-  // Trailing smear above
-  for (let i = 1; i <= 10; i++) {
-    glitchGfx.rect(0, y - i, W, 1).fill({ color: C.cyan, alpha: 0.07 / i });
-  }
-}
+      // ── Draw: VHS tape-head scan line ─────────────────────────────────────────────
+      function drawTapeHead(y) {
+        glitchGfx.clear();
+        glitchGfx.rect(0, y, W, 2).fill({ color: C.white, alpha: 0.55 });
+        // Trailing smear above
+        for (let i = 1; i <= 10; i++) {
+          glitchGfx
+            .rect(0, y - i, W, 1)
+            .fill({ color: C.cyan, alpha: 0.07 / i });
+        }
+      }
 
-// ── Ticker ────────────────────────────────────────────────────────────────────
-app.ticker.add((ticker) => {
-  const dt = Math.min(ticker.deltaMS / 1000, 0.05);
-  time += dt;
+      // ── Ticker ────────────────────────────────────────────────────────────────────
+      app.ticker.add((ticker) => {
+        const dt = Math.min(ticker.deltaMS / 1000, 0.05);
+        time += dt;
 
-  // Glitch bands
-  glitchTimer -= dt;
-  if (!glitchActive && glitchTimer <= 0) {
-    glitchActive   = true;
-    glitchStrength = rnd(0.4, 2.0);
-    glitchEnd      = time + rnd(0.03, 0.20);
-    glitchTimer    = rnd(1.0, 5.5);
-  }
-  if (glitchActive) {
-    if (time >= glitchEnd) { glitchActive = false; glitchGfx.clear(); }
-    else drawGlitch(glitchStrength);
-  }
+        // Glitch bands
+        glitchTimer -= dt;
+        if (!glitchActive && glitchTimer <= 0) {
+          glitchActive = true;
+          glitchStrength = rnd(0.4, 2.0);
+          glitchEnd = time + rnd(0.03, 0.2);
+          glitchTimer = rnd(1.0, 5.5);
+        }
+        if (glitchActive) {
+          if (time >= glitchEnd) {
+            glitchActive = false;
+            glitchGfx.clear();
+          } else drawGlitch(glitchStrength);
+        }
 
-  // RGB split
-  rgbTimer -= dt;
-  if (!rgbActive && rgbTimer <= 0) {
-    rgbActive   = true;
-    rgbStrength = rnd(0.5, 2.0);
-    rgbEnd      = time + rnd(0.04, 0.24);
-    rgbTimer    = rnd(1.5, 6.5);
-  }
-  if (rgbActive) {
-    if (time >= rgbEnd) { rgbActive = false; rgbGfx.clear(); }
-    else drawRGBSplit(rgbStrength);
-  }
+        // RGB split
+        rgbTimer -= dt;
+        if (!rgbActive && rgbTimer <= 0) {
+          rgbActive = true;
+          rgbStrength = rnd(0.5, 2.0);
+          rgbEnd = time + rnd(0.04, 0.24);
+          rgbTimer = rnd(1.5, 6.5);
+        }
+        if (rgbActive) {
+          if (time >= rgbEnd) {
+            rgbActive = false;
+            rgbGfx.clear();
+          } else drawRGBSplit(rgbStrength);
+        }
 
-  // Noise burst
-  noiseTimer -= dt;
-  if (!noiseActive && noiseTimer <= 0) {
-    noiseActive = true;
-    noiseEnd    = time + rnd(0.06, 0.28);
-    noiseTimer  = rnd(1.5, 5.5);
-  }
-  if (noiseActive) {
-    if (time >= noiseEnd) { noiseActive = false; noiseGfx.clear(); }
-    else drawNoise();
-  }
+        // Noise burst
+        noiseTimer -= dt;
+        if (!noiseActive && noiseTimer <= 0) {
+          noiseActive = true;
+          noiseEnd = time + rnd(0.06, 0.28);
+          noiseTimer = rnd(1.5, 5.5);
+        }
+        if (noiseActive) {
+          if (time >= noiseEnd) {
+            noiseActive = false;
+            noiseGfx.clear();
+          } else drawNoise();
+        }
 
-  // VHS tape-head scan (skips if a glitch band is active to avoid overlap)
-  headTimer -= dt;
-  if (!headActive && headTimer <= 0) {
-    headActive = true;
-    headY      = 0;
-    headTimer  = rnd(5, 14);
-  }
-  if (headActive) {
-    headY += dt * H * 1.3;
-    if (headY > H) { headActive = false; glitchGfx.clear(); }
-    else if (!glitchActive) drawTapeHead(headY);
-  }
+        // VHS tape-head scan (skips if a glitch band is active to avoid overlap)
+        headTimer -= dt;
+        if (!headActive && headTimer <= 0) {
+          headActive = true;
+          headY = 0;
+          headTimer = rnd(5, 14);
+        }
+        if (headActive) {
+          headY += dt * H * 1.3;
+          if (headY > H) {
+            headActive = false;
+            glitchGfx.clear();
+          } else if (!glitchActive) drawTapeHead(headY);
+        }
 
-  // CRT flicker — always running
-  drawFlicker(time);
-});
+        // CRT flicker — always running
+        drawFlicker(time);
+      });
 
-// ── Resize ────────────────────────────────────────────────────────────────────
-window.addEventListener('resize', () => {
-  W = window.innerWidth;
-  H = window.innerHeight;
-  app.renderer.resize(W, H);
-  buildScanlines();
-  buildEdgeFringe();
-});
-</script>
-</body>
+      // ── Resize ────────────────────────────────────────────────────────────────────
+      window.addEventListener("resize", () => {
+        W = window.innerWidth;
+        H = window.innerHeight;
+        app.renderer.resize(W, H);
+        buildScanlines();
+        buildEdgeFringe();
+      });
+    </script>
+  </body>
 </html>
