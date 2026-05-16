@@ -147,12 +147,10 @@
             const px = rnd(0, W);
             const py = y + rnd(0, bh);
             const ps = rnd(1, 2.5);
-            glitchGfx
-              .rect(px, py, ps, ps)
-              .fill({
-                color: pick(C.white, C.cyan, C.green, 0x000000),
-                alpha: rnd(0.4, 1.0),
-              });
+            glitchGfx.rect(px, py, ps, ps).fill({
+              color: pick(C.white, C.cyan, C.green, 0x000000),
+              alpha: rnd(0.4, 1.0),
+            });
           }
         }
 
