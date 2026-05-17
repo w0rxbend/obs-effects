@@ -207,6 +207,7 @@ export default defineConfig({
         cellularSlime: resolve(__dirname, "cellular-slime.html"),
         artificialLife: resolve(__dirname, "artificial-life.html"),
         softBodyCube: resolve(__dirname, "soft-body-cube.html"),
+        jellyBlobFace: resolve(__dirname, "jelly-blob-face.html"),
         zombieAvatar: resolve(__dirname, "zombie-avatar.html"),
         physarumGol: resolve(__dirname, "physarum-gol.html"),
         crystalGrowth: resolve(__dirname, "crystal-growth.html"),

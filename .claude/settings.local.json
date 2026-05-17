@@ -80,7 +80,9 @@
       "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(json.dumps\\({**d.get\\('dependencies',{}\\), **d.get\\('devDependencies',{}\\)}, indent=2\\)\\)\")",
       "Bash(grep -E \"^[A-Za-z].*[A-Za-z]$\")",
       "Bash(python3)",
-      "Bash(echo \"exit: $?\")"
+      "Bash(echo \"exit: $?\")",
+      "Bash(rg \"three\" /home/worxbend/Workspace/obs-effects/src --include=\"*.ts\" -l)",
+      "Bash(rg -l \"three\" /home/worxbend/Workspace/obs-effects/src --include=\"*.ts\")"
     ],
     "additionalDirectories": [
       "/home/worxbend/Workspace/obs-effects",
