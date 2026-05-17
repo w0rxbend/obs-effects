@@ -226,6 +226,16 @@ export default defineConfig({
         ),
         softVolFog: resolve(__dirname, "soft-vol-fog.html"),
         robotAvatar: resolve(__dirname, "robot-avatar.html"),
+        monolithicBlackGeometry: resolve(
+          __dirname,
+          "monolithic-black-geometry.html",
+        ),
+        slimeMoldNetwork: resolve(__dirname, "slime-mold-network.html"),
+        reactiveEnergyMembrane: resolve(
+          __dirname,
+          "reactive-energy-membrane.html",
+        ),
+        digitalFluidInk: resolve(__dirname, "digital-fluid-ink.html"),
       },
     },
   },
