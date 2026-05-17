@@ -75,7 +75,12 @@
       "Bash(rg -l \"rogue.avatar|boba.fett|madara\" --iglob \"!node_modules\" /home/worxbend/Workspace/obs-effects)",
       "Bash(rg -l \"BobaFett|boba\" --iglob \"!node_modules\" /home/worxbend/Workspace/obs-effects)",
       "Bash(rm \"/home/worxbend/Workspace/obs-effects/raw-assets/main{m}/Madara_Uchiha.obj\" \\\\ *)",
-      "Bash(python3 -m json.tool /home/worxbend/Workspace/obs-effects/src/manifest.json)"
+      "Bash(python3 -m json.tool /home/worxbend/Workspace/obs-effects/src/manifest.json)",
+      "Bash(rg \"FBXLoader\\\\|GLTFLoader\\\\|three\" /home/worxbend/Workspace/obs-effects/src --include=\"*.ts\" -l)",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(json.dumps\\({**d.get\\('dependencies',{}\\), **d.get\\('devDependencies',{}\\)}, indent=2\\)\\)\")",
+      "Bash(grep -E \"^[A-Za-z].*[A-Za-z]$\")",
+      "Bash(python3)",
+      "Bash(echo \"exit: $?\")"
     ],
     "additionalDirectories": [
       "/home/worxbend/Workspace/obs-effects",
