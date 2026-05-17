@@ -157,7 +157,7 @@ loader.load(
 
     const h = size.y;
     const targetY = box.min.y + h * 0.75;
-    const dist = h * 2.2;
+    const dist = h * 1.32; // another 25% closer
 
     camera.position.set(center.x, targetY, center.z + dist);
     camera.lookAt(center.x, targetY, center.z);
@@ -188,19 +188,13 @@ loader.load(
   },
 );
 
-// ── Typing finger data ────────────────────────────────────────────────────────
-// Each entry: [bone, frequency, phase] — independent press rhythm per finger
-const R_FINGERS: [string, number, number][] = [
-  [R_IDX1, 4.1, 0.0],
-  [R_MID1, 3.7, 1.2],
-  [R_RNG1, 4.5, 2.5],
-  [R_PKY1, 3.3, 3.8],
-];
-const L_FINGERS: [string, number, number][] = [
-  ["CC_Base_L_Index1_53", 3.9, 0.6],
-  ["CC_Base_L_Mid1_50", 4.3, 1.9],
-  ["CC_Base_L_Ring1_56", 3.5, 3.1],
-  ["CC_Base_L_Pinky1_59", 4.7, 4.4],
+// ── Finger bone names ─────────────────────────────────────────────────────────
+const R_FINGERS = [R_IDX1, R_MID1, R_RNG1, R_PKY1];
+const L_FINGERS = [
+  "CC_Base_L_Index1_53",
+  "CC_Base_L_Mid1_50",
+  "CC_Base_L_Ring1_56",
+  "CC_Base_L_Pinky1_59",
 ];
 
 // ── Render loop ───────────────────────────────────────────────────────────────
@@ -211,142 +205,70 @@ function animate(): void {
   const dt = Math.min(clock.getDelta(), 0.05);
   const t = clock.elapsedTime + dt;
 
-  // ── Breathing ─────────────────────────────────────────────────────────────
-  const breath = Math.sin(t * 1.05);
-  const breathX = breath * 0.016;
+  // ── Dance beat ~120 BPM ──────────────────────────────────────────────────
+  const beatF = (120 / 60) * Math.PI; // 120 BPM → rad/s
+  const rawBeat = Math.sin(t * beatF);
+  const beat = Math.sign(rawBeat) * Math.pow(Math.abs(rawBeat), 0.45);
 
-  // ── Music beat — two layered tempos, ~100 BPM feel ───────────────────────
-  // Sharp sine for a snappier bob
-  const rawBeat = Math.sin(t * 1.67 * Math.PI); // ~100 BPM
-  const beat = Math.sign(rawBeat) * Math.pow(Math.abs(rawBeat), 0.55);
-  const beatBob = beat * 0.028;
+  // ── Body groove ──────────────────────────────────────────────────────────
+  const bob = beat * 0.06;
+  const swayZ = Math.sin(t * 1.15) * 0.07;
+  const shift = Math.sin(t * 0.9 + 0.4);
 
-  // Slow body sway and weight shift
-  const swayZ = Math.sin(t * 0.38) * 0.018;
-  const shift = Math.sin(t * 0.32 + 0.5);
+  if (rig.has(HIP)) pose(HIP, -0.04 + bob * 0.7, 0, swayZ + shift * 0.04);
+  if (rig.has(WAIST)) pose(WAIST, bob * 0.5, 0, swayZ * 0.65);
+  if (rig.has(SPINE1)) pose(SPINE1, bob * 0.35, 0, swayZ * 0.4);
+  if (rig.has(SPINE2)) pose(SPINE2, bob * 0.2, 0, swayZ * 0.25);
 
-  // Coding posture: persistent forward lean
-  const codingLean = 0.09;
+  if (rig.has(L_THIGH)) pose(L_THIGH, 0, 0, shift * 0.04);
+  if (rig.has(R_THIGH)) pose(R_THIGH, 0, 0, shift * 0.04);
+  if (rig.has(L_FOOT)) pose(L_FOOT, -shift * 0.018, 0, 0);
+  if (rig.has(R_FOOT)) pose(R_FOOT, -shift * 0.018, 0, 0);
 
-  // ── Back stretch — fires every 22 s, lasts ~4 s ───────────────────────────
-  const STRETCH_PERIOD = 22;
-  const sphase = (t % STRETCH_PERIOD) / STRETCH_PERIOD;
-  const stretch =
-    sphase > 0.82 ? Math.sin(((sphase - 0.82) / 0.18) * Math.PI) : 0;
-  const backLean = stretch * 0.28;
+  // ── Head — zombie loll + beat nod ────────────────────────────────────────
+  const headNod = beat * 0.1;
+  const lookY = Math.sin(t * 0.3) * 0.12;
+  const loll = Math.sin(t * 0.18 + 0.7) * 0.07;
 
-  if (rig.has(HIP))
-    pose(
-      HIP,
-      codingLean + beatBob * 0.7 + breathX * 0.3 - backLean * 0.4,
-      0,
-      swayZ + shift * 0.015,
-    );
-  if (rig.has(WAIST))
-    pose(
-      WAIST,
-      codingLean * 0.8 + beatBob * 0.55 + breathX * 0.4 - backLean * 0.55,
-      0,
-      swayZ * 0.6 + shift * 0.01,
-    );
-  if (rig.has(SPINE1))
-    pose(
-      SPINE1,
-      codingLean * 0.6 + beatBob * 0.38 + breathX * 0.6 - backLean * 0.8,
-      0,
-      swayZ * 0.4,
-    );
-  if (rig.has(SPINE2))
-    pose(
-      SPINE2,
-      codingLean * 0.4 + beatBob * 0.22 + breathX * 0.35 - backLean,
-      0,
-      swayZ * 0.2,
-    );
+  if (rig.has(NECK1)) pose(NECK1, headNod * 0.4, lookY * 0.35, loll * 0.4);
+  if (rig.has(NECK2)) pose(NECK2, headNod * 0.35, lookY * 0.3, loll * 0.35);
+  if (rig.has(HEAD)) pose(HEAD, headNod, lookY, loll);
+  if (rig.has(EYE_R)) pose(EYE_R, 0.05, lookY * 0.4, 0);
+  if (rig.has(EYE_L)) pose(EYE_L, 0.05, lookY * 0.4, 0);
 
-  if (rig.has(L_THIGH)) pose(L_THIGH, 0, 0, shift * 0.025);
-  if (rig.has(R_THIGH)) pose(R_THIGH, 0, 0, shift * 0.025);
-  if (rig.has(L_FOOT)) pose(L_FOOT, -shift * 0.012, 0, 0);
-  if (rig.has(R_FOOT)) pose(R_FOOT, -shift * 0.012, 0, 0);
-
-  // ── Head — looking at imaginary screen + music nod ────────────────────────
-  // Persistent downward gaze (looking at screen/keyboard)
-  const screenGaze = 0.2;
-  // Music nod: forward dip on the beat
-  const musicNod = beat * 0.07;
-  // Slow left-right drift (reading code / thinking)
-  const lookY = Math.sin(t * 0.19) * 0.15 + Math.sin(t * 0.06) * 0.06;
-  // Occasional head tilt (vibing to music)
-  const tilt = Math.sin(t * 0.28 + 0.4) * 0.05;
-
-  const stretchLook = stretch * 0.32;
-  if (rig.has(NECK1))
-    pose(
-      NECK1,
-      (screenGaze + musicNod) * 0.4 - stretchLook * 0.4,
-      lookY * 0.4 * (1 - stretch * 0.85),
-      tilt * 0.35,
-    );
-  if (rig.has(NECK2))
-    pose(
-      NECK2,
-      (screenGaze + musicNod) * 0.35 - stretchLook * 0.35,
-      lookY * 0.35 * (1 - stretch * 0.85),
-      tilt * 0.3,
-    );
-  if (rig.has(HEAD))
-    pose(
-      HEAD,
-      screenGaze + musicNod - stretchLook,
-      lookY * (1 - stretch * 0.85),
-      tilt,
-    );
-
-  if (rig.has(EYE_R)) pose(EYE_R, screenGaze * 0.3, lookY * 0.5, 0);
-  if (rig.has(EYE_L)) pose(EYE_L, screenGaze * 0.3, lookY * 0.5, 0);
-
-  const jawOpen = Math.max(0, -breath) * 0.035;
+  const jawOpen = Math.max(0, beat) * 0.05;
   if (rig.has(JAW)) pose(JAW, jawOpen, 0, 0);
 
-  // ── Arms — keyboard position with stretch blend ───────────────────────────
-  // Upper arm swings forward from T-pose (Z≈1.1 is the safe zone where the
-  // forearm X bend still points hands forward, not backward). During stretch
-  // arms lift back toward sides.
-  const rHoverY = Math.sin(t * 0.9 + 0.2) * 0.012;
-  const lHoverY = Math.sin(t * 0.85 + 1.1) * 0.012;
-  const strA = stretch;
+  // ── Zombie arms — raised up, alternating pump on beat ────────────────────
+  // rx < 0 lifts the upper arm upward from T-pose.
+  // rz ≈ 1.1 keeps the arm swung forward so the forearm bends correctly.
+  // Forearm rx > 0 = natural gravity droop (no backward bend).
+  // Hand rx > 0 = classic zombie wrist droop.
+  const rPump = Math.sin(t * beatF * 0.5) * 0.22; // arm pumps up/down
+  const lPump = Math.sin(t * beatF * 0.5 + Math.PI) * 0.22; // opposite phase
 
   // Right arm
-  if (rig.has(R_CLAV)) pose(R_CLAV, 0.1, 0, 0.2 + strA * 0.1);
-  if (rig.has(R_UPARM)) pose(R_UPARM, 0.55, 0, 1.1 - strA * 0.82);
-  if (rig.has(R_FOREARM)) pose(R_FOREARM, -1.0 + strA * 0.95, 0, 0);
-  if (rig.has(R_HAND)) pose(R_HAND, (0.22 + rHoverY) * (1 - strA * 0.7), 0, 0);
+  if (rig.has(R_CLAV)) pose(R_CLAV, -0.06, 0, 0.22);
+  if (rig.has(R_UPARM)) pose(R_UPARM, -0.55 + rPump, 0, 1.1);
+  if (rig.has(R_FOREARM)) pose(R_FOREARM, 0.42, 0, 0);
+  if (rig.has(R_HAND)) pose(R_HAND, 0.5, 0, 0);
 
   // Left arm (mirrored Z)
-  if (rig.has(L_CLAV)) pose(L_CLAV, 0.1, 0, -(0.2 + strA * 0.1));
-  if (rig.has(L_UPARM)) pose(L_UPARM, 0.55, 0, -(1.1 - strA * 0.82));
-  if (rig.has(L_FOREARM)) pose(L_FOREARM, -1.0 + strA * 0.95, 0, 0);
-  if (rig.has(L_HAND)) pose(L_HAND, (0.22 + lHoverY) * (1 - strA * 0.7), 0, 0);
+  if (rig.has(L_CLAV)) pose(L_CLAV, -0.06, 0, -0.22);
+  if (rig.has(L_UPARM)) pose(L_UPARM, -0.55 + lPump, 0, -1.1);
+  if (rig.has(L_FOREARM)) pose(L_FOREARM, 0.42, 0, 0);
+  if (rig.has(L_HAND)) pose(L_HAND, 0.5, 0, 0);
 
-  // ── Typing fingers ─────────────────────────────────────────────────────────
-  // Each finger independently presses down on its own rhythm.
-  // Typing intensity varies slowly so it feels like real bursts of keys.
-  const intensity =
-    (0.35 + 0.65 * Math.max(0, Math.sin(t * 0.22))) * (1 - stretch);
-
-  for (const [bone, freq, phase] of R_FINGERS) {
-    if (!rig.has(bone)) continue;
-    const press = Math.max(0, Math.sin(t * freq + phase)) * 0.5 * intensity;
-    pose(bone, press, 0, 0);
+  // ── Fingers — zombie curl ─────────────────────────────────────────────────
+  const curl = 0.3 + Math.sin(t * 0.38) * 0.06;
+  for (const bone of R_FINGERS) {
+    if (rig.has(bone)) pose(bone, curl, 0, 0);
   }
-  for (const [bone, freq, phase] of L_FINGERS) {
-    if (!rig.has(bone)) continue;
-    const press = Math.max(0, Math.sin(t * freq + phase)) * 0.5 * intensity;
-    pose(bone, press, 0, 0);
+  for (const bone of L_FINGERS) {
+    if (rig.has(bone)) pose(bone, curl, 0, 0);
   }
-  // Thumbs rest naturally
-  if (rig.has(R_THB1)) pose(R_THB1, 0.1, 0, 0);
-  if (rig.has("CC_Base_L_Thumb1_62")) pose("CC_Base_L_Thumb1_62", 0.1, 0, 0);
+  if (rig.has(R_THB1)) pose(R_THB1, 0.2, 0, 0.3);
+  if (rig.has("CC_Base_L_Thumb1_62")) pose("CC_Base_L_Thumb1_62", 0.2, 0, -0.3);
 
   renderer.render(scene, camera);
 }
