@@ -237,6 +237,8 @@ export default defineConfig({
           "reactive-energy-membrane.html",
         ),
         digitalFluidInk: resolve(__dirname, "digital-fluid-ink.html"),
+        solarSystem: resolve(__dirname, "solar-system.html"),
+        fireOrb: resolve(__dirname, "fire-orb.html"),
       },
     },
   },
