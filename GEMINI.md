@@ -9,7 +9,7 @@ This repo is a PixiJS 8 + TypeScript multi-page collection of OBS Browser Source
 - Vite HTML entries live at the repo root.
 - New pages must be wired into:
   - `vite.config.ts`
-  - `map.html`
+  - `index.html`
 
 The runtime foundation is:
 
@@ -66,7 +66,7 @@ As of `2026-04-24`, the latest effect work added and refined a new page called `
 ### Files updated
 
 - `vite.config.ts`
-- `map.html`
+- `index.html`
 
 ### Feature summary
 

@@ -10,7 +10,7 @@ This repository is a multi-page PixiJS 8 + TypeScript project for OBS Browser So
   - `*.html` in the repo root: the Vite entry page that mounts `#pixi-container` and imports the entry TS file.
 - New pages must also be registered in:
   - `vite.config.ts` under `build.rollupOptions.input`
-  - `map.html` so the effect appears in the local preview directory
+  - `index.html` so the effect appears in the local preview directory
 - The engine bootstrap lives in:
   - `src/engine/engine.ts`
   - `src/app/getEngine.ts`
@@ -102,7 +102,7 @@ Adds a new standalone Pixi screen, Vite entry, and map listing.
 2. Create `src/your-screen.ts`.
 3. Create `your-screen.html`.
 4. Register the HTML file in `vite.config.ts`.
-5. Add the page to `map.html`.
+5. Add the page to `index.html`.
 6. If the effect is asset-free, set `static assetBundles: string[] = []`.
 
 ### Adding a Webcam Border
@@ -149,7 +149,7 @@ Files added:
 Files updated:
 
 - `vite.config.ts`
-- `map.html`
+- `index.html`
 
 ### What The User Asked For
 
@@ -206,6 +206,6 @@ When extending or refining this screen, preserve that intent: calm rotation, rea
 ## File-Specific Guidance
 
 - `vite.config.ts`: keep keys descriptive and consistent with existing camelCase entry names.
-- `map.html`: add human-readable labels that describe the visual identity of the page.
+- `index.html`: add human-readable labels that describe the visual identity of the page.
 - `src/app/screens/*`: keep render math self-contained and readable; small helper interfaces are preferred over untyped objects.
 - Root `*.html` files: keep them minimal and consistent with existing pages.

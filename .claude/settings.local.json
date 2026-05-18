@@ -82,7 +82,8 @@
       "Bash(python3)",
       "Bash(echo \"exit: $?\")",
       "Bash(rg \"three\" /home/worxbend/Workspace/obs-effects/src --include=\"*.ts\" -l)",
-      "Bash(rg -l \"three\" /home/worxbend/Workspace/obs-effects/src --include=\"*.ts\")"
+      "Bash(rg -l \"three\" /home/worxbend/Workspace/obs-effects/src --include=\"*.ts\")",
+      "WebSearch"
     ],
     "additionalDirectories": [
       "/home/worxbend/Workspace/obs-effects",

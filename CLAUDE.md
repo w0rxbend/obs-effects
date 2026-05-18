@@ -8,7 +8,7 @@ This repository is a PixiJS 8 / TypeScript multi-page OBS effects collection. Ea
 - `src/*.ts`: page bootstraps that create `CreationEngine`, call `setEngine`, initialize the renderer, and navigate to the screen.
 - `*.html` at repo root: per-page Vite entries.
 - `vite.config.ts`: defines all page inputs.
-- `map.html`: local directory page for browsing effects.
+- `index.html`: local directory page for browsing effects.
 
 Core runtime files:
 
@@ -70,7 +70,7 @@ Added:
 Updated:
 
 - `vite.config.ts`
-- `map.html`
+- `index.html`
 
 ### Intent of the original prompt
 
@@ -102,7 +102,7 @@ If continuing this effect, preserve the slower and more physical motion profile.
 ## Request Interpretation
 
 - For terse visual prompts, default to building the thing unless the user explicitly asks for a plan first.
-- For “new page” requests, include screen, TS entry, HTML, Vite registration, and `map.html` registration.
+- For “new page” requests, include screen, TS entry, HTML, Vite registration, and `index.html` registration.
 - For refinements, update the existing effect directly unless versioning was requested.
 
 ## Verification

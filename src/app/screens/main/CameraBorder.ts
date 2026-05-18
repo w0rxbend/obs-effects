@@ -241,13 +241,13 @@ interface WaveConfig {
   breatheMode: "calm" | "bass" | "electric" | "fluid";
 }
 
-// wander=random, orbit=circular, bounce=elastic, pulse=scale-oscillate, beat=heartbeat-kick, float=slow-bob, spin=fast-rotate
+// wander=random, orbit=circular, bounce=elastic, pulse=scale-oscillate, swell=ambient-breathe, float=slow-bob, spin=fast-rotate
 type AnimStyle =
   | "wander"
   | "orbit"
   | "bounce"
   | "pulse"
-  | "beat"
+  | "swell"
   | "float"
   | "spin";
 
@@ -272,9 +272,6 @@ interface GraffitiOrbitSprite {
   phase: number; // random phase for oscillations
   pulseSpeed: number; // rad/s for pulse/float breathe
   pulseAmp: number; // scale amplitude for pulse
-  beatTimer: number; // countdown to next heartbeat kick
-  beatInterval: number; // seconds between kicks
-  beatScale: number; // current kick multiplier, decays to 1.0
   orbitAngle: number; // current angle for orbit style
   orbitRadius: number; // orbit distance from centre
   orbitSpeed: number; // rad/s, signed — CW or CCW
@@ -398,6 +395,11 @@ const WAVE_CONFIGS: WaveConfig[] = [
 ];
 
 const WAVE_STEPS = 240;
+const FLOATING_DECOR_SCALE = 0.6;
+
+function scaledBorderOffset(offset: number): number {
+  return offset * FLOATING_DECOR_SCALE;
+}
 
 // ── Graffiti tag definitions ──────────────────────────────────────────────────
 
@@ -532,7 +534,7 @@ function jaggedPath(
  * Layers (bottom → top):
  *   blurRingGfx  — soft toxic glow ring (BlurFilter, static, scale-breathed)
  *   brushGfx     — graffiti arc brush strokes with drips
- *   waveGfx      — 6 TrapNation neon-tube wave rings (beat + breathe)
+ *   waveGfx      — 6 TrapNation neon-tube wave rings (soft breathe)
  *   graffCont    — drawn marks (crosses, dots) + Text tags (XO, crazy, ★ …)
  *   surfaceGfx   — black ink lines draped over the surface
  *   effectGfx    — sparkles ✦, sparks, lightning arcs
@@ -587,16 +589,12 @@ export class CameraBorder extends Container {
   private time = 0;
   private glitchActive = false;
   private glitchEndTime = 0;
-  private glitchNextTime = 2.5;
   private glitchShiftX = 0;
   private glitchBands: GlitchBand[] = [];
-  private jitterAmp = 0;
   private brushAccum = 0;
   private sparkleAccum = 0;
   private sparkAccum = 0;
   private lightningAccum = 0;
-  private beatAmplitude = 1.0;
-  private nextBeatTime = 0.5;
 
   // ── Living-world state ─────────────────────────────────────────────────────
   // Slow macro envelope (0.4..1.0) — creates natural calm/active cycles
@@ -701,7 +699,7 @@ export class CameraBorder extends Container {
       "orbit",
       "bounce",
       "pulse",
-      "beat",
+      "swell",
       "float",
       "spin",
       "orbit",
@@ -725,7 +723,7 @@ export class CameraBorder extends Container {
 
       const sprite = new Sprite(cropped);
       sprite.anchor.set(0.5);
-      const baseScale = SIZES[i] / CELL;
+      const baseScale = (SIZES[i] * FLOATING_DECOR_SCALE) / CELL;
       sprite.scale.set(baseScale);
       sprite.blendMode = "screen";
       sprite.alpha = 0;
@@ -733,7 +731,8 @@ export class CameraBorder extends Container {
       const style = STYLES[i];
       const phase = Math.random() * Math.PI * 2;
       const startAngle = (i / STYLES.length) * Math.PI * 2;
-      const startR = this.baseRadius + 22 + Math.random() * 65;
+      const startR =
+        this.baseRadius + scaledBorderOffset(22 + Math.random() * 65);
       sprite.x = Math.cos(startAngle) * startR;
       sprite.y = Math.sin(startAngle) * startR;
 
@@ -746,8 +745,6 @@ export class CameraBorder extends Container {
             ? 60 + Math.random() * 80
             : 25 + Math.random() * 55;
       const ang = Math.random() * Math.PI * 2;
-      const beatInterval = 0.8 + Math.random() * 1.2;
-
       this.splatSprites.push({
         sprite,
         x: sprite.x,
@@ -772,9 +769,6 @@ export class CameraBorder extends Container {
         phase,
         pulseSpeed: 1.2 + Math.random() * 2.5,
         pulseAmp: 0.25 + Math.random() * 0.35,
-        beatTimer: Math.random() * beatInterval,
-        beatInterval,
-        beatScale: 1.0,
         orbitAngle: startAngle,
         orbitRadius: startR,
         orbitSpeed:
@@ -803,19 +797,13 @@ export class CameraBorder extends Container {
           scaleF = 1 + s.pulseAmp * Math.sin(t * s.pulseSpeed + s.phase);
           break;
 
-        case "beat":
-          s.beatTimer -= dt;
-          if (s.beatTimer <= 0) {
-            s.beatTimer = s.beatInterval;
-            s.beatScale = 2.4; // sharp kick
-          }
-          s.beatScale = Math.max(1.0, s.beatScale - 6.0 * dt); // fast decay
-          scaleF = s.beatScale;
+        case "swell":
+          scaleF = 1 + 0.18 * Math.sin(t * 0.32 + s.phase);
           break;
 
         case "float":
           // Vertical sinusoidal bob + gentle scale breathe
-          spriteY = s.y + Math.sin(t * 0.85 + s.phase) * 24;
+          spriteY = s.y + Math.sin(t * 0.85 + s.phase) * scaledBorderOffset(24);
           scaleF = 1 + 0.14 * Math.sin(t * 0.55 + s.phase + 1.2);
           break;
 
@@ -1028,11 +1016,12 @@ export class CameraBorder extends Container {
 
     for (let i = 0; i < GRAFFITI_DEFS.length; i++) {
       const def = GRAFFITI_DEFS[i];
-      const x = Math.cos(def.angle) * (r + def.rOffset);
-      const y = Math.sin(def.angle) * (r + def.rOffset);
+      const orbitRadius = r + scaledBorderOffset(def.rOffset);
+      const x = Math.cos(def.angle) * orbitRadius;
+      const y = Math.sin(def.angle) * orbitRadius;
       const tag = new Text({
         text: def.label,
-        style: graffStyle(def.size, def.color),
+        style: graffStyle(def.size * FLOATING_DECOR_SCALE, def.color),
       });
       tag.anchor.set(0.5);
       tag.x = x;
@@ -1040,7 +1029,6 @@ export class CameraBorder extends Container {
       tag.rotation = def.rot;
       tag.alpha = 0;
       this.graffCont.addChild(tag);
-      const orbitRadius = r + def.rOffset;
       const orbitBase = -Math.PI + (i / GRAFFITI_DEFS.length) * Math.PI;
       this.graffitiTags.push({
         node: tag,
@@ -1057,7 +1045,7 @@ export class CameraBorder extends Container {
         alphaMax: 0.75 + Math.random() * 0.25,
         alphaSpeed: 0.18 + Math.random() * 0.38,
         alphaPhase: Math.random() * Math.PI * 2,
-        bobAmp: 3 + Math.random() * 6,
+        bobAmp: scaledBorderOffset(3 + Math.random() * 6),
         bobSpeed: 0.25 + Math.random() * 0.5,
         bobPhase: Math.random() * Math.PI * 2,
       });
@@ -1070,7 +1058,7 @@ export class CameraBorder extends Container {
     const dt = 1 / 60;
     this.time += dt;
 
-    this.tickBeat(dt);
+    this.tickActivity(dt);
 
     // Dynamic intervals — scale with activity level
     const dynBrushInterval =
@@ -1154,63 +1142,17 @@ export class CameraBorder extends Container {
     this.drawFrame(dt);
   }
 
-  // ── Beat simulation ────────────────────────────────────────────────────────
+  // ── Activity simulation ────────────────────────────────────────────────────
 
-  private tickBeat(dt: number): void {
-    // ── Macro activity envelope ────────────────────────────────────────────
-    // Full cycle ≈ 175 s — creates natural ebb/flow without any external input
+  private tickActivity(dt: number): void {
     this.activityPhase += dt * 0.018;
     this.activityLevel = 0.4 + 0.6 * (0.5 + 0.5 * Math.sin(this.activityPhase));
+  }
 
-    if (this.time >= this.nextBeatTime) {
-      // ── Heartbeat tempo: 45–70 BPM, slower during rest phases ─────────────
-      const restStretch = 1 + (1 - this.activityLevel) * 1.3;
-      const baseInterval = (0.85 + Math.random() * 0.55) * restStretch;
-
-      // 12 % chance of a skipped beat (longer pause, no visual burst)
-      if (Math.random() < 0.12) {
-        this.nextBeatTime =
-          this.time + baseInterval + 0.6 + Math.random() * 0.8;
-        this.beatAmplitude = 1.05; // barely a blip
-      } else {
-        this.nextBeatTime = this.time + baseInterval;
-        // Beat strength scales with activity — half-energy at rest, full at peak
-        this.beatAmplitude =
-          1.4 + this.activityLevel * 1.4 + Math.random() * 0.4;
-        this.jitterAmp = 0.3 + this.activityLevel * 0.55;
-
-        this.spawnSparks(true);
-        if (Math.random() < 0.45 * this.activityLevel) this.spawnLightning();
-
-        // Glitch: rare, only during active phases
-        if (
-          !this.glitchActive &&
-          this.time >= this.glitchNextTime &&
-          Math.random() < 0.12 * this.activityLevel
-        ) {
-          this.glitchActive = true;
-          this.glitchEndTime = this.time + 0.05 + Math.random() * 0.1;
-          this.glitchNextTime = this.time + 4.0 + Math.random() * 5.0;
-          this.glitchShiftX = 5 + Math.random() * 14;
-          this.glitchBands = [];
-          const bandCount = 2 + Math.floor(Math.random() * 4);
-          for (let b = 0; b < bandCount; b++) {
-            const angle = Math.random() * Math.PI * 2;
-            const r = this.baseRadius + (Math.random() - 0.5) * 60;
-            this.glitchBands.push({
-              y: Math.sin(angle) * r,
-              height: 2 + Math.random() * 8,
-              shiftX: (Math.random() - 0.5) * this.glitchShiftX * 2,
-              alpha: 0.4 + Math.random() * 0.5,
-            });
-          }
-        }
-      }
-    }
-
-    // Slower decay — beat sustains through the full interval
-    this.beatAmplitude = Math.max(1.0, this.beatAmplitude - dt * 1.6);
-    this.jitterAmp = Math.max(0, this.jitterAmp - dt * 2.0);
+  private ambientStrength(seed = 0): number {
+    const slow = 0.5 + 0.5 * Math.sin(this.time * 0.17 + seed * 1.91);
+    const drift = 0.5 + 0.5 * Math.sin(this.time * 0.07 + seed * 0.73 + 1.4);
+    return 0.82 + this.activityLevel * 0.16 + slow * 0.16 + drift * 0.08;
   }
 
   // ── Spawners ───────────────────────────────────────────────────────────────
@@ -1362,8 +1304,9 @@ export class CameraBorder extends Container {
       this.ringAmpDrift[ci] += dt * (0.019 + ci * 0.002);
       const speedMod = 1 + 0.28 * Math.sin(this.ringSpeedDrift[ci]);
       const ampEnv = 0.45 + 0.55 * Math.abs(Math.sin(this.ringAmpDrift[ci]));
+      const ambient = this.ambientStrength(ci);
       const phase = this.time * cfg.speed * speedMod + cfg.phaseOffset;
-      const amplitude = cfg.baseAmplitude * this.beatAmplitude * ampEnv;
+      const amplitude = cfg.baseAmplitude * ampEnv * ambient;
       this.drawGlowWaveRing(
         this.baseRadius * breathe * cfg.radiusScale,
         cfg.color,
@@ -1372,6 +1315,7 @@ export class CameraBorder extends Container {
         phase,
         cfg.lineWidth,
         cfg.breatheMode,
+        ambient,
       );
     }
 
@@ -1696,9 +1640,10 @@ export class CameraBorder extends Container {
     phase: number,
     lineWidth: number,
     breatheMode: "calm" | "bass" | "electric" | "fluid",
+    ambient: number,
   ): void {
     if (breatheMode === "calm") {
-      const w = lineWidth * (1 + (this.beatAmplitude - 1) * 0.07);
+      const w = lineWidth * (0.96 + ambient * 0.05);
       this.buildWavePath(radius, waveCount, amplitude, phase);
       this.waveGfx.stroke({ color, alpha: 0.04, width: w * 8 });
       this.buildWavePath(radius, waveCount, amplitude, phase);
@@ -1706,8 +1651,7 @@ export class CameraBorder extends Container {
       this.buildWavePath(radius, waveCount, amplitude, phase);
       this.waveGfx.stroke({ color, alpha: 0.88, width: w });
     } else if (breatheMode === "bass") {
-      const beatFactor = 1 + (this.beatAmplitude - 1) * 0.85;
-      const w = lineWidth * beatFactor;
+      const w = lineWidth * (0.92 + ambient * 0.12);
       this.buildWavePath(radius, waveCount, amplitude, phase);
       this.waveGfx.stroke({ color, alpha: 0.05, width: w * 9 });
       this.buildWavePath(radius, waveCount, amplitude, phase);
@@ -1715,22 +1659,19 @@ export class CameraBorder extends Container {
       this.buildWavePath(radius, waveCount, amplitude, phase);
       this.waveGfx.stroke({ color, alpha: 0.92, width: w });
     } else if (breatheMode === "electric") {
-      // Per-beat jitter spikes + random width flicker
-      const beatFactor = 1 + (this.beatAmplitude - 1) * 0.7;
-      const w = lineWidth * beatFactor;
-      const eJitter = amplitude * 0.55 * (this.beatAmplitude - 1);
+      const w = lineWidth * (0.9 + ambient * 0.1);
+      const eJitter = amplitude * 0.08 * ambient;
       // Dim outer corona
-      this.buildWavePath(radius, waveCount, amplitude, phase, eJitter * 0.5);
+      this.buildWavePath(radius, waveCount, amplitude, phase, eJitter * 0.3);
       this.waveGfx.stroke({ color, alpha: 0.08, width: w * 11 });
       // Jittered mid line
-      this.buildWavePath(radius, waveCount, amplitude, phase, eJitter);
+      this.buildWavePath(radius, waveCount, amplitude, phase, eJitter * 0.55);
       this.waveGfx.stroke({ color, alpha: 0.35, width: w * 2.5 });
-      // Sharp core — extra jitter for electric look
-      this.buildWavePath(radius, waveCount, amplitude, phase, eJitter * 1.5);
+      // Sharp core
+      this.buildWavePath(radius, waveCount, amplitude, phase, eJitter * 0.8);
       this.waveGfx.stroke({ color, alpha: 0.95, width: w });
     } else {
-      // fluid — no extra jitter, very soft glow, barely reacts to beat
-      const w = lineWidth * (1 + (this.beatAmplitude - 1) * 0.12);
+      const w = lineWidth * (0.94 + ambient * 0.08);
       this.buildWavePath(radius, waveCount, amplitude, phase, 0);
       this.waveGfx.stroke({ color, alpha: 0.03, width: w * 12 });
       this.buildWavePath(radius, waveCount, amplitude, phase, 0);
@@ -1749,14 +1690,9 @@ export class CameraBorder extends Container {
   ): void {
     for (let i = 0; i <= WAVE_STEPS; i++) {
       const angle = (i / WAVE_STEPS) * Math.PI * 2;
-      const jitter =
-        this.jitterAmp > 0 ? (Math.random() - 0.5) * this.jitterAmp * 7 : 0;
       const eJitter = extraJitter > 0 ? (Math.random() - 0.5) * extraJitter : 0;
       const r =
-        radius +
-        Math.sin(angle * waveCount + phase) * amplitude +
-        jitter +
-        eJitter;
+        radius + Math.sin(angle * waveCount + phase) * amplitude + eJitter;
       const x = Math.cos(angle) * r;
       const y = Math.sin(angle) * r;
       if (i === 0) this.waveGfx.moveTo(x, y);
@@ -1786,7 +1722,7 @@ export class CameraBorder extends Container {
     }
     const phase =
       this.time * WAVE_CONFIGS[0].speed + WAVE_CONFIGS[0].phaseOffset;
-    const amp = WAVE_CONFIGS[0].baseAmplitude * this.beatAmplitude;
+    const amp = WAVE_CONFIGS[0].baseAmplitude;
     for (let i = 0; i <= WAVE_STEPS; i++) {
       const angle = (i / WAVE_STEPS) * Math.PI * 2;
       const rv = r + Math.sin(angle * WAVE_CONFIGS[0].waveCount + phase) * amp;
@@ -1843,37 +1779,30 @@ export class CameraBorder extends Container {
     this.orbitDotGfx.clear();
 
     for (const dot of this.orbitDots) {
-      // Advance angle — beat makes fast dots surge slightly
-      const beatBoost = dot.speed > 0 ? this.beatAmplitude * 0.18 : 1.0;
-      dot.angle += dot.speed * dt * (1 + beatBoost * 0.15);
+      dot.angle += dot.speed * dt;
 
       const r = (this.baseRadius + dot.radiusOffset) * breathe;
       const x = Math.cos(dot.angle) * r;
       const y = Math.sin(dot.angle) * r;
+      const ambient = this.ambientStrength(dot.alphaPhase);
 
-      // Alpha pulses gently; beat gives a short brightness kick
       const baseAlpha =
         0.55 + 0.45 * Math.sin(this.time * dot.alphaSpeed + dot.alphaPhase);
-      const kickAlpha = Math.min(
-        1.0,
-        baseAlpha + (this.beatAmplitude - 1.0) * 0.35,
-      );
-      const size = dot.size * (1 + (this.beatAmplitude - 1) * 0.25);
+      const alpha = Math.min(1, baseAlpha * (0.88 + ambient * 0.16));
+      const size = dot.size * (0.94 + ambient * 0.08);
 
       // Soft glow halo
       this.orbitDotGfx
         .circle(x, y, size * 3.5)
-        .fill({ color: dot.color, alpha: dot.glowAlpha * kickAlpha });
+        .fill({ color: dot.color, alpha: dot.glowAlpha * alpha });
 
       // Mid bloom
       this.orbitDotGfx
         .circle(x, y, size * 1.8)
-        .fill({ color: dot.color, alpha: kickAlpha * 0.45 });
+        .fill({ color: dot.color, alpha: alpha * 0.45 });
 
       // Bright core
-      this.orbitDotGfx
-        .circle(x, y, size)
-        .fill({ color: dot.color, alpha: kickAlpha });
+      this.orbitDotGfx.circle(x, y, size).fill({ color: dot.color, alpha });
     }
   }
 
@@ -1927,10 +1856,16 @@ export class CameraBorder extends Container {
     const makeStyle = (color: number): TextStyle =>
       new TextStyle({
         fontFamily: "'SymbolsNF', monospace",
-        fontSize: 20 + Math.floor(Math.random() * 14), // 20–34 px
+        fontSize: (20 + Math.floor(Math.random() * 14)) * FLOATING_DECOR_SCALE,
         fill: color,
-        padding: 20, // prevents drop-shadow glow from being cropped on all sides
-        dropShadow: { color, blur: 14, distance: 0, alpha: 0.9, angle: 0 },
+        padding: 20 * FLOATING_DECOR_SCALE,
+        dropShadow: {
+          color,
+          blur: 14 * FLOATING_DECOR_SCALE,
+          distance: 0,
+          alpha: 0.9,
+          angle: 0,
+        },
       });
 
     const count = ALL_SYMS.length;
@@ -1948,15 +1883,16 @@ export class CameraBorder extends Container {
         node,
         angle: (i / count) * Math.PI * 2 + Math.random() * 0.3,
         orbitSpeed: dir * (0.08 + Math.random() * 0.22),
-        orbitRadius: this.baseRadius + 22 + Math.random() * 65, // strictly outside ring
-        vibeAmp: 0.12 + Math.random() * 0.22, // ±12–34 % scale oscillation
-        vibeSpeed: 8 + Math.random() * 18, // 8–26 rad/s → 1.3–4 Hz
+        orbitRadius:
+          this.baseRadius + scaledBorderOffset(22 + Math.random() * 65),
+        vibeAmp: 0.06 + Math.random() * 0.1,
+        vibeSpeed: 1.2 + Math.random() * 2.8,
         vibePhase: Math.random() * Math.PI * 2,
         alphaBase: 0.55 + Math.random() * 0.35,
         alphaAmp: 0.3 + Math.random() * 0.25,
-        alphaSpeed: 0.8 + Math.random() * 1.8,
+        alphaSpeed: 0.25 + Math.random() * 0.6,
         alphaPhase: Math.random() * Math.PI * 2,
-        jitterAmp: 2 + Math.random() * 5,
+        jitterAmp: scaledBorderOffset(2 + Math.random() * 5),
         jitterPhase: Math.random() * Math.PI * 2,
         baseScale: 1.0,
       });
@@ -1964,8 +1900,6 @@ export class CameraBorder extends Container {
   }
 
   private updateFloatingSymbols(breathe: number): void {
-    const beatBoost = 1 + (this.beatAmplitude - 1) * 0.4;
-
     for (const s of this.floatingSymbols) {
       const r = s.orbitRadius * breathe;
       const jx = Math.sin(s.jitterPhase * 1.3) * s.jitterAmp;
@@ -1975,14 +1909,13 @@ export class CameraBorder extends Container {
       s.node.y = Math.sin(s.angle) * r + jy;
       s.node.rotation = s.angle + Math.PI / 2;
 
-      // Scale vibrates rapidly — multiplied by beat boost on kicks
-      const vibeScale = 1 + s.vibeAmp * Math.sin(s.vibePhase) * beatBoost;
+      const ambient = this.ambientStrength(s.alphaPhase);
+      const vibeScale =
+        (0.96 + ambient * 0.04) * (1 + s.vibeAmp * Math.sin(s.vibePhase));
       s.node.scale.set(s.baseScale * vibeScale);
 
-      // Alpha breathes slowly, flares on beat
       const baseA = s.alphaBase + s.alphaAmp * Math.sin(s.alphaPhase);
-      const beatA = Math.min(1.0, baseA + (this.beatAmplitude - 1) * 0.25);
-      s.node.alpha = Math.max(0, beatA);
+      s.node.alpha = Math.min(1, Math.max(0, baseA * (0.88 + ambient * 0.12)));
     }
   }
 
@@ -2015,7 +1948,6 @@ export class CameraBorder extends Container {
       // ── Alpha pulse — gentle, slightly faster than orbit ─────────────────
       const alphaPulse =
         0.5 + 0.5 * Math.sin(this.time * 0.55 + stain.floatPhase);
-      const beatSwell = 1 + (this.beatAmplitude - 1) * 0.08;
       const alpha = stain.baseAlpha * alphaPulse;
 
       // ── Build smooth Fourier polygon at (bx, by) with radius scale ────────
@@ -2023,7 +1955,7 @@ export class CameraBorder extends Container {
         const pts: number[] = [];
         for (let i = 0; i <= VERTS; i++) {
           const theta = (i / VERTS) * Math.PI * 2;
-          let rad = stain.baseRadius * rScale * beatSwell;
+          let rad = stain.baseRadius * rScale;
           for (let mi = 0; mi < stain.modes.length; mi++) {
             rad +=
               stain.modes[mi].amp *
@@ -2071,7 +2003,7 @@ export class CameraBorder extends Container {
     const float = Math.sin(this.time * 0.5) * 7;
     const y = baseY + float;
 
-    // Slow breathe + persistent high-freq tremor (no beat punch)
+    // Slow breathe + persistent high-freq tremor
     const breathe = 1 + 0.055 * Math.sin(this.time * 0.6);
     const tremor =
       1 +
