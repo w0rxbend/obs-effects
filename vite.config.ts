@@ -209,7 +209,6 @@ export default defineConfig({
         artificialLife: resolve(__dirname, "artificial-life.html"),
         softBodyCube: resolve(__dirname, "soft-body-cube.html"),
         jellyBlobFace: resolve(__dirname, "jelly-blob-face.html"),
-        zombieAvatar: resolve(__dirname, "zombie-avatar.html"),
         physarumGol: resolve(__dirname, "physarum-gol.html"),
         crystalGrowth: resolve(__dirname, "crystal-growth.html"),
         japaneseTempleLofi: resolve(__dirname, "japanese-temple-lofi.html"),
@@ -228,7 +227,6 @@ export default defineConfig({
           "particle-border-overlay.html",
         ),
         softVolFog: resolve(__dirname, "soft-vol-fog.html"),
-        robotAvatar: resolve(__dirname, "robot-avatar.html"),
         monolithicBlackGeometry: resolve(
           __dirname,
           "monolithic-black-geometry.html",
@@ -245,7 +243,6 @@ export default defineConfig({
         discordRobot: resolve(__dirname, "discord-robot.html"),
         octocatRobot: resolve(__dirname, "octocat-robot.html"),
         gunanSkeleton: resolve(__dirname, "gunan-skeleton.html"),
-        catAssassin: resolve(__dirname, "cat-assassin.html"),
         zombieFbx: resolve(__dirname, "zombie-fbx.html"),
         droneVisualization: resolve(__dirname, "drone-visualization.html"),
         djiFpv: resolve(__dirname, "dji-fpv.html"),
