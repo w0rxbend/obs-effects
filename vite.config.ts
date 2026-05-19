@@ -252,6 +252,7 @@ export default defineConfig({
         droneVisualization: resolve(__dirname, "drone-visualization.html"),
         ergodoxShowroom: resolve(__dirname, "ergodox-showroom.html"),
         djiFpv: resolve(__dirname, "dji-fpv.html"),
+        hexWaterIsland: resolve(__dirname, "hex-water-island.html"),
       },
     },
   },
