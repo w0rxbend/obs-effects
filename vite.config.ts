@@ -248,6 +248,7 @@ export default defineConfig({
         octocatRobot: resolve(__dirname, "octocat-robot.html"),
         gunanSkeleton: resolve(__dirname, "gunan-skeleton.html"),
         zombieFbx: resolve(__dirname, "zombie-fbx.html"),
+        meshyAvatar: resolve(__dirname, "meshy-avatar.html"),
         droneVisualization: resolve(__dirname, "drone-visualization.html"),
         djiFpv: resolve(__dirname, "dji-fpv.html"),
       },
