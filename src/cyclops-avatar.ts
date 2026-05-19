@@ -181,7 +181,7 @@ let micLevel = 0;
 let sampleMic: (() => void) | null = null;
 
 navigator.mediaDevices
-  .getUserMedia({ audio: true, video: false })
+  ?.getUserMedia({ audio: true, video: false })
   .then((stream) => {
     const ctx = new AudioContext();
     const src = ctx.createMediaStreamSource(stream);
