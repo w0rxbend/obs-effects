@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 
 // ── Renderer ──────────────────────────────────────────────────────────────────
 const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
@@ -8,7 +9,7 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setClearColor(0x000000, 0);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.1;
+renderer.toneMappingExposure = 0.3;
 document.body.style.margin = "0";
 document.body.style.overflow = "hidden";
 document.body.appendChild(renderer.domElement);
@@ -25,6 +26,11 @@ document.body.appendChild(overlay);
 
 // ── Scene ─────────────────────────────────────────────────────────────────────
 const scene = new THREE.Scene();
+
+// IBL — minimal intensity so it doesn't wash out the red; clearcoat uses it
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment()).texture;
+pmrem.dispose();
 const camera = new THREE.PerspectiveCamera(
   38,
   window.innerWidth / window.innerHeight,
@@ -33,21 +39,20 @@ const camera = new THREE.PerspectiveCamera(
 );
 
 // ── Lights ────────────────────────────────────────────────────────────────────
-scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+scene.add(new THREE.AmbientLight(0x1a0000, 2.5));
 
-const key = new THREE.DirectionalLight(0xfff0e0, 1.3);
-key.position.set(3, 6, 4);
-scene.add(key);
+// Key — dark black crimson, at camera position after load
+const camLight = new THREE.PointLight(0x3d0000, 0.9, 0);
+scene.add(camLight);
 
-const rimL = new THREE.PointLight(0x6699ff, 4.0, 0);
-const rimR = new THREE.PointLight(0xff4422, 3.0, 0);
+// rimL — very dark purple-blue, silhouette contrast only
+const rimL = new THREE.PointLight(0x080018, 1.0, 0);
+// rimR — dark black rim
+const rimR = new THREE.PointLight(0x150000, 2.5, 0);
 scene.add(rimL, rimR);
 
-const top = new THREE.DirectionalLight(0xaaddff, 0.4);
-top.position.set(0, 10, 0);
-scene.add(top);
-
-const frontTop = new THREE.DirectionalLight(0xfff8f0, 1.2);
+// frontTop — bright blood red
+const frontTop = new THREE.DirectionalLight(0xff0000, 0.7);
 frontTop.position.set(0, 8, 10);
 scene.add(frontTop);
 
@@ -129,6 +134,68 @@ loader.load(
     });
     console.log("[cyclops] controlled bones found:", [...rig.keys()]);
 
+    // ── Glossy blood-red material pass ────────────────────────────────────
+    // Converts every MeshStandardMaterial to MeshPhysicalMaterial with
+    // clearcoat gloss + red-shifted color. Run after bone collection so we
+    // don't disturb the rig; maps/normals/AO are preserved from the original.
+    const toGlossy = (src: THREE.Material): THREE.MeshPhysicalMaterial => {
+      const std = src instanceof THREE.MeshStandardMaterial ? src : null;
+      const dst = new THREE.MeshPhysicalMaterial({
+        map: std?.map ?? null,
+        normalMap: std?.normalMap ?? null,
+        roughnessMap: std?.roughnessMap ?? null,
+        metalnessMap: std?.metalnessMap ?? null,
+        aoMap: std?.aoMap ?? null,
+        emissiveMap: std?.emissiveMap ?? null,
+        alphaMap: std?.alphaMap ?? null,
+        // Darken and push hard into blood red — green/blue channels crushed
+        color: (() => {
+          if (!std) return new THREE.Color(0x6b0000);
+          return std.color.clone().multiply(new THREE.Color(1.1, 0.06, 0.06));
+        })(),
+        roughness: Math.max(0.5, (std?.roughness ?? 0.5) * 0.85),
+        metalness: std?.metalness ?? 0,
+        clearcoat: 0.05,
+        clearcoatRoughness: 0.6,
+        reflectivity: 0.3,
+        emissive: new THREE.Color(0x1a0000),
+        emissiveIntensity: 0.35,
+        envMapIntensity: 0.15,
+        transparent: src.transparent,
+        opacity: src.opacity,
+        side: src.side,
+      });
+      src.dispose();
+      return dst;
+    };
+
+    model.traverse((obj) => {
+      const mesh = obj as THREE.Mesh;
+      if (!mesh.isMesh) return;
+      if (Array.isArray(mesh.material)) {
+        mesh.material = mesh.material.map(toGlossy);
+      } else {
+        mesh.material = toGlossy(mesh.material);
+      }
+    });
+
+    // ── Eye override — keep original texture/pupil, boost to white-red ───
+    const eyeMesh = model.getObjectByName("Object_9") as THREE.Mesh | undefined;
+    if (eyeMesh?.isMesh) {
+      const src = eyeMesh.material as THREE.MeshStandardMaterial;
+      eyeMesh.material = new THREE.MeshPhysicalMaterial({
+        map: src.map,
+        emissiveMap: src.map, // modulates glow by texture — bright iris glows more
+        color: new THREE.Color(0xff4444),
+        emissive: new THREE.Color(0xff1800),
+        emissiveIntensity: 7.0, // high enough that dark sclera gets red glow, iris blazes
+        roughness: 0.05,
+        metalness: 0.0,
+        clearcoat: 0.6,
+        clearcoatRoughness: 0.05,
+      });
+    }
+
     // Auto-frame camera
     const box = new THREE.Box3().setFromObject(model);
     const size = new THREE.Vector3();
@@ -137,21 +204,20 @@ loader.load(
     box.getCenter(center);
 
     const h = size.y;
-    const targetY = box.min.y + h * 0.72;
+    const faceY = box.min.y + h * 0.82; // look-at: upper face area
+    const camY = box.min.y + h * 0.38; // camera sits low — chest/waist level
     const dist = h * 1.15;
 
-    camera.position.set(center.x, targetY, center.z + dist);
-    camera.lookAt(center.x, targetY, center.z);
+    camera.position.set(center.x, camY, center.z + dist);
+    camera.lookAt(center.x, faceY, center.z);
     camera.near = dist * 0.01;
     camera.far = dist * 20;
     camera.updateProjectionMatrix();
 
-    rimL.position.set(center.x - h * 0.7, targetY, center.z - h * 0.5);
-    rimR.position.set(
-      center.x + h * 0.7,
-      targetY - h * 0.1,
-      center.z - h * 0.4,
-    );
+    camLight.position.copy(camera.position);
+
+    rimL.position.set(center.x - h * 0.7, faceY, center.z - h * 0.5);
+    rimR.position.set(center.x + h * 0.7, faceY - h * 0.1, center.z - h * 0.4);
     rimL.distance = h * 3;
     rimR.distance = h * 3;
 
@@ -178,18 +244,32 @@ loader.load(
 
 // ── Microphone ────────────────────────────────────────────────────────────────
 let micLevel = 0;
+let micReady = false;
 let sampleMic: (() => void) | null = null;
+let micContext: AudioContext | null = null;
 
-navigator.mediaDevices
-  ?.getUserMedia({ audio: true, video: false })
-  .then((stream) => {
-    const ctx = new AudioContext();
-    const src = ctx.createMediaStreamSource(stream);
-    const analyser = ctx.createAnalyser();
+async function initMicrophone(): Promise<void> {
+  if (sampleMic || !navigator.mediaDevices?.getUserMedia) return;
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        channelCount: 1,
+        echoCancellation: false,
+        noiseSuppression: false,
+        autoGainControl: false,
+      },
+      video: false,
+    });
+
+    micContext = new AudioContext();
+    const src = micContext.createMediaStreamSource(stream);
+    const analyser = micContext.createAnalyser();
     analyser.fftSize = 512;
     analyser.smoothingTimeConstant = 0.35;
     src.connect(analyser);
     const buf = new Uint8Array(analyser.frequencyBinCount);
+    let noiseFloor = 0.018;
 
     sampleMic = () => {
       analyser.getByteTimeDomainData(buf);
@@ -199,12 +279,33 @@ navigator.mediaDevices
         sum += v * v;
       }
       const rms = Math.sqrt(sum / buf.length);
-      const target = Math.min(1, rms * 14);
+      if (rms < noiseFloor * 1.8) {
+        noiseFloor += (rms - noiseFloor) * 0.04;
+      } else {
+        noiseFloor += (0.018 - noiseFloor) * 0.002;
+      }
+
+      const gatedRms = Math.max(0, rms - noiseFloor * 1.35);
+      const target = Math.min(1, gatedRms * 22);
       const rate = target > micLevel ? 0.5 : 0.12;
       micLevel += (target - micLevel) * rate;
     };
-  })
-  .catch((e) => console.warn("[cyclops] mic denied:", e));
+
+    micReady = true;
+    if (micContext.state === "suspended") {
+      window.addEventListener("pointerdown", () => void micContext?.resume(), {
+        once: true,
+      });
+    }
+  } catch (e) {
+    console.warn("[cyclops] microphone unavailable:", e);
+  }
+}
+
+void initMicrophone();
+window.addEventListener("pointerdown", () => void initMicrophone(), {
+  once: true,
+});
 
 // ── Render loop ───────────────────────────────────────────────────────────────
 const clock = new THREE.Clock();
@@ -263,18 +364,14 @@ function animate(): void {
   pose("ForearmL_22", lElbow, 0, 0);
   pose("HandL_20", 0.08 + lFwd * 0.3, 0, 0);
 
-  // Jaw — audio-reactive; synthetic fallback when mic unavailable
-  let jaw: number;
+  // Jaw — driven only by microphone input. No browser-audio or synthetic speech.
+  let jaw = 0;
   if (sampleMic) {
     sampleMic();
     const syllable = (Math.sin(t * 8.5) * 0.3 + 0.7) * micLevel;
     jaw = syllable * 0.35;
-  } else {
-    const jawRaw =
-      Math.sin(t * 7.3) * 0.55 +
-      Math.sin(t * 11.7 + 1.4) * 0.3 +
-      Math.sin(t * 4.9 + 0.8) * 0.15;
-    jaw = Math.max(0, jawRaw) * 0.28;
+  } else if (!micReady) {
+    micLevel += (0 - micLevel) * 0.08;
   }
   pose("Jaw_5", jaw, 0, 0);
 

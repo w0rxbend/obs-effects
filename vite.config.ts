@@ -118,6 +118,7 @@ export default defineConfig({
         worxbendText: resolve(__dirname, "worxbend-text.html"),
         worxbendFluid: resolve(__dirname, "worxbend-fluid.html"),
         worxbendMolecular: resolve(__dirname, "worxbend-molecular.html"),
+        worxbend3dText: resolve(__dirname, "worxbend-3d-text.html"),
         startingSoonJelly: resolve(__dirname, "starting-soon-jelly.html"),
         startingSoonFluid: resolve(__dirname, "starting-soon-fluid.html"),
         startingSoonParticleMesh: resolve(
@@ -138,6 +139,9 @@ export default defineConfig({
         fluidPaint: resolve(__dirname, "fluid-paint.html"),
         waveBorderCam: resolve(__dirname, "wave-border-cam.html"),
         catCircleCam: resolve(__dirname, "cat-circle-cam.html"),
+        threeRingCamBorder: resolve(__dirname, "three-ring-cam-border.html"),
+        threeGeoCamBorder: resolve(__dirname, "three-geo-cam-border.html"),
+        jellyRingCamBorder: resolve(__dirname, "jelly-ring-cam-border.html"),
         animatedLines: resolve(__dirname, "animated-lines.html"),
         mountainNightRailway: resolve(__dirname, "mountain-night-railway.html"),
         tuxBlob: resolve(__dirname, "tux-blob.html"),

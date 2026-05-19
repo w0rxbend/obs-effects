@@ -88,7 +88,8 @@
       "Bash(mkdir -p '/home/worxbend/Workspace/obs-effects/raw-assets/main{m}/gunan/source')",
       "Bash(mv '/home/worxbend/Workspace/obs-effects/raw-assets/main{m}/source/Gunan_animated.fbx' '/home/worxbend/Workspace/obs-effects/raw-assets/main{m}/gunan/source/Gunan_animated.fbx')",
       "Bash(mv '/home/worxbend/Workspace/obs-effects/raw-assets/main{m}/textures' '/home/worxbend/Workspace/obs-effects/raw-assets/main{m}/gunan/textures')",
-      "Bash(rmdir '/home/worxbend/Workspace/obs-effects/raw-assets/main{m}/source' 2>/dev/null && echo \"removed empty source dir\" || echo \"source dir not empty or already gone\")"
+      "Bash(rmdir '/home/worxbend/Workspace/obs-effects/raw-assets/main{m}/source' 2>/dev/null && echo \"removed empty source dir\" || echo \"source dir not empty or already gone\")",
+      "Bash(node *)"
     ],
     "additionalDirectories": [
       "/home/worxbend/Workspace/obs-effects",
