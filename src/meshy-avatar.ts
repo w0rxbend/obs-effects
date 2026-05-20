@@ -201,21 +201,10 @@ overlay.innerHTML = [
 ].join("");
 document.body.appendChild(overlay);
 
-// ── Skeleton info panel ───────────────────────────────────────────────────────
-const panel = document.createElement("div");
-panel.style.cssText = [
-  "position:fixed;top:14px;left:14px;padding:12px 15px",
-  "color:rgba(100,210,255,0.82);font:400 10.5px/1.65 'Courier New',monospace;letter-spacing:0.04em",
-  "background:rgba(0,8,18,0.58);border:1px solid rgba(100,210,255,0.18);border-radius:6px",
-  "max-width:250px;max-height:75vh;overflow-y:auto",
-  "pointer-events:none;opacity:0;transition:opacity 0.8s ease",
-  "scrollbar-width:thin;scrollbar-color:rgba(100,210,255,0.2) transparent",
-].join(";");
-document.body.appendChild(panel);
-
 // ── Runtime state ─────────────────────────────────────────────────────────────
 let modelRoot: THREE.Group | null = null;
-let skeletonHelper: THREE.SkeletonHelper | null = null;
+
+let camOrbit: { dist: number; targetY: number; center: THREE.Vector3 } | null = null;
 
 // ── Load ──────────────────────────────────────────────────────────────────────
 const loadStatus = document.getElementById("load-status")!;
@@ -246,59 +235,6 @@ loader.load(
 
     console.log("[meshy-avatar] bones:", allBoneNames);
     console.log("[meshy-avatar] groups:", boneGroups);
-
-    // Panel HTML
-    const LABELS: Record<BoneGroup, string> = {
-      hips: "HIPS / ROOT",
-      spine: "SPINE",
-      neck: "NECK",
-      head: "HEAD",
-      leftShoulder: "L SHOULDER",
-      leftArm: "L ARM",
-      leftForearm: "L FOREARM",
-      leftHand: "L HAND",
-      rightShoulder: "R SHOULDER",
-      rightArm: "R ARM",
-      rightForearm: "R FOREARM",
-      rightHand: "R HAND",
-      leftThigh: "L THIGH",
-      leftShin: "L SHIN",
-      leftFoot: "L FOOT",
-      rightThigh: "R THIGH",
-      rightShin: "R SHIN",
-      rightFoot: "R FOOT",
-      fingers: "FINGERS",
-      toes: "TOES",
-      other: "OTHER",
-    };
-    const rows: string[] = [
-      `<div style="color:rgba(180,235,255,0.95);font-weight:600;font-size:11.5px;margin-bottom:6px">MESHY AI CHARACTER</div>`,
-      `<div style="color:rgba(100,210,255,0.55);margin-bottom:10px;font-size:10px">${allBoneNames.length} joints · idle animation</div>`,
-    ];
-    for (const [group, names] of Object.entries(boneGroups) as [
-      BoneGroup,
-      string[],
-    ][]) {
-      if (names.length === 0) continue;
-      const color =
-        group === "other"
-          ? "rgba(100,210,255,0.38)"
-          : group.startsWith("left") || group === "leftShoulder"
-            ? "rgba(120,220,180,0.72)"
-            : group.startsWith("right") || group === "rightShoulder"
-              ? "rgba(255,170,120,0.72)"
-              : "rgba(200,220,255,0.72)";
-      rows.push(
-        `<div style="color:${color};font-weight:600;margin-top:7px;font-size:9.5px;letter-spacing:0.08em">${LABELS[group]} (${names.length})</div>`,
-      );
-      rows.push(
-        ...names.map(
-          (n) =>
-            `<div style="color:rgba(100,210,255,0.6);padding-left:6px;font-size:9.5px">${n}</div>`,
-        ),
-      );
-    }
-    panel.innerHTML = rows.join("");
 
     scene.add(gltf.scene);
 
@@ -334,16 +270,6 @@ loader.load(
       mesh.material = Array.isArray(src) ? upgraded : upgraded[0];
     });
 
-    skeletonHelper = new THREE.SkeletonHelper(gltf.scene);
-    const helperMat = skeletonHelper.material;
-    if (helperMat instanceof THREE.LineBasicMaterial) {
-      helperMat.color.set(0x00d4ff);
-      helperMat.transparent = true;
-      helperMat.opacity = 0.45;
-      helperMat.depthWrite = false;
-    }
-    scene.add(skeletonHelper);
-
     // Frame camera
     const box = new THREE.Box3().setFromObject(gltf.scene);
     const size = new THREE.Vector3();
@@ -357,8 +283,6 @@ loader.load(
     const dist = (h * 0.5 + span) / Math.tan(fovRad / 2);
     const targetY = box.min.y + h * 0.52;
 
-    camera.position.set(center.x, targetY + h * 0.04, dist);
-    camera.lookAt(center.x, targetY, center.z);
     camera.near = Math.max(dist * 0.004, 0.01);
     camera.far = dist * 12;
     camera.updateProjectionMatrix();
@@ -366,7 +290,10 @@ loader.load(
     controls.target.set(center.x, targetY, center.z);
     controls.minDistance = dist * 0.28;
     controls.maxDistance = dist * 3.2;
+    controls.enabled = false;
     controls.update();
+
+    camOrbit = { dist, targetY, center: center.clone() };
 
     // Place key point light near the character's upper chest / face level
     keyPoint.position.set(
@@ -376,11 +303,30 @@ loader.load(
     );
     keyPoint.distance = h * 5;
 
+    // ── Split keyboard ────────────────────────────────────────────────────
+    // GLB contains both halves in one mesh (left half X<0, right half X>0).
+    // Scale to ~35% of character height and position at hand level in front.
+    new GLTFLoader().load(
+      "/assets/main/ErgoDox_EZ_keyb.glb",
+      (kbGltf) => {
+        // keyboard native half-width ≈ 0.95 units; target span ≈ 38% of h
+        const kbScale = (h * 0.38) / 1.9;
+        const kb = kbGltf.scene;
+        kb.scale.setScalar(kbScale);
+        // Y: roughly at hand height (~43% up from feet)
+        // Z: slightly forward toward camera
+        kb.rotation.y = Math.PI;
+        kb.position.set(center.x, box.min.y + h * 0.5, center.z + dist * 0.12);
+        scene.add(kb);
+      },
+      undefined,
+      (err) => console.error("[keyboard]", err),
+    );
+
     loadStatus.textContent = `${allBoneNames.length} joints loaded`;
     overlay.style.opacity = "0";
     setTimeout(() => {
       overlay.remove();
-      panel.style.opacity = "1";
     }, 900);
   },
   (xhr) => {
@@ -506,10 +452,10 @@ function animate(): void {
     B.lArm,
     -(0.35 + lArmSwing * 0.05 + breathe * 0.018),
     lArmSwing * 0.025,
-    -0.20,
+    -0.02,
   );
   // Left forearm: less flex → forearm angles more downward from elbow
-  pose(B.lForeArm, -(0.60 + Math.abs(lArmSwing) * 0.03), 1.32, 0);
+  pose(B.lForeArm, -(0.6 + Math.abs(lArmSwing) * 0.03), 1.32, 0);
   // Left wrist: positive X droops palm down
   pose(B.lHand, 0.25 + lArmSwing * 0.02, 0, lArmSwing * 0.01);
 
@@ -518,10 +464,10 @@ function animate(): void {
     B.rArm,
     -(0.35 + rArmSwing * 0.05 + breathe * 0.018),
     rArmSwing * -0.025,
-    0.20,
+    0.02,
   );
   // Right forearm: mirror
-  pose(B.rForeArm, -(0.60 + Math.abs(rArmSwing) * 0.03), -1.32, 0);
+  pose(B.rForeArm, -(0.6 + Math.abs(rArmSwing) * 0.03), -1.32, 0);
   pose(B.rHand, 0.25 + rArmSwing * 0.02, 0, rArmSwing * -0.01);
 
   // ── Fingers — typing animation: staggered taps per finger ─────────────
@@ -556,8 +502,19 @@ function animate(): void {
   // ── Root model micro-sway ─────────────────────────────────────────────
   if (modelRoot) modelRoot.rotation.y = sway * 0.045;
 
-  if (skeletonHelper) skeletonHelper.updateMatrixWorld(true);
-  controls.update();
+  if (camOrbit) {
+    const { dist, targetY: ty, center: ctr } = camOrbit;
+    const az = THREE.MathUtils.degToRad(20) + THREE.MathUtils.degToRad(10) * Math.sin(t * 0.42);
+    const el = THREE.MathUtils.degToRad(20) + THREE.MathUtils.degToRad(4) * Math.sin(t * 0.27 + 1.1);
+    camera.position.set(
+      ctr.x + dist * Math.sin(az) * Math.cos(el),
+      ty + dist * Math.sin(el),
+      ctr.z + dist * Math.cos(az) * Math.cos(el),
+    );
+    camera.lookAt(ctr.x, ty, ctr.z);
+  } else {
+    controls.update();
+  }
   renderer.render(scene, camera);
 }
 

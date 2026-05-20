@@ -250,6 +250,7 @@ export default defineConfig({
         zombieFbx: resolve(__dirname, "zombie-fbx.html"),
         meshyAvatar: resolve(__dirname, "meshy-avatar.html"),
         droneVisualization: resolve(__dirname, "drone-visualization.html"),
+        ergodoxShowroom: resolve(__dirname, "ergodox-showroom.html"),
         djiFpv: resolve(__dirname, "dji-fpv.html"),
       },
     },
