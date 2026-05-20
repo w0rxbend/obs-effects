@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 
 // ── Renderer ──────────────────────────────────────────────────────────────────
 const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
@@ -18,6 +19,11 @@ document.body.appendChild(renderer.domElement);
 
 // ── Scene ─────────────────────────────────────────────────────────────────────
 const scene = new THREE.Scene();
+
+// IBL — neutral room environment drives reflections on glossy surfaces
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+pmrem.dispose();
 const camera = new THREE.PerspectiveCamera(
   38,
   window.innerWidth / window.innerHeight,
@@ -31,26 +37,35 @@ controls.dampingFactor = 0.08;
 controls.enablePan = false;
 controls.rotateSpeed = 0.6;
 controls.zoomSpeed = 0.8;
-controls.minPolarAngle = THREE.MathUtils.degToRad(10);
-controls.maxPolarAngle = THREE.MathUtils.degToRad(150);
+controls.minPolarAngle = THREE.MathUtils.degToRad(5);
+controls.maxPolarAngle = THREE.MathUtils.degToRad(155);
 
 // ── Lights ────────────────────────────────────────────────────────────────────
-scene.add(new THREE.AmbientLight(0xd0e8ff, 0.9));
+scene.add(new THREE.AmbientLight(0xd0e8ff, 0.55));
 
-const keyLight = new THREE.DirectionalLight(0xffeedd, 2.4);
+// Key — warm directional from front-right above
+const keyLight = new THREE.DirectionalLight(0xfff4e0, 1.8);
 keyLight.position.set(3, 6, 5);
 keyLight.castShadow = true;
 scene.add(keyLight);
 
-const fillLight = new THREE.DirectionalLight(0x80c8ff, 1.2);
+// Fill — cool from opposite side, softer
+const fillLight = new THREE.DirectionalLight(0x9ec8ff, 0.7);
 fillLight.position.set(-4, 2, 3);
 scene.add(fillLight);
 
-const rimLight = new THREE.DirectionalLight(0xc0f0ff, 1.6);
+// Rim — cold-blue edge light from behind
+const rimLight = new THREE.DirectionalLight(0xb0e0ff, 1.1);
 rimLight.position.set(0, 3, -6);
 scene.add(rimLight);
 
-// ── Rig helpers ───────────────────────────────────────────────────────────────
+// Key point light — warm close source that creates sharp specular highlights
+// Position is updated after the model loads so it sits near the character's face.
+const keyPoint = new THREE.PointLight(0xffddb0, 1.8, 0, 2);
+keyPoint.position.set(1.5, 2, 2);
+scene.add(keyPoint);
+
+// ── Rig ───────────────────────────────────────────────────────────────────────
 interface BoneEntry {
   obj: THREE.Object3D;
   bindQ: THREE.Quaternion;
@@ -68,8 +83,48 @@ function pose(name: string, rx: number, ry: number, rz: number): void {
   b.obj.quaternion.copy(b.bindQ).multiply(_q);
 }
 
-// ── Bone classification ───────────────────────────────────────────────────────
-// Populated at load time by categorizing every bone name.
+// ── Exact bone names as Three.js registers them (colon stripped from namespace) ─
+// GLB stores "smartrig:Head" but Three.js sanitizes to "smartrigHead".
+const B = {
+  hips: "smartrigHips",
+  spine: "smartrigSpine",
+  spine1: "smartrigSpine1",
+  spine2: "smartrigSpine2",
+  neck: "smartrigNeck",
+  head: "smartrigHead",
+
+  lShoulder: "smartrigLeftShoulder",
+  lArm: "smartrigLeftArm",
+  lForeArm: "smartrigLeftForeArm",
+  lHand: "smartrigLeftHand",
+  lThumb1: "smartrigLeftHandThumb1",
+  lIndex1: "smartrigLeftHandIndex1",
+  lMiddle1: "smartrigLeftHandMiddle1",
+  lRing1: "smartrigLeftHandRing1",
+  lPinky1: "smartrigLeftHandPinky1",
+
+  rShoulder: "smartrigRightShoulder",
+  rArm: "smartrigRightArm",
+  rForeArm: "smartrigRightForeArm",
+  rHand: "smartrigRightHand",
+  rThumb1: "smartrigRightHandThumb1",
+  rIndex1: "smartrigRightHandIndex1",
+  rMiddle1: "smartrigRightHandMiddle1",
+  rRing1: "smartrigRightHandRing1",
+  rPinky1: "smartrigRightHandPinky1",
+
+  lUpLeg: "smartrigLeftUpLeg",
+  lLeg: "smartrigLeftLeg",
+  lFoot: "smartrigLeftFoot",
+  lToeBase: "smartrigLeftToeBase",
+
+  rUpLeg: "smartrigRightUpLeg",
+  rLeg: "smartrigRightLeg",
+  rFoot: "smartrigRightFoot",
+  rToeBase: "smartrigRightToeBase",
+} as const;
+
+// ── Bone panel classification ─────────────────────────────────────────────────
 const boneGroups = {
   hips: [] as string[],
   spine: [] as string[],
@@ -93,51 +148,41 @@ const boneGroups = {
   toes: [] as string[],
   other: [] as string[],
 };
-
 type BoneGroup = keyof typeof boneGroups;
 
 function classify(name: string): BoneGroup {
-  const n = name.toLowerCase().replace(/[_\-.\s]/g, "");
-  const isLeft = /^(l|left|mixamorigl)/.test(n) || /left/.test(n);
-  const isRight = /^(r|right|mixamorigr)/.test(n) || /right/.test(n);
+  // Strip namespace prefixes like "smartrig:", "mixamorig:", etc.
+  const stripped = name.replace(/^[a-z]+:/i, "");
+  const n = stripped.toLowerCase().replace(/[_\-.\s]/g, "");
+  const isLeft = /^l(?=[A-Z])/.test(stripped) || /left/i.test(stripped);
+  const isRight = /^r(?=[A-Z])/.test(stripped) || /right/i.test(stripped);
 
-  if (/hips?|pelvis|root/i.test(n) && !/(leg|thigh|arm)/i.test(n))
-    return "hips";
-  if (
-    /spine|chest|torso|back|upperbody/i.test(n) &&
-    !/(arm|leg|hand|foot)/i.test(n)
-  )
+  if (/hips?|pelvis/i.test(n) && !/(leg|thigh|arm)/i.test(n)) return "hips";
+  if (/spine|chest|upperbody/i.test(n) && !/(arm|leg|hand|foot)/i.test(n))
     return "spine";
   if (/neck/i.test(n)) return "neck";
-  if (/head/i.test(n) && !/headband|headphone/i.test(n)) return "head";
-
-  if (/finger|thumb|index|middle|ring|pinky|little/i.test(n)) return "fingers";
+  if (/head/i.test(n)) return "head";
+  if (/finger|thumb|index|middle|ring|pinky/i.test(n)) return "fingers";
   if (/toe/i.test(n)) return "toes";
 
   if (isLeft) {
-    if (/clavicle|collar|shoulder(?!.*(upper|arm))/i.test(n))
-      return "leftShoulder";
-    if (/upperarm|arm(?!ature)|shoulder.*arm/i.test(n)) return "leftArm";
-    if (/forearm|lowerarm|elbow/i.test(n)) return "leftForearm";
-    if (/hand|wrist/i.test(n) && !/upper/i.test(n)) return "leftHand";
-    if (/upleg|thigh|upperleg|hip(?!s)/i.test(n)) return "leftThigh";
-    if (/leg|shin|knee|lowerleg/i.test(n) && !/upper/i.test(n))
-      return "leftShin";
+    if (/shoulder|clavicle|collar/i.test(n)) return "leftShoulder";
+    if (/forearm|lowerarm/i.test(n)) return "leftForearm";
+    if (/arm/i.test(n)) return "leftArm";
+    if (/hand|wrist/i.test(n)) return "leftHand";
+    if (/upleg|thigh|upperleg/i.test(n)) return "leftThigh";
+    if (/leg|shin|knee/i.test(n) && !/upper/i.test(n)) return "leftShin";
     if (/foot|ankle/i.test(n)) return "leftFoot";
   }
-
   if (isRight) {
-    if (/clavicle|collar|shoulder(?!.*(upper|arm))/i.test(n))
-      return "rightShoulder";
-    if (/upperarm|arm(?!ature)|shoulder.*arm/i.test(n)) return "rightArm";
-    if (/forearm|lowerarm|elbow/i.test(n)) return "rightForearm";
-    if (/hand|wrist/i.test(n) && !/upper/i.test(n)) return "rightHand";
-    if (/upleg|thigh|upperleg|hip(?!s)/i.test(n)) return "rightThigh";
-    if (/leg|shin|knee|lowerleg/i.test(n) && !/upper/i.test(n))
-      return "rightShin";
+    if (/shoulder|clavicle|collar/i.test(n)) return "rightShoulder";
+    if (/forearm|lowerarm/i.test(n)) return "rightForearm";
+    if (/arm/i.test(n)) return "rightArm";
+    if (/hand|wrist/i.test(n)) return "rightHand";
+    if (/upleg|thigh|upperleg/i.test(n)) return "rightThigh";
+    if (/leg|shin|knee/i.test(n) && !/upper/i.test(n)) return "rightShin";
     if (/foot|ankle/i.test(n)) return "rightFoot";
   }
-
   return "other";
 }
 
@@ -149,7 +194,7 @@ overlay.style.cssText = [
   "pointer-events:none;transition:opacity 0.8s ease",
 ].join(";");
 overlay.innerHTML = [
-  `<div id="load-status">Analyzing Meshy AI Character…</div>`,
+  `<div id="load-status">Loading Meshy AI Character…</div>`,
   `<div style="width:220px;height:2px;background:rgba(100,210,255,0.15);border-radius:1px">`,
   `<div id="load-fill" style="height:100%;width:0%;background:rgba(100,210,255,0.75);border-radius:1px;transition:width 0.12s"></div>`,
   `</div>`,
@@ -169,11 +214,8 @@ panel.style.cssText = [
 document.body.appendChild(panel);
 
 // ── Runtime state ─────────────────────────────────────────────────────────────
-let mixer: THREE.AnimationMixer | null = null;
 let modelRoot: THREE.Group | null = null;
 let skeletonHelper: THREE.SkeletonHelper | null = null;
-let modelHeight = 1;
-const modelCenter = new THREE.Vector3();
 
 // ── Load ──────────────────────────────────────────────────────────────────────
 const loadStatus = document.getElementById("load-status")!;
@@ -185,17 +227,15 @@ loader.load(
   (gltf) => {
     modelRoot = gltf.scene;
 
-    // Collect every bone from scene-graph and skeleton arrays.
     const allBoneNames: string[] = [];
-    const seenNames = new Set<string>();
+    const seen = new Set<string>();
 
     const registerBone = (obj: THREE.Object3D) => {
-      if (seenNames.has(obj.name)) return;
-      seenNames.add(obj.name);
+      if (seen.has(obj.name)) return;
+      seen.add(obj.name);
       rig.set(obj.name, { obj, bindQ: obj.quaternion.clone() });
       allBoneNames.push(obj.name);
-      const group = classify(obj.name);
-      boneGroups[group].push(obj.name);
+      boneGroups[classify(obj.name)].push(obj.name);
     };
 
     gltf.scene.traverse((obj) => {
@@ -204,11 +244,10 @@ loader.load(
       if (sm.isSkinnedMesh) sm.skeleton.bones.forEach(registerBone);
     });
 
-    console.log("[meshy-avatar] total bones:", allBoneNames.length);
-    console.log("[meshy-avatar] bone names:", allBoneNames);
+    console.log("[meshy-avatar] bones:", allBoneNames);
     console.log("[meshy-avatar] groups:", boneGroups);
 
-    // Build info panel HTML
+    // Panel HTML
     const LABELS: Record<BoneGroup, string> = {
       hips: "HIPS / ROOT",
       spine: "SPINE",
@@ -232,12 +271,10 @@ loader.load(
       toes: "TOES",
       other: "OTHER",
     };
-
     const rows: string[] = [
       `<div style="color:rgba(180,235,255,0.95);font-weight:600;font-size:11.5px;margin-bottom:6px">MESHY AI CHARACTER</div>`,
-      `<div style="color:rgba(100,210,255,0.55);margin-bottom:10px;font-size:10px">${allBoneNames.length} joints detected · ${gltf.animations.length} animation${gltf.animations.length !== 1 ? "s" : ""}</div>`,
+      `<div style="color:rgba(100,210,255,0.55);margin-bottom:10px;font-size:10px">${allBoneNames.length} joints · idle animation</div>`,
     ];
-
     for (const [group, names] of Object.entries(boneGroups) as [
       BoneGroup,
       string[],
@@ -246,9 +283,9 @@ loader.load(
       const color =
         group === "other"
           ? "rgba(100,210,255,0.38)"
-          : group.startsWith("left")
+          : group.startsWith("left") || group === "leftShoulder"
             ? "rgba(120,220,180,0.72)"
-            : group.startsWith("right")
+            : group.startsWith("right") || group === "rightShoulder"
               ? "rgba(255,170,120,0.72)"
               : "rgba(200,220,255,0.72)";
       rows.push(
@@ -265,51 +302,81 @@ loader.load(
 
     scene.add(gltf.scene);
 
-    // Skeleton helper — cyan holographic look
+    // ── Gloss pass — upgrade every mesh material to MeshPhysicalMaterial ──
+    gltf.scene.traverse((obj) => {
+      const mesh = obj as THREE.Mesh;
+      if (!mesh.isMesh) return;
+      const src = mesh.material as THREE.MeshStandardMaterial;
+      const mats: THREE.MeshStandardMaterial[] = Array.isArray(src)
+        ? (src as unknown as THREE.MeshStandardMaterial[])
+        : [src];
+      const upgraded = mats.map((m) => {
+        const p = new THREE.MeshPhysicalMaterial({
+          map: m.map ?? null,
+          normalMap: m.normalMap ?? null,
+          roughnessMap: m.roughnessMap ?? null,
+          metalnessMap: m.metalnessMap ?? null,
+          aoMap: m.aoMap ?? null,
+          emissiveMap: m.emissiveMap ?? null,
+          color: m.color.clone(),
+          roughness: Math.max((m.roughness ?? 0.8) * 0.85, 0.5),
+          metalness: m.metalness ?? 0,
+          clearcoat: 0.06,
+          clearcoatRoughness: 0.5,
+          envMapIntensity: 0.3,
+          transparent: m.transparent,
+          opacity: m.opacity,
+          side: m.side,
+        });
+        m.dispose();
+        return p;
+      });
+      mesh.material = Array.isArray(src) ? upgraded : upgraded[0];
+    });
+
     skeletonHelper = new THREE.SkeletonHelper(gltf.scene);
     const helperMat = skeletonHelper.material;
     if (helperMat instanceof THREE.LineBasicMaterial) {
       helperMat.color.set(0x00d4ff);
       helperMat.transparent = true;
-      helperMat.opacity = 0.5;
+      helperMat.opacity = 0.45;
       helperMat.depthWrite = false;
     }
     scene.add(skeletonHelper);
 
-    // Baked animations blended at low weight so procedural layer dominates
-    if (gltf.animations.length > 0) {
-      mixer = new THREE.AnimationMixer(gltf.scene);
-      gltf.animations.forEach((clip) => {
-        const action = mixer!.clipAction(clip);
-        action.setEffectiveWeight(0.25);
-        action.play();
-      });
-    }
-
-    // Frame camera to fit the full model
+    // Frame camera
     const box = new THREE.Box3().setFromObject(gltf.scene);
     const size = new THREE.Vector3();
+    const center = new THREE.Vector3();
     box.getSize(size);
-    box.getCenter(modelCenter);
-    modelHeight = Math.max(size.y, 1);
+    box.getCenter(center);
+    const h = Math.max(size.y, 1);
 
     const fovRad = THREE.MathUtils.degToRad(camera.fov);
-    const maxSpan = Math.max(size.x, size.z) * 0.5;
-    const dist = (modelHeight * 0.5 + maxSpan) / Math.tan(fovRad / 2);
-    const targetY = box.min.y + modelHeight * 0.52;
+    const span = Math.max(size.x, size.z) * 0.5;
+    const dist = (h * 0.5 + span) / Math.tan(fovRad / 2);
+    const targetY = box.min.y + h * 0.52;
 
-    camera.position.set(modelCenter.x, targetY + modelHeight * 0.04, dist);
-    camera.lookAt(modelCenter.x, targetY, modelCenter.z);
+    camera.position.set(center.x, targetY + h * 0.04, dist);
+    camera.lookAt(center.x, targetY, center.z);
     camera.near = Math.max(dist * 0.004, 0.01);
     camera.far = dist * 12;
     camera.updateProjectionMatrix();
 
-    controls.target.set(modelCenter.x, targetY, modelCenter.z);
+    controls.target.set(center.x, targetY, center.z);
     controls.minDistance = dist * 0.28;
     controls.maxDistance = dist * 3.2;
     controls.update();
 
-    loadStatus.textContent = `${allBoneNames.length} joints · ${gltf.animations.length} anims`;
+    // Place key point light near the character's upper chest / face level
+    keyPoint.position.set(
+      center.x + h * 0.35,
+      box.min.y + h * 0.78,
+      dist * 0.38,
+    );
+    keyPoint.distance = h * 5;
+
+    loadStatus.textContent = `${allBoneNames.length} joints loaded`;
     overlay.style.opacity = "0";
     setTimeout(() => {
       overlay.remove();
@@ -319,91 +386,177 @@ loader.load(
   (xhr) => {
     if (xhr.total > 0) {
       const pct = Math.round((xhr.loaded / xhr.total) * 100);
-      loadStatus.textContent = `Analyzing skeleton… ${pct}%`;
+      loadStatus.textContent = `Loading… ${pct}%`;
       loadFill.style.width = `${pct}%`;
     }
   },
   (err) => {
-    console.error("[meshy-avatar] load error:", err);
+    console.error("[meshy-avatar]", err);
     loadStatus.textContent = "Failed to load model.";
   },
 );
 
-// ── Procedural idle animation ─────────────────────────────────────────────────
-// Uses the first bone found in each group; gracefully skips missing groups.
-function firstOf(arr: string[]): string | undefined {
-  return arr[0];
-}
+// ── Glance state machine ──────────────────────────────────────────────────────
+// Drives where the head is looking — idle (forward), turn, hold, return.
+type GlancePhase = "idle" | "turning" | "holding" | "returning";
 
-const clock = new THREE.Clock();
+let glancePhase: GlancePhase = "idle";
+let glanceCooldown = 1.5 + Math.random() * 2.5; // time until first glance
+let glanceTargetY = 0; // signed radians: negative = right, positive = left
+let glanceHoldTimer = 0;
+let headYSmooth = 0; // current smoothed head Y value
+
+// ── Render loop ───────────────────────────────────────────────────────────────
+let prevMs = performance.now();
+let elapsedSec = 0;
 
 function animate(): void {
   requestAnimationFrame(animate);
-  const dt = Math.min(clock.getDelta(), 0.05);
-  const t = clock.elapsedTime;
+  const nowMs = performance.now();
+  const dt = Math.min((nowMs - prevMs) / 1000, 0.05);
+  prevMs = nowMs;
+  elapsedSec += dt;
+  const t = elapsedSec;
 
-  mixer?.update(dt);
+  // ── Oscillator bank ────────────────────────────────────────────────────
+  // Breathing: ~10 breaths/min (1.08 rad/s ≈ 5.8 s/cycle)
+  const breatheSin = Math.sin(t * 1.08);
+  const breathe = (breatheSin + 1) * 0.5; // 0..1
 
-  const breathe = Math.sin(t * 1.08);
-  const sway = Math.sin(t * 0.44);
-  const nod = Math.sin(t * 0.31);
+  // Weight shift: ~9 s primary cycle + slower secondary drift
+  const sway = Math.sin(t * 0.7) * 0.55 + Math.sin(t * 0.27 + 1.3) * 0.35;
 
-  // Hips — subtle float
-  const hips = firstOf(boneGroups.hips);
-  if (hips) pose(hips, breathe * 0.006, sway * 0.01, 0);
+  // Micro-motion for organic feel
+  const microNod = Math.sin(t * 0.29) * 0.5 + Math.sin(t * 0.53 + 0.8) * 0.35;
+  const microTilt =
+    Math.sin(t * 0.23 + 1.1) * 0.5 + Math.sin(t * 0.18 + 2.5) * 0.3;
 
-  // Spine — layered sway
-  for (const name of boneGroups.spine) {
-    pose(name, breathe * 0.007, sway * 0.012, 0);
+  // Arm pendulum signals — slow incommensurate for organic feel
+  const lArmSwing =
+    Math.sin(t * 0.36 + 0.5) * 0.6 + Math.sin(t * 0.73 + 1.2) * 0.3;
+  const rArmSwing =
+    Math.sin(t * 0.39 + 1.9) * 0.6 + Math.sin(t * 0.68 + 0.3) * 0.3;
+
+  // Weight on each foot — drives knee flex and foot tilt
+  const leftWeight = Math.max(0, -sway);
+  const rightWeight = Math.max(0, sway);
+
+  // ── Hips — lateral roll follows weight shift ───────────────────────────
+  pose(B.hips, 0, 0, sway * 0.038);
+
+  // ── Spine — breathing chest rise + lateral counter-sway ───────────────
+  pose(B.spine, breathe * 0.028, 0, sway * -0.012);
+  pose(B.spine1, breathe * 0.036, 0, sway * -0.008);
+  pose(B.spine2, breathe * 0.025, 0, sway * -0.006);
+
+  // ── Clavicles — rise on inhale, drift with body lean ──────────────────
+  pose(B.lShoulder, 0, 0, breathe * 0.055 + sway * 0.012);
+  pose(B.rShoulder, 0, 0, -(breathe * 0.055 + sway * 0.012));
+
+  // ── Glance state machine ──────────────────────────────────────────────
+  if (glancePhase === "idle") {
+    glanceCooldown -= dt;
+    // Drift slowly back to center while waiting
+    headYSmooth += (0 - headYSmooth) * Math.min(1, dt * 1.2);
+    if (glanceCooldown <= 0) {
+      glancePhase = "turning";
+      const side = Math.random() < 0.5 ? -1 : 1;
+      // ~1–2 degrees sideways
+      glanceTargetY = side * (0.012 + Math.random() * 0.008);
+      glanceHoldTimer = 1.4 + Math.random() * 2.0;
+    }
+  } else if (glancePhase === "turning") {
+    // Quick saccade-like movement toward target
+    headYSmooth += (glanceTargetY - headYSmooth) * Math.min(1, dt * 6.0);
+    if (Math.abs(headYSmooth - glanceTargetY) < 0.001) {
+      headYSmooth = glanceTargetY;
+      glancePhase = "holding";
+    }
+  } else if (glancePhase === "holding") {
+    // Very gentle drift during hold — eyes aren't perfectly still
+    glanceTargetY += Math.sin(t * 1.8) * 0.0003;
+    headYSmooth += (glanceTargetY - headYSmooth) * Math.min(1, dt * 1.8);
+    glanceHoldTimer -= dt;
+    if (glanceHoldTimer <= 0) glancePhase = "returning";
+  } else {
+    // returning — smooth ease back to center
+    headYSmooth += (0 - headYSmooth) * Math.min(1, dt * 3.2);
+    if (Math.abs(headYSmooth) < 0.0005) {
+      headYSmooth = 0;
+      glancePhase = "idle";
+      glanceCooldown = 3.0 + Math.random() * 4.5;
+    }
   }
 
-  // Neck / Head
-  const neck = firstOf(boneGroups.neck);
-  const head = firstOf(boneGroups.head);
-  if (neck) pose(neck, nod * 0.028, sway * 0.035, 0);
-  if (head) pose(head, nod * 0.038, sway * 0.07, 0);
+  // Distribute the glance across the neck–head chain so total world rotation
+  // equals headYSmooth exactly. Neck (parent) takes 40%, head bone takes 60%.
+  // Both use the same headYSmooth value directly — no lag between them —
+  // so the neck-head boundary vertices never get sheared during the turn.
+  pose(B.neck, microNod * 0.003, headYSmooth * 0.4, microTilt * 0.001);
+  pose(B.head, microNod * 0.004, headYSmooth * 0.6, microTilt * 0.002);
 
-  // Left arm chain
-  const lShoulder = firstOf(boneGroups.leftShoulder);
-  const lArm = firstOf(boneGroups.leftArm);
-  const lFore = firstOf(boneGroups.leftForearm);
-  const lHand = firstOf(boneGroups.leftHand);
-  const lSwing =
-    Math.sin(t * 0.39 + 0.4) * 0.05 + Math.sin(t * 0.73 + 1.1) * 0.025;
-  const lSide = Math.sin(t * 0.54 + 2.2) * 0.04;
-  const lElbow = 0.42 + Math.sin(t * 0.61 + 2.3) * 0.04;
-  if (lShoulder) pose(lShoulder, 0, 0, 0.05);
-  if (lArm) pose(lArm, breathe * 0.008 + lSwing, 0, 0.1 + lSide);
-  if (lFore) pose(lFore, lElbow, 0, 0);
-  if (lHand) pose(lHand, 0.06 + lSwing * 0.25, 0, 0);
+  // ── Arms — keyboard typing pose ───────────────────────────────────────
+  // Axis calibration (confirmed from user feedback):
+  //   lArm Z negative  = elbow spreads outward (left)
+  //   rArm Z positive  = elbow spreads outward (right)
+  //   arm X negative   = forward raise
 
-  // Right arm chain
-  const rShoulder = firstOf(boneGroups.rightShoulder);
-  const rArm = firstOf(boneGroups.rightArm);
-  const rFore = firstOf(boneGroups.rightForearm);
-  const rHand = firstOf(boneGroups.rightHand);
-  const rSwing =
-    Math.sin(t * 0.45 + 1.7) * 0.05 + Math.sin(t * 0.69 + 0.5) * 0.025;
-  const rSide = Math.sin(t * 0.5 + 3.1) * 0.04;
-  const rElbow = 0.42 + Math.sin(t * 0.57 + 0.8) * 0.04;
-  if (rShoulder) pose(rShoulder, 0, 0, -0.05);
-  if (rArm) pose(rArm, breathe * 0.008 + rSwing, 0, -0.1 + rSide);
-  if (rFore) pose(rFore, rElbow, 0, 0);
-  if (rHand) pose(rHand, 0.06 + rSwing * 0.25, 0, 0);
+  // Left upper arm: X smaller = arm lower; Z spread keeps elbows out
+  pose(
+    B.lArm,
+    -(0.35 + lArmSwing * 0.05 + breathe * 0.018),
+    lArmSwing * 0.025,
+    -0.20,
+  );
+  // Left forearm: less flex → forearm angles more downward from elbow
+  pose(B.lForeArm, -(0.60 + Math.abs(lArmSwing) * 0.03), 1.32, 0);
+  // Left wrist: positive X droops palm down
+  pose(B.lHand, 0.25 + lArmSwing * 0.02, 0, lArmSwing * 0.01);
 
-  // Legs — minimal shift weight
-  const lThigh = firstOf(boneGroups.leftThigh);
-  const rThigh = firstOf(boneGroups.rightThigh);
-  if (lThigh) pose(lThigh, 0, 0, -0.02 + breathe * 0.005);
-  if (rThigh) pose(rThigh, 0, 0, 0.02 - breathe * 0.005);
+  // Right upper arm (mirror)
+  pose(
+    B.rArm,
+    -(0.35 + rArmSwing * 0.05 + breathe * 0.018),
+    rArmSwing * -0.025,
+    0.20,
+  );
+  // Right forearm: mirror
+  pose(B.rForeArm, -(0.60 + Math.abs(rArmSwing) * 0.03), -1.32, 0);
+  pose(B.rHand, 0.25 + rArmSwing * 0.02, 0, rArmSwing * -0.01);
 
-  // Root body sway
-  if (modelRoot) {
-    modelRoot.rotation.y = sway * 0.055;
-  }
+  // ── Fingers — typing animation: staggered taps per finger ─────────────
+  // tap(phase) returns 0..1 with a quick downstroke and slower release
+  const typingFreq = 5.5;
+  const tap = (phase: number) =>
+    Math.max(0, Math.sin(t * typingFreq + phase)) * 0.38;
+
+  // Resting curl base + tap on top; each finger at a different phase
+  pose(B.lIndex1, 0.14 + tap(0.0), 0, 0);
+  pose(B.lMiddle1, 0.16 + tap(2.1), 0, 0);
+  pose(B.lRing1, 0.18 + tap(4.2), 0, 0);
+  pose(B.lPinky1, 0.2 + tap(1.4), 0, 0);
+  pose(B.lThumb1, 0.05, -0.3, 0.2);
+
+  pose(B.rIndex1, 0.14 + tap(1.0), 0, 0);
+  pose(B.rMiddle1, 0.16 + tap(3.1), 0, 0);
+  pose(B.rRing1, 0.18 + tap(5.2), 0, 0);
+  pose(B.rPinky1, 0.2 + tap(2.4), 0, 0);
+  pose(B.rThumb1, 0.05, 0.3, -0.2);
+
+  // ── Legs — weight shift with visible knee flex ────────────────────────
+  pose(B.lUpLeg, lArmSwing * 0.008, 0, sway * -0.05);
+  pose(B.rUpLeg, rArmSwing * 0.008, 0, sway * 0.05);
+  pose(B.lLeg, 0.04 + leftWeight * 0.06 - rightWeight * 0.03, 0, 0);
+  pose(B.rLeg, 0.04 + rightWeight * 0.06 - leftWeight * 0.03, 0, 0);
+  pose(B.lFoot, leftWeight * -0.035, 0, 0);
+  pose(B.rFoot, rightWeight * -0.035, 0, 0);
+  pose(B.lToeBase, leftWeight * 0.015, 0, 0);
+  pose(B.rToeBase, rightWeight * 0.015, 0, 0);
+
+  // ── Root model micro-sway ─────────────────────────────────────────────
+  if (modelRoot) modelRoot.rotation.y = sway * 0.045;
 
   if (skeletonHelper) skeletonHelper.updateMatrixWorld(true);
-
   controls.update();
   renderer.render(scene, camera);
 }
