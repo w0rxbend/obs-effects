@@ -204,7 +204,8 @@ document.body.appendChild(overlay);
 // ── Runtime state ─────────────────────────────────────────────────────────────
 let modelRoot: THREE.Group | null = null;
 
-let camOrbit: { dist: number; targetY: number; center: THREE.Vector3 } | null = null;
+let camOrbit: { dist: number; targetY: number; center: THREE.Vector3 } | null =
+  null;
 
 // ── Load ──────────────────────────────────────────────────────────────────────
 const loadStatus = document.getElementById("load-status")!;
@@ -504,8 +505,12 @@ function animate(): void {
 
   if (camOrbit) {
     const { dist, targetY: ty, center: ctr } = camOrbit;
-    const az = THREE.MathUtils.degToRad(20) + THREE.MathUtils.degToRad(10) * Math.sin(t * 0.42);
-    const el = THREE.MathUtils.degToRad(20) + THREE.MathUtils.degToRad(4) * Math.sin(t * 0.27 + 1.1);
+    const az =
+      THREE.MathUtils.degToRad(20) +
+      THREE.MathUtils.degToRad(10) * Math.sin(t * 0.42);
+    const el =
+      THREE.MathUtils.degToRad(20) +
+      THREE.MathUtils.degToRad(4) * Math.sin(t * 0.27 + 1.1);
     camera.position.set(
       ctr.x + dist * Math.sin(az) * Math.cos(el),
       ty + dist * Math.sin(el),

@@ -76,6 +76,7 @@
         --grid-line: rgba(255, 255, 255, 0.025);
         --shimmer-mask: #000;
       }
+
       :root[data-theme="light"] {
         --c-ink: 255 255 255;
         --c-panel: 250 250 250;
@@ -89,18 +90,22 @@
         --grid-line: rgba(0, 0, 0, 0.04);
         --shimmer-mask: #fff;
       }
+
       html,
       body {
         background: rgb(var(--c-ink));
         color: rgb(var(--c-fg));
       }
+
       body {
         font-family: "Inter", system-ui, sans-serif;
       }
+
       .font-display {
         font-family: "Space Grotesk", system-ui, sans-serif;
         letter-spacing: -0.02em;
       }
+
       .font-mono {
         font-family: "Geist Mono", ui-monospace, monospace;
       }
@@ -124,6 +129,7 @@
         overflow: hidden;
         isolation: isolate;
       }
+
       .shimmer::before {
         content: "";
         position: absolute;
@@ -148,15 +154,18 @@
         pointer-events: none;
         z-index: 0;
       }
+
       .shimmer:hover::before {
         opacity: 1;
         animation: spin 2.4s linear infinite;
       }
+
       @keyframes spin {
         to {
           --shimmer-angle: 360deg;
         }
       }
+
       @property --shimmer-angle {
         syntax: "<angle>";
         inherits: false;
@@ -171,6 +180,7 @@
         transition: opacity 0.4s ease;
         pointer-events: none;
       }
+
       .preview-on .preview-base {
         opacity: 1;
       }
@@ -183,10 +193,12 @@
         background-size: 10px 10px;
         animation: drift 6s linear infinite;
       }
+
       @keyframes drift {
         from {
           background-position: 0 0;
         }
+
         to {
           background-position: 40px 40px;
         }
@@ -205,11 +217,13 @@
         );
         animation: pulse 2.4s ease-in-out infinite;
       }
+
       @keyframes pulse {
         0%,
         100% {
           transform: scale(1);
         }
+
         50% {
           transform: scale(1.08);
         }
@@ -224,10 +238,12 @@
         );
         animation: bars 1.2s steps(8) infinite;
       }
+
       @keyframes bars {
         from {
           background-position: 0 0;
         }
+
         to {
           background-position: 56px 0;
         }
@@ -262,11 +278,13 @@
           );
         animation: float 4s ease-in-out infinite;
       }
+
       @keyframes float {
         0%,
         100% {
           transform: translateY(0);
         }
+
         50% {
           transform: translateY(-4px);
         }
@@ -307,13 +325,16 @@
         width: 10px;
         height: 10px;
       }
+
       ::-webkit-scrollbar-track {
         background: rgb(var(--c-ink));
       }
+
       ::-webkit-scrollbar-thumb {
         background: rgb(var(--c-line2));
         border-radius: 0;
       }
+
       ::-webkit-scrollbar-thumb:hover {
         background: rgb(var(--c-dimmer));
       }
@@ -339,16 +360,19 @@
         white-space: nowrap;
         animation: tick 60s linear infinite;
       }
+
       @keyframes tick {
         from {
           transform: translateX(0);
         }
+
         to {
           transform: translateX(-50%);
         }
       }
     </style>
   </head>
+
   <body class="bg-ink text-fg antialiased">
     <div id="root"></div>
 
@@ -723,6 +747,12 @@
           ],
         ],
         [
+          "tux-penguin.html",
+          "Live Tux Penguin",
+          "3D",
+          ["Three.js", "GLB", "Linux", "Tux", "Transparent", "Character"],
+        ],
+        [
           "gunan-skeleton.html",
           "Gunan Bust",
           "3D",
@@ -740,11 +770,17 @@
           "3D",
           ["Three.js", "GLB", "Rigged", "Skeleton", "Transparent", "Avatar"],
         ],
+        ["meshy-post1-avatar.html", "Meshy Post1 Character Avatar", "3D"],
+        ["Three.js", "GLB", "Human", "Rigged", "Transparent", "Avatar"],
+        ["ai-character-natural.html",
+        "AI Character — Natural Conversation",
+        "3D"],
+        ["Three.js", "GLB", "Avatar", "Gesture", "Conversation", "Transparent"],
         [
-          "meshy-post1-avatar.html",
-          "Meshy Post1 Character Avatar",
+          "ai-character-final.html",
+          "AI Character — Final Dialogue",
           "3D",
-          ["Three.js", "GLB", "Human", "Rigged", "Transparent", "Avatar"],
+          ["Three.js", "GLB", "Avatar", "Gesture", "Expressive", "Transparent"],
         ],
         [
           "drone-visualization.html",
@@ -774,7 +810,14 @@
           "hex-water-island.html",
           "Hex Water Island",
           "3D",
-          ["Three.js", "Water", "Hexagonal", "Island", "Transparent", "Simulation"],
+          [
+            "Three.js",
+            "Water",
+            "Hexagonal",
+            "Island",
+            "Transparent",
+            "Simulation",
+          ],
         ],
         [
           "monolithic-black-geometry.html",
