@@ -140,7 +140,6 @@ export default defineConfig({
         waveBorderCam: resolve(__dirname, "wave-border-cam.html"),
         catCircleCam: resolve(__dirname, "cat-circle-cam.html"),
         threeRingCamBorder: resolve(__dirname, "three-ring-cam-border.html"),
-        threeGeoCamBorder: resolve(__dirname, "three-geo-cam-border.html"),
         jellyRingCamBorder: resolve(__dirname, "jelly-ring-cam-border.html"),
         animatedLines: resolve(__dirname, "animated-lines.html"),
         mountainNightRailway: resolve(__dirname, "mountain-night-railway.html"),
