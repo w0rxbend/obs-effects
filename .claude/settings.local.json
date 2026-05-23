@@ -91,7 +91,9 @@
       "Bash(rmdir '/home/worxbend/Workspace/obs-effects/raw-assets/main{m}/source' 2>/dev/null && echo \"removed empty source dir\" || echo \"source dir not empty or already gone\")",
       "Bash(node *)",
       "Bash(git stash *)",
-      "Bash(git *)"
+      "Bash(git *)",
+      "Bash(xargs -I{} basename {} .ts)",
+      "Bash(grep -i 'title\\\\|description\\\\|canvas\\\\|script' /home/worxbend/Workspace/obs-effects/__TRACKED_VAR__.html)"
     ],
     "additionalDirectories": [
       "/home/worxbend/Workspace/obs-effects",
