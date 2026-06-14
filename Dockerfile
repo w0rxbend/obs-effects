@@ -7,7 +7,7 @@ COPY . .
 RUN npm run build
 
 # Stage 2: Serve the application with Nginx
-FROM nginx:1.30
+FROM nginx:1.31
 # Copy the build output to replace the default nginx contents
 COPY --from=builder /app/dist /usr/share/nginx/html
 EXPOSE 80

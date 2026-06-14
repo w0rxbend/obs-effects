@@ -204,8 +204,8 @@ export class StartingSoonJellyScreen extends Container {
       const floorFactor = 1 - rawBounce; // peaks near floor
 
       // Squish/stretch deformation (strongest at floor, zero at peak)
-      let scaleX = 1;
-      let scaleY = 1;
+      let scaleX: number;
+      let scaleY: number;
       const deform = floorFactor * speedFactor * blob.deformFactor;
 
       if (velDir < 0) {

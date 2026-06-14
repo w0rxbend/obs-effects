@@ -158,10 +158,10 @@ export class WorxbendTextScreen extends Container {
 
   private _spawnComet(): Comet {
     const side = Math.floor(Math.random() * 4);
-    let x = 0,
-      y = 0,
-      vx = 0,
-      vy = 0;
+    let x: number;
+    let y: number;
+    let vx: number;
+    let vy: number;
     const speed = 4 + Math.random() * 6;
 
     if (side === 0) {

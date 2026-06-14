@@ -464,7 +464,7 @@ export class TrapNationScreen extends Container {
     for (let i = 0; i < BAR_COUNT; i++) {
       const index = i < BAR_COUNT / 2 ? i : BAR_COUNT - 1 - i;
       const normIdx = index / (BAR_COUNT / 2);
-      let v = 0;
+      let v: number;
       if (normIdx < 0.25) {
         v = (1.0 - normIdx * 3) * this.beatDecay * 1.6;
         v += Math.sin(this.time * 6 + i * 0.2) * 0.3;

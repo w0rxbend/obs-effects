@@ -118,12 +118,11 @@ export class StartingSoonParticleMeshScreen extends Container {
     const maxTextHeight = this.h * 0.52;
 
     let fontSize = Math.floor(Math.min(this.w * 0.18, this.h * 0.28));
-    let widths: number[] = [];
     let lineGap = 0;
 
     while (fontSize > 72) {
       ctx.font = `${fontSize}px "Bangers", sans-serif`;
-      widths = lines.map((line) => ctx.measureText(line).width);
+      const widths = lines.map((line) => ctx.measureText(line).width);
       lineGap = Math.round(fontSize * 0.12);
       const totalHeight = fontSize * lines.length + lineGap;
 

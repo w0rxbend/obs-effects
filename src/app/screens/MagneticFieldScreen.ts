@@ -360,8 +360,8 @@ export class MagneticFieldScreen extends Container {
 
   private spawnParticle(p: Particle, stagger = false): void {
     const cy = this.h * 0.5;
-    let x = 0,
-      y = 0;
+    let x: number;
+    let y: number;
     let attempts = 0;
     do {
       x = p.charge === 0 ? Math.random() * this.w : Math.random() * this.w;

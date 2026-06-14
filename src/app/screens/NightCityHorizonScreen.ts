@@ -525,34 +525,40 @@ export class NightCityHorizonScreen extends Container {
     heightRange: readonly [number, number],
   ): Omit<Building, "x" | "windows" | "smokeSources"> {
     const roll = Math.random();
-    let kind: Building["kind"] = "midrise";
+    const kind: Building["kind"] =
+      depth > 0.82
+        ? roll < 0.22
+          ? "tower"
+          : roll < 0.47
+            ? "walkup"
+            : roll < 0.7
+              ? "slab"
+              : "midrise"
+        : depth > 0.45
+          ? roll < 0.28
+            ? "tower"
+            : roll < 0.54
+              ? "slab"
+              : roll < 0.78
+                ? "midrise"
+                : "walkup"
+          : roll < 0.34
+            ? "tower"
+            : roll < 0.66
+              ? "slab"
+              : roll < 0.88
+                ? "midrise"
+                : "walkup";
 
-    if (depth > 0.82) {
-      if (roll < 0.22) kind = "tower";
-      else if (roll < 0.47) kind = "walkup";
-      else if (roll < 0.7) kind = "slab";
-      else kind = "midrise";
-    } else if (depth > 0.45) {
-      if (roll < 0.28) kind = "tower";
-      else if (roll < 0.54) kind = "slab";
-      else if (roll < 0.78) kind = "midrise";
-      else kind = "walkup";
-    } else {
-      if (roll < 0.34) kind = "tower";
-      else if (roll < 0.66) kind = "slab";
-      else if (roll < 0.88) kind = "midrise";
-      else kind = "walkup";
-    }
-
-    let width = rand(widthRange[0], widthRange[1]);
-    let height = rand(heightRange[0], heightRange[1]);
-    let roof: Building["roof"] = "flat";
-    let bodyInset = 0;
-    let podiumHeight = 0;
-    let podiumInset = 0;
-    let crownHeight = 0;
-    let crownInset = 0;
-    let windowDensity = 0.9;
+    let width: number;
+    let height: number;
+    let roof: Building["roof"];
+    let bodyInset: number;
+    let podiumHeight: number;
+    let podiumInset: number;
+    let crownHeight: number;
+    let crownInset: number;
+    let windowDensity: number;
 
     if (kind === "tower") {
       width = rand(
@@ -723,11 +729,11 @@ export class NightCityHorizonScreen extends Container {
       const type: TreeCluster["type"] =
         typeRoll < 0.52 ? "broadleaf" : typeRoll < 0.76 ? "poplar" : "conifer";
 
-      let width = rand(44, 82);
-      let trunkWidth = rand(4, 8);
-      let trunkHeight = rand(18, 34);
-      let canopyWidth = rand(28, 56);
-      let canopyHeight = rand(26, 60);
+      let width: number;
+      let trunkWidth: number;
+      let trunkHeight: number;
+      let canopyWidth: number;
+      let canopyHeight: number;
 
       if (type === "broadleaf") {
         width = rand(52, 96);
