@@ -531,7 +531,10 @@ class FloatingReadout extends Container {
 }
 
 // ── Header ─────────────────────────────────────────────────────────────────────
-function buildHeader(parent: Container, w: number): NodeJS.Timeout {
+function buildHeader(
+  parent: Container,
+  w: number,
+): ReturnType<typeof setInterval> {
   const con = new Container();
 
   const bg = new Graphics();
@@ -588,7 +591,7 @@ function buildHeader(parent: Container, w: number): NodeJS.Timeout {
   con.addChild(rb);
 
   parent.addChild(con);
-  return interval as unknown as NodeJS.Timeout;
+  return interval;
 }
 
 // ── Screen ─────────────────────────────────────────────────────────────────────

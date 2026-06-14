@@ -2,7 +2,7 @@ import * as THREE from "three";
 
 // ── Audio ─────────────────────────────────────────────────────────────────────
 let analyser: AnalyserNode | null = null;
-let freqData: Uint8Array | null = null;
+let freqData: Uint8Array<ArrayBuffer> | null = null;
 let smoothVol = 0;
 let smoothMid = 0;
 

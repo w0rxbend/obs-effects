@@ -60,7 +60,7 @@ export class ParticleConstellationScreen extends Container {
   private particles: Particle[] = [];
 
   private analyser: AnalyserNode | null = null;
-  private freqData: Uint8Array | null = null;
+  private freqData: Uint8Array<ArrayBuffer> | null = null;
 
   // Smoothed audio state
   private fieldScale = 1;
