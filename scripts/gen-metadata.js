@@ -4,6 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   validateCatalogEntry as validateCatalogEntrySchema,
+  validateGeneratedMetadataRecord,
   validateOverrideEntry,
 } from "./effects-meta-schema.js";
 
@@ -19,6 +20,7 @@ const preserveExisting = process.argv.includes("--preserve-existing") && !checkM
 const catalogSource = path.relative(repoRoot, catalogPath);
 const overridesSource = path.relative(repoRoot, overridesPath);
 const trackedPagesSource = "git tracked root HTML pages";
+const generatedMetadataSource = "generated metadata records";
 
 function slugFromHref(href) {
   return path.basename(href, ".html");
@@ -82,6 +84,14 @@ function printDiagnosticsAndExit(diagnostics) {
   }
 
   process.exit(1);
+}
+
+function validateGeneratedMetadataRecords(metadata, diagnostics) {
+  for (const [index, record] of metadata.entries()) {
+    for (const issue of validateGeneratedMetadataRecord(record, index)) {
+      addDiagnostic(diagnostics, generatedMetadataSource, issue);
+    }
+  }
 }
 
 function readRequiredJsonFile(filePath, source, diagnostics) {
@@ -422,6 +432,9 @@ function main() {
       metadataForFile(fileName, catalogEntries, existingEntries, overrides),
     )
     .sort((a, b) => a.slug.localeCompare(b.slug));
+  validateGeneratedMetadataRecords(metadata, diagnostics);
+  printDiagnosticsAndExit(diagnostics);
+
   const generatedMetadata = formatMetadata(metadata);
 
   if (checkMode) {

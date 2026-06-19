@@ -12,6 +12,37 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const repoRoot = path.resolve(__dirname, "..");
 const metadataPath = path.join(repoRoot, "public", "effects-meta.json");
+const metadataSource = path.relative(repoRoot, metadataPath);
+
+function addDiagnostic(diagnostics, source, message) {
+  if (!diagnostics.has(source)) {
+    diagnostics.set(source, []);
+  }
+
+  diagnostics.get(source).push(message);
+}
+
+function printDiagnosticsAndExit(diagnostics) {
+  const groups = [...diagnostics.entries()].filter(
+    ([, messages]) => messages.length > 0,
+  );
+
+  if (groups.length === 0) {
+    return false;
+  }
+
+  console.error("Effects metadata integrity check failed:");
+
+  for (const [source, messages] of groups) {
+    console.error(`\n${source}:`);
+    for (const message of messages) {
+      console.error(`  - ${message}`);
+    }
+  }
+
+  process.exitCode = 1;
+  return true;
+}
 
 function listTrackedRootEffectPages() {
   const output = execFileSync("git", ["ls-files", "*.html"], {
@@ -33,12 +64,37 @@ function listTrackedRootEffectPages() {
   );
 }
 
-function readMetadata() {
+function readMetadata(diagnostics) {
+  if (!fs.existsSync(metadataPath)) {
+    addDiagnostic(
+      diagnostics,
+      metadataSource,
+      "File is required but was not found.",
+    );
+    return undefined;
+  }
+
   const rawMetadata = fs.readFileSync(metadataPath, "utf8");
-  const metadata = JSON.parse(rawMetadata);
+  if (!rawMetadata.trim()) {
+    addDiagnostic(diagnostics, metadataSource, "File is required but is empty.");
+    return undefined;
+  }
+
+  let metadata;
+  try {
+    metadata = JSON.parse(rawMetadata);
+  } catch (error) {
+    addDiagnostic(
+      diagnostics,
+      metadataSource,
+      `Invalid JSON: ${error instanceof Error ? error.message : String(error)}`,
+    );
+    return undefined;
+  }
 
   if (!Array.isArray(metadata)) {
-    throw new Error("public/effects-meta.json must contain a JSON array.");
+    addDiagnostic(diagnostics, metadataSource, "Expected a JSON array.");
+    return undefined;
   }
 
   return metadata;
@@ -103,7 +159,13 @@ function listMetadataHrefs(metadata) {
 }
 
 function main() {
-  const metadata = readMetadata();
+  const diagnostics = new Map();
+  const metadata = readMetadata(diagnostics);
+  if (!metadata) {
+    printDiagnosticsAndExit(diagnostics);
+    return;
+  }
+
   const trackedPages = listTrackedRootEffectPages();
   const issues = metadata.flatMap((entry, index) => [
     ...validateGeneratedMetadataRecord(entry, index),
@@ -128,12 +190,11 @@ function main() {
     issues.push(`tracked root effect page "${href}" is missing from metadata.`);
   }
 
-  if (issues.length > 0) {
-    console.error("Effects metadata integrity check failed:");
-    for (const issue of issues) {
-      console.error(`- ${issue}`);
-    }
-    process.exitCode = 1;
+  for (const issue of issues) {
+    addDiagnostic(diagnostics, metadataSource, issue);
+  }
+
+  if (printDiagnosticsAndExit(diagnostics)) {
     return;
   }
 

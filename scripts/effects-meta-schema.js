@@ -1,4 +1,6 @@
 const HTML_EXTENSION = ".html";
+const CATALOG_ENTRY_FIELDS = ["href", "category", "tags"];
+const OVERRIDE_ENTRY_FIELDS = ["category", "description", "tags"];
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*(?:\([1-9][0-9]*\))?$/;
 const ISO_LIKE_TIMESTAMP_PATTERN =
   /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/;
@@ -67,6 +69,20 @@ export function validateArrayOfNonEmptyStrings(value, label) {
   return value.flatMap((item, index) =>
     validateNonEmptyTrimmedString(item, `${label}[${index}]`),
   );
+}
+
+function validateAllowedFields(object, label, allowedFields) {
+  const allowedFieldSet = new Set(allowedFields);
+
+  return Object.keys(object)
+    .filter((fieldName) => !allowedFieldSet.has(fieldName))
+    .sort((a, b) => a.localeCompare(b))
+    .map(
+      (fieldName) =>
+        `${label}.${fieldName} is not allowed; expected only ${allowedFields.join(
+          ", ",
+        )}.`,
+    );
 }
 
 export function validateRootHtmlHref(value, label) {
@@ -164,6 +180,7 @@ export function validateCatalogEntry(entry, index) {
   }
 
   return [
+    ...validateAllowedFields(entry, label, CATALOG_ENTRY_FIELDS),
     ...validateRootHtmlHref(entry.href, `${label}.href`),
     ...validateNonEmptyTrimmedString(entry.category, `${label}.category`),
     ...validateArrayOfNonEmptyStrings(entry.tags, `${label}.tags`),
@@ -179,6 +196,8 @@ export function validateOverrideEntry(slug, override) {
 
   const issues = [];
 
+  issues.push(...validateAllowedFields(override, label, OVERRIDE_ENTRY_FIELDS));
+
   if (Object.hasOwn(override, "category")) {
     issues.push(
       ...validateNonEmptyTrimmedString(override.category, `${label}.category`),
@@ -187,7 +206,7 @@ export function validateOverrideEntry(slug, override) {
 
   if (Object.hasOwn(override, "description")) {
     issues.push(
-      ...validateOptionalTrimmedString(
+      ...validateNonEmptyTrimmedString(
         override.description,
         `${label}.description`,
       ),

@@ -57,6 +57,27 @@ function assertIncludes(actual, expected, label) {
   }
 }
 
+function assertEqual(actual, expected, label) {
+  if (actual !== expected) {
+    throw new Error(`${label}\nExpected: ${expected}\nActual: ${actual}`);
+  }
+}
+
+function assertDeepEqual(actual, expected, label) {
+  const actualJson = JSON.stringify(actual);
+  const expectedJson = JSON.stringify(expected);
+
+  if (actualJson !== expectedJson) {
+    throw new Error(
+      `${label}\nExpected:\n${JSON.stringify(
+        expected,
+        null,
+        2,
+      )}\n\nActual:\n${JSON.stringify(actual, null, 2)}`,
+    );
+  }
+}
+
 function createFixture(name, trackedPages = ["alpha.html"]) {
   const root = path.join(fixtureRoot, name);
   fs.mkdirSync(path.join(root, "scripts"), { recursive: true });
@@ -127,6 +148,79 @@ function writeMetadata(root, records) {
 
 function runScript(root, scriptName, args = []) {
   return run("node", [path.join(root, "scripts", scriptName), ...args], root);
+}
+
+function runScriptRequired(root, scriptName, args = []) {
+  const result = runScript(root, scriptName, args);
+  if (result.status !== 0) {
+    throw new Error(
+      `${scriptName} ${args.join(" ")} failed in ${root}\n${combinedOutput(
+        result,
+      )}`,
+    );
+  }
+
+  return result;
+}
+
+function readGeneratedMetadata(root) {
+  return JSON.parse(
+    fs.readFileSync(path.join(root, "public", "effects-meta.json"), "utf8"),
+  );
+}
+
+function expectHappyPath() {
+  const root = createFixture("happy-path", ["alpha.html"]);
+  writeCatalog(root, {
+    effects: [
+      {
+        href: "alpha.html",
+        category: "Catalog Category",
+        tags: ["Fixture Tag", "OBS"],
+      },
+    ],
+  });
+  writeOverrides(root, {
+    alpha: {
+      category: "Override Category",
+      description: "A generated fixture effect.",
+      tags: ["Override Tag", "fixture tag"],
+    },
+  });
+
+  runScriptRequired(root, "gen-metadata.js");
+
+  const metadata = readGeneratedMetadata(root);
+  assertEqual(metadata.length, 1, "happy-path record count");
+
+  const [record] = metadata;
+  assertDeepEqual(
+    {
+      slug: record.slug,
+      title: record.title,
+      href: record.href,
+      category: record.category,
+      tags: record.tags,
+      description: record.description,
+    },
+    {
+      slug: "alpha",
+      title: "Alpha",
+      href: "alpha.html",
+      category: "Override Category",
+      tags: ["fixture tag", "obs", "override tag"],
+      description: "A generated fixture effect.",
+    },
+    "happy-path generated record content",
+  );
+  assertIncludes(
+    record.createdAt,
+    "T",
+    "happy-path generated record timestamp shape",
+  );
+
+  runScriptRequired(root, "gen-metadata.js", ["--check"]);
+  runScriptRequired(root, "check-effects-meta.js");
 }
 
 function expectFailure(testCase) {
@@ -200,7 +294,7 @@ const failureCases = [
     expected: "overrides.alpha must be an object keyed by optional metadata fields.",
   },
   {
-    name: "invalid-override-tag",
+    name: "override-tag-whitespace",
     script: "gen-metadata.js",
     setup(root) {
       writeCatalog(root, validCatalog());
@@ -209,7 +303,7 @@ const failureCases = [
     expected: "overrides.alpha.tags[1] must be a non-empty string.",
   },
   {
-    name: "blank-catalog-category",
+    name: "catalog-category-whitespace",
     script: "gen-metadata.js",
     setup(root) {
       writeCatalog(root, {
@@ -220,7 +314,7 @@ const failureCases = [
     expected: "effects[0].category must be a non-empty string.",
   },
   {
-    name: "invalid-catalog-tag",
+    name: "catalog-tag-whitespace",
     script: "gen-metadata.js",
     setup(root) {
       writeCatalog(root, {
@@ -229,6 +323,154 @@ const failureCases = [
       writeOverrides(root, {});
     },
     expected: "effects[0].tags[0] must be a non-empty string.",
+  },
+  {
+    name: "catalog-tag-non-string-value",
+    script: "gen-metadata.js",
+    setup(root) {
+      writeCatalog(root, {
+        effects: [{ href: "alpha.html", category: "Fixture", tags: [42] }],
+      });
+      writeOverrides(root, {});
+    },
+    expected: "effects[0].tags[0] must be a string; received number.",
+  },
+  {
+    name: "blank-override-description",
+    script: "gen-metadata.js",
+    setup(root) {
+      writeCatalog(root, validCatalog());
+      writeOverrides(root, { alpha: { description: " " } });
+    },
+    expected: "overrides.alpha.description must be a non-empty string.",
+  },
+  {
+    name: "unknown-override-field",
+    script: "gen-metadata.js",
+    setup(root) {
+      writeCatalog(root, validCatalog());
+      writeOverrides(root, { alpha: { descripton: "Typo" } });
+    },
+    expected:
+      "overrides.alpha.descripton is not allowed; expected only category, description, tags.",
+  },
+  {
+    name: "unknown-catalog-field",
+    script: "gen-metadata.js",
+    setup(root) {
+      writeCatalog(root, {
+        effects: [
+          {
+            href: "alpha.html",
+            category: "Fixture",
+            tags: ["fixture"],
+            title: "Alpha",
+          },
+        ],
+      });
+      writeOverrides(root, {});
+    },
+    expected:
+      "effects[0].title is not allowed; expected only href, category, tags.",
+  },
+  {
+    name: "checker-non-object-record",
+    script: "check-effects-meta.js",
+    setup(root) {
+      writeMetadata(root, [null]);
+    },
+    expected: "entry 0 must be an object metadata record.",
+  },
+  {
+    name: "checker-wrong-field-types",
+    script: "check-effects-meta.js",
+    setup(root) {
+      writeMetadata(root, [
+        {
+          slug: 42,
+          title: false,
+          href: 42,
+          category: [],
+          tags: "fixture",
+          description: 42,
+          createdAt: null,
+        },
+      ]);
+    },
+    expected: "entry 0.slug must be a string; received number.",
+  },
+  {
+    name: "checker-blank-category",
+    script: "check-effects-meta.js",
+    setup(root) {
+      writeMetadata(root, [
+        { ...metadataRecord("alpha", "alpha.html"), category: " " },
+      ]);
+    },
+    expected: "entry 0.category must be a non-empty string.",
+  },
+  {
+    name: "checker-blank-title",
+    script: "check-effects-meta.js",
+    setup(root) {
+      writeMetadata(root, [
+        { ...metadataRecord("alpha", "alpha.html"), title: " " },
+      ]);
+    },
+    expected: "entry 0.title must be a non-empty string.",
+  },
+  {
+    name: "checker-non-array-tags",
+    script: "check-effects-meta.js",
+    setup(root) {
+      writeMetadata(root, [
+        { ...metadataRecord("alpha", "alpha.html"), tags: "fixture" },
+      ]);
+    },
+    expected: "entry 0.tags must be an array of non-empty strings.",
+  },
+  {
+    name: "checker-blank-tag",
+    script: "check-effects-meta.js",
+    setup(root) {
+      writeMetadata(root, [
+        { ...metadataRecord("alpha", "alpha.html"), tags: ["fixture", " "] },
+      ]);
+    },
+    expected: "entry 0.tags[1] must be a non-empty string.",
+  },
+  {
+    name: "checker-invalid-timestamp",
+    script: "check-effects-meta.js",
+    setup(root) {
+      writeMetadata(root, [
+        { ...metadataRecord("alpha", "alpha.html"), createdAt: "not-a-date" },
+      ]);
+    },
+    expected:
+      "entry 0.createdAt must be an ISO-like timestamp such as 2026-05-02T12:02:12+03:00 or 2026-05-02T09:02:12.000Z; received \"not-a-date\".",
+  },
+  {
+    name: "checker-invalid-slug",
+    script: "check-effects-meta.js",
+    setup(root) {
+      writeMetadata(root, [
+        { ...metadataRecord("alpha", "alpha.html"), slug: "Alpha" },
+      ]);
+    },
+    expected:
+      'entry 0.slug must use lowercase letters, numbers, hyphen separators, and an optional numeric parenthesized suffix; received "Alpha".',
+  },
+  {
+    name: "checker-slug-href-basename-mismatch",
+    script: "check-effects-meta.js",
+    setup(root) {
+      writeMetadata(root, [
+        { ...metadataRecord("alpha", "alpha.html"), slug: "alpha-copy" },
+      ]);
+    },
+    expected:
+      'entry 0.slug "alpha-copy" must exactly match href basename "alpha" from entry 0.href "alpha.html".',
   },
   {
     name: "duplicate-generated-metadata-href",
@@ -272,6 +514,10 @@ const failureCases = [
 let passed = 0;
 
 try {
+  expectHappyPath();
+  passed += 1;
+  console.log("ok - happy-path");
+
   for (const testCase of failureCases) {
     expectFailure(testCase);
     passed += 1;

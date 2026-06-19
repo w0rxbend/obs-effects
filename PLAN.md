@@ -31,48 +31,37 @@ Completed across the metadata directory work:
 - [x] Made generation fail when `scripts/effects-catalog.json` references a non-tracked root effect page.
 - [x] Validated `scripts/effects-meta-overrides.json` keys against known effect slugs.
 - [x] Added `scripts/effects-meta-schema.js` as the shared validation vocabulary for catalog entries, override entries, generated metadata records, root HTML hrefs, slugs, and ISO-like timestamps.
-- [x] Tightened catalog validation to require root-level `.html` hrefs, non-empty trimmed category strings, and tag arrays whose entries are non-empty trimmed strings.
-- [x] Tightened override validation to require object values and typed `category`, `description`, and `tags` fields when present.
+- [x] Tightened catalog validation to require only `href`, `category`, and `tags`; root-level `.html` hrefs; non-empty trimmed category strings; and tag arrays whose entries are non-empty trimmed strings.
+- [x] Tightened override validation to require only `category`, `description`, and `tags`; object values; typed optional fields; non-empty trimmed override descriptions; and non-empty trimmed tag strings.
 - [x] Extended `scripts/check-effects-meta.js` to validate full generated metadata record shape: `slug`, `title`, `href`, `category`, `tags`, `description`, `createdAt`, and exact `slug`/`href` basename consistency.
-- [x] Added `scripts/test-effects-meta.js` fixture tests for missing catalog file, invalid catalog JSON, missing tracked page, stale catalog href, dead override key, malformed override value, invalid override tag, blank catalog category, invalid catalog tag, duplicate metadata href, duplicate metadata slug, and stale generated output.
+- [x] Validated generated metadata records inside `scripts/gen-metadata.js` before writing `public/effects-meta.json`.
+- [x] Normalized `scripts/check-effects-meta.js` diagnostics for missing, empty, invalid JSON, and non-array `public/effects-meta.json`.
+- [x] Added `scripts/test-effects-meta.js` fixture tests for a valid end-to-end generation/check path plus catalog, override, generated-schema, duplicate, and stale-output failures.
 - [x] Added `npm run test:effects-meta`.
-- [x] Verified `npm run test:effects-meta`, `node scripts/gen-metadata.js --check`, `node scripts/check-effects-meta.js`, `npm run lint`, `npm run build`, and `git diff --check` pass after iteration 4.
+- [x] Wired `npm run test:effects-meta` into `npm run check:effects-meta`, and added top-level `npm test`.
+- [x] Verified `npm run test:effects-meta` and `npm run check:effects-meta` pass after iteration 5 review.
 
 Current review findings:
 
-- No high-priority correctness regression was found in iteration 4. The schema module, generator validation, generated metadata checker, focused regression script, and build gate all pass on the current tree.
-- Medium priority: `scripts/test-effects-meta.js` contains only expected-failure tests. It does not prove that a valid fixture can generate metadata, pass freshness checking, and pass integrity checking.
-- Medium priority: `npm run test:effects-meta` exists but is not part of `npm run build` or `npm run check:effects-meta`, so the new regression suite is manual unless the verification checklist is followed.
-- Medium priority: override `description: ""` is still accepted when the field is present, even though the plan called for normalizing or rejecting blank-only override descriptions.
-- Medium priority: unknown override fields such as `descripton` are silently ignored. That leaves a typo path outside the new schema contract.
-- Medium priority: the generator does not validate the records it is about to write with `validateGeneratedMetadataRecord`; invalid generated output is caught by `scripts/check-effects-meta.js` and the build, but direct generation can still write first and fail later.
-- Medium priority: `scripts/check-effects-meta.js` still reports missing or invalid `public/effects-meta.json` as an uncaught Node error instead of grouped, actionable diagnostics.
+- No high-priority correctness regression was found in iteration 5. The strict catalog/override rules, producer-side generated-record validation, normalized metadata-file diagnostics, expanded fixture suite, and standard check wiring all pass on the current tree.
+- Medium priority: generated metadata validation still allows unknown extra fields on public records. That may be acceptable for forward-compatible consumers, but it is inconsistent with the now-strict catalog and override contracts and should be decided explicitly.
+- Medium priority: `scripts/check-effects-meta.js` still lets `git ls-files` failures surface as uncaught subprocess errors. Metadata file diagnostics are normalized, but tracked-page discovery errors are not.
+- Medium priority: several duplicate checker regression tests pass by finding the target duplicate message while also producing unrelated schema errors. The coverage is useful, but the fixtures are not fully isolated.
 - Medium priority: direct `file://` behavior remains intentionally degraded to five inline fallback records. The UI states this, but the repo still lacks a documented product decision.
-- Medium priority: metadata coverage remains shallow: 227 of 251 records have empty descriptions, 20 are `Uncategorized`, and 18 have no tags.
+- Medium priority: metadata coverage remains shallow: most records still have empty descriptions, some are `Uncategorized`, and some have no tags.
 - Medium priority: highlight rendering can still match inside escaped HTML entities because highlighting runs after escaping.
 
-## Phase 1 - Strengthen Metadata Regression Tests
+## Phase 1 - Close Remaining Contract Gaps
 
 Priority: high.
 
-- [ ] Add a happy-path fixture test that runs `node scripts/gen-metadata.js`, verifies the generated JSON content shape, then runs `node scripts/gen-metadata.js --check` and `node scripts/check-effects-meta.js` successfully.
-- [ ] Add checker failure tests for full generated schema validation: non-object record, wrong field types, blank category/title, non-array tags, blank tag, invalid timestamp, invalid slug, and `slug`/`href` mismatch.
-- [ ] Add generator failure tests for category whitespace, tag whitespace, non-string tag values, blank override description, and unknown override fields.
-- [ ] Decide whether `npm run test:effects-meta` should be part of `npm run check:effects-meta` or `npm run build`; if not, document why it remains a manual regression suite.
-- [ ] Add a top-level `npm test` script or equivalent if this repo should expose all regression tests through one command.
+- [ ] Decide whether generated metadata records should reject unknown fields. If strict output is desired, add allowed-field validation for generated records and cover it in `scripts/test-effects-meta.js`.
+- [ ] Normalize `scripts/check-effects-meta.js` diagnostics for `git ls-files` failures, matching the grouped style used for metadata-file errors.
+- [ ] Add checker regression coverage for tracked-page discovery failure if it can be simulated without brittle shell tricks; otherwise document the limitation in the test file.
+- [ ] Make duplicate href/slug regression fixtures isolate the duplicate invariant without also triggering unrelated slug/href mismatch diagnostics.
+- [ ] Add explicit tests for missing, empty, invalid JSON, and non-array `public/effects-meta.json` in `scripts/check-effects-meta.js`.
 
-## Phase 2 - Close Remaining Schema Contract Edges
-
-Priority: high.
-
-- [ ] Decide whether an explicit override `description: ""` means "clear the description" or is invalid; implement that rule and test it.
-- [ ] Reject unknown fields in `scripts/effects-meta-overrides.json` so typoed override keys cannot silently do nothing.
-- [ ] Consider rejecting unknown fields in `scripts/effects-catalog.json` entries if the catalog should be a strict source contract.
-- [ ] Validate generated metadata records inside `scripts/gen-metadata.js` before writing `public/effects-meta.json`, using the same generated-record schema used by `scripts/check-effects-meta.js`.
-- [ ] Validate catalog href basenames against the accepted slug format, or rely on generator self-validation and document that decision in the script.
-- [ ] Make checker diagnostics for missing, empty, invalid JSON, and non-array `public/effects-meta.json` consistent with the generator's grouped diagnostic style.
-
-## Phase 3 - Finish Static Directory Behavior
+## Phase 2 - Finish Static Directory Behavior
 
 Priority: medium.
 
@@ -81,16 +70,16 @@ Priority: medium.
 - [ ] If degraded fallback remains intentional, add a short repository note explaining that the full directory requires Vite or another local static server.
 - [ ] Add an "updated metadata source" timestamp or build identifier to the footer.
 
-## Phase 4 - Improve Directory UX and Filtering
+## Phase 3 - Improve Directory UX and Filtering
 
 Priority: medium.
 
-- [ ] Add a category sidebar or category chip row with counts and click-to-filter behavior.
-- [ ] Keep selected search, sort, category, and tag filters represented in URL query params so catalog links can be shared.
-- [ ] Improve no-description cards by generating a better deterministic fallback sentence from category and tags.
 - [ ] Harden highlight rendering so queries cannot split escaped HTML entities.
+- [ ] Keep selected search, sort, category, and tag filters represented in URL query params so catalog links can be shared.
+- [ ] Add a category sidebar or category chip row with counts and click-to-filter behavior.
+- [ ] Improve no-description cards by generating a better deterministic fallback sentence from category and tags.
 
-## Phase 5 - Expand Metadata Coverage
+## Phase 4 - Expand Metadata Coverage
 
 Priority: medium.
 
@@ -98,8 +87,9 @@ Priority: medium.
 - [ ] Add richer tags and categories for all current `Uncategorized` or no-tag records.
 - [ ] Review category taxonomy and merge near-duplicates such as `3D`, `3D Models`, and `Full Scenes` if they are not intentionally distinct.
 - [ ] Add a lightweight coverage report that counts empty descriptions, `Uncategorized`, no-tag records, and low-tag records.
+- [ ] Consider failing the coverage report only on regressions rather than enforcing a hard quality threshold immediately.
 
-## Phase 6 - Future Thumbnail Pipeline
+## Phase 5 - Future Thumbnail Pipeline
 
 Priority: low.
 
@@ -112,9 +102,8 @@ Priority: low.
 Run before considering the directory work complete:
 
 ```bash
-npm run test:effects-meta
-node scripts/gen-metadata.js --check
-node scripts/check-effects-meta.js
+npm test
+npm run check:effects-meta
 npm run lint
 npm run build
 git diff --check
