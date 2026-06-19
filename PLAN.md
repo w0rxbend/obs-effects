@@ -64,8 +64,9 @@ For effects without an override, the script auto-generates tags from the existin
 The current `index.html` has a large inline JS array and a basic search filter. Replace it with:
 
 ### Data loading
+
 ```js
-const meta = await fetch('/effects-meta.json').then(r => r.json());
+const meta = await fetch("/effects-meta.json").then((r) => r.json());
 ```
 
 During development (no server) fall back to the inline array for backward compatibility.
@@ -73,6 +74,7 @@ During development (no server) fall back to the inline array for backward compat
 ### UI additions (pure CSS + vanilla JS, no framework)
 
 **Sort bar:**
+
 ```
 [Newest first ▾]  [Oldest first]  [A → Z]  [Z → A]
 ```
@@ -81,21 +83,32 @@ During development (no server) fall back to the inline array for backward compat
 Auto-generated from all unique tags. Clicking a chip filters to effects with that tag. Multiple chips = AND filter. Active chips highlighted in accent color.
 
 **Search box** (already exists, extend):
+
 - Search across: title, description, tags
 - Debounce 150 ms
 - Highlight matched text in results
 
 **Effect cards** (upgrade from current link list):
+
 - Show: thumbnail placeholder or color swatch, title, category badge, tag chips, description excerpt, creation date (`Jan 2026`)
 - CSS grid, responsive columns
 
 ### Sort implementation
+
 ```js
 function sortEffects(list, mode) {
-  if (mode === 'newest') return [...list].sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
-  if (mode === 'oldest') return [...list].sort((a,b) => new Date(a.createdAt) - new Date(b.createdAt));
-  if (mode === 'az')     return [...list].sort((a,b) => a.title.localeCompare(b.title));
-  if (mode === 'za')     return [...list].sort((a,b) => b.title.localeCompare(a.title));
+  if (mode === "newest")
+    return [...list].sort(
+      (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
+    );
+  if (mode === "oldest")
+    return [...list].sort(
+      (a, b) => new Date(a.createdAt) - new Date(b.createdAt),
+    );
+  if (mode === "az")
+    return [...list].sort((a, b) => a.title.localeCompare(b.title));
+  if (mode === "za")
+    return [...list].sort((a, b) => b.title.localeCompare(a.title));
 }
 ```
 
@@ -115,14 +128,14 @@ Run headless Chromium via Playwright to capture a 400×225 screenshot of each ef
 
 ## Execution order
 
-| Step | What | Files touched |
-|------|------|---------------|
-| 1 | Write `gen-metadata.js` script | `scripts/gen-metadata.js` |
-| 2 | Write `effects-meta-overrides.json` (start with ~20 key effects) | `scripts/effects-meta-overrides.json` |
-| 3 | Run script → commit `public/effects-meta.json` | `public/effects-meta.json` |
-| 4 | Rewrite index.html JS + add sort/filter UI | `index.html` |
-| 5 | Style card grid in `style.css` or inline | `index.html` / `style.css` |
-| 6 | Fill in remaining overrides over time | `scripts/effects-meta-overrides.json` |
+| Step | What                                                             | Files touched                         |
+| ---- | ---------------------------------------------------------------- | ------------------------------------- |
+| 1    | Write `gen-metadata.js` script                                   | `scripts/gen-metadata.js`             |
+| 2    | Write `effects-meta-overrides.json` (start with ~20 key effects) | `scripts/effects-meta-overrides.json` |
+| 3    | Run script → commit `public/effects-meta.json`                   | `public/effects-meta.json`            |
+| 4    | Rewrite index.html JS + add sort/filter UI                       | `index.html`                          |
+| 5    | Style card grid in `style.css` or inline                         | `index.html` / `style.css`            |
+| 6    | Fill in remaining overrides over time                            | `scripts/effects-meta-overrides.json` |
 
 ---
 
