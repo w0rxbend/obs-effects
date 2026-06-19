@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "start": "npm run dev",
-    "build": "npm run lint && tsc && vite build",
+    "build": "npm run lint && npm run check:effects-meta && tsc && vite build",
+    "check:effects-meta": "node scripts/check-effects-meta.js",
     "lint": "eslint .",
     "dev": "vite"
   },

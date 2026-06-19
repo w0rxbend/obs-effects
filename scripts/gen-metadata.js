@@ -6,10 +6,11 @@ import { fileURLToPath } from "node:url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const repoRoot = path.resolve(__dirname, "..");
-const indexPath = path.join(repoRoot, "index.html");
+const catalogPath = path.join(__dirname, "effects-catalog.json");
 const overridesPath = path.join(__dirname, "effects-meta-overrides.json");
 const outputDir = path.join(repoRoot, "public");
 const outputPath = path.join(outputDir, "effects-meta.json");
+const preserveExisting = process.argv.includes("--preserve-existing");
 
 function slugFromHref(href) {
   return path.basename(href, ".html");
@@ -24,7 +25,7 @@ function titleFromSlug(slug) {
 }
 
 function normalizeTag(tag) {
-  return String(tag).trim().replace(/\s+/g, " ");
+  return tag.trim().replace(/\s+/g, " ").toLocaleLowerCase("en-US");
 }
 
 function normalizeTags(tags) {
@@ -32,130 +33,18 @@ function normalizeTags(tags) {
   const normalized = [];
 
   for (const tag of tags) {
+    if (typeof tag !== "string") continue;
+
     const displayTag = normalizeTag(tag);
     if (!displayTag) continue;
 
-    const key = displayTag.toLocaleLowerCase("en-US");
-    if (seen.has(key)) continue;
+    if (seen.has(displayTag)) continue;
 
-    seen.add(key);
+    seen.add(displayTag);
     normalized.push(displayTag);
   }
 
   return normalized;
-}
-
-function extractArrayLiteral(source, marker) {
-  const markerIndex = source.indexOf(marker);
-  if (markerIndex === -1) {
-    return "";
-  }
-
-  const arrayStart = source.indexOf("[", markerIndex);
-  if (arrayStart === -1) {
-    throw new Error(`Could not find array literal after ${marker.trim()}`);
-  }
-
-  let depth = 0;
-  let quote = "";
-  let escaped = false;
-  let inLineComment = false;
-  let inBlockComment = false;
-
-  for (let index = arrayStart; index < source.length; index += 1) {
-    const char = source[index];
-    const next = source[index + 1];
-
-    if (inLineComment) {
-      if (char === "\n") inLineComment = false;
-      continue;
-    }
-
-    if (inBlockComment) {
-      if (char === "*" && next === "/") {
-        inBlockComment = false;
-        index += 1;
-      }
-      continue;
-    }
-
-    if (quote) {
-      if (escaped) {
-        escaped = false;
-      } else if (char === "\\") {
-        escaped = true;
-      } else if (char === quote) {
-        quote = "";
-      }
-      continue;
-    }
-
-    if (char === "/" && next === "/") {
-      inLineComment = true;
-      index += 1;
-      continue;
-    }
-
-    if (char === "/" && next === "*") {
-      inBlockComment = true;
-      index += 1;
-      continue;
-    }
-
-    if (char === '"' || char === "'" || char === "`") {
-      quote = char;
-      continue;
-    }
-
-    if (char === "[") depth += 1;
-
-    if (char === "]") {
-      depth -= 1;
-      if (depth === 0) {
-        return source.slice(arrayStart, index + 1);
-      }
-    }
-  }
-
-  throw new Error(`Could not parse array literal after ${marker.trim()}`);
-}
-
-function readIndexEntries() {
-  const source = fs.readFileSync(indexPath, "utf8");
-  const entriesBySlug = new Map();
-  const markers = ["const RAW =", "const FALLBACK_EFFECTS ="];
-
-  for (const marker of markers) {
-    const rawLiteral = extractArrayLiteral(source, marker);
-    if (!rawLiteral) continue;
-
-    const rawEntries = Function(`"use strict"; return (${rawLiteral});`)();
-
-    for (const entry of rawEntries) {
-      if (Array.isArray(entry)) {
-        const [href, _label, category, tags] = entry;
-        if (typeof href !== "string") continue;
-
-        entriesBySlug.set(slugFromHref(href), {
-          category: typeof category === "string" ? category : "Uncategorized",
-          tags: Array.isArray(tags) ? tags : [],
-        });
-        continue;
-      }
-
-      if (!entry || typeof entry !== "object" || typeof entry.href !== "string") {
-        continue;
-      }
-
-      entriesBySlug.set(slugFromHref(entry.href), {
-        category:
-          typeof entry.category === "string" ? entry.category : "Uncategorized",
-        tags: Array.isArray(entry.tags) ? entry.tags : [],
-      });
-    }
-  }
-
-  return entriesBySlug;
 }
 
 function readExistingMetadataEntries() {
@@ -187,24 +76,53 @@ function readExistingMetadataEntries() {
   return entriesBySlug;
 }
 
+function readJsonFile(filePath, fallback) {
+  if (!fs.existsSync(filePath)) {
+    return fallback;
+  }
+
+  const rawJson = fs.readFileSync(filePath, "utf8");
+  if (!rawJson.trim()) {
+    return fallback;
+  }
+
+  return JSON.parse(rawJson);
+}
+
+function readCatalogEntries() {
+  const catalog = readJsonFile(catalogPath, { effects: [] });
+  const entries = Array.isArray(catalog.effects) ? catalog.effects : [];
+  const entriesBySlug = new Map();
+
+  for (const entry of entries) {
+    if (!entry || typeof entry !== "object" || typeof entry.href !== "string") {
+      continue;
+    }
+
+    const slug = slugFromHref(entry.href);
+    if (entriesBySlug.has(slug)) {
+      throw new Error(`Duplicate catalog entry for ${entry.href}`);
+    }
+
+    entriesBySlug.set(slug, {
+      category:
+        typeof entry.category === "string" ? entry.category : "Uncategorized",
+      tags: Array.isArray(entry.tags) ? entry.tags : [],
+    });
+  }
+
+  return entriesBySlug;
+}
+
 function readOverrides() {
-  if (!fs.existsSync(overridesPath)) {
-    return {};
-  }
-
-  const rawOverrides = fs.readFileSync(overridesPath, "utf8");
-  if (!rawOverrides.trim()) {
-    return {};
-  }
-
-  return JSON.parse(rawOverrides);
+  return readJsonFile(overridesPath, {});
 }
 
 function gitCreatedAt(fileName) {
   try {
     const output = execFileSync(
       "git",
-      ["log", "--diff-filter=A", "--format=%ai", "--", fileName],
+      ["log", "--format=%aI", "--diff-filter=A", "--", fileName],
       {
         cwd: repoRoot,
         encoding: "utf8",
@@ -217,23 +135,10 @@ function gitCreatedAt(fileName) {
       .map((line) => line.trim())
       .find(Boolean);
 
-    return firstDate ? formatGitDate(firstDate) : "";
+    return firstDate ?? "";
   } catch {
     return "";
   }
-}
-
-function formatGitDate(gitDate) {
-  const match = gitDate.match(
-    /^(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2}:\d{2}) ([+-]\d{2})(\d{2})$/,
-  );
-
-  if (!match) {
-    return gitDate;
-  }
-
-  const [, date, time, offsetHour, offsetMinute] = match;
-  return `${date}T${time}${offsetHour}:${offsetMinute}`;
 }
 
 function fileCreatedAt(fileName) {
@@ -246,30 +151,45 @@ function createdAtFor(fileName) {
 }
 
 function listEffectHtmlFiles() {
-  return fs
-    .readdirSync(repoRoot, { withFileTypes: true })
-    .filter((entry) => entry.isFile())
-    .map((entry) => entry.name)
+  const output = execFileSync("git", ["ls-files", "*.html"], {
+    cwd: repoRoot,
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "ignore"],
+  });
+
+  return output
+    .split(/\r?\n/)
+    .map((fileName) => fileName.trim())
     .filter(
-      (fileName) => fileName.endsWith(".html") && fileName !== "index.html",
+      (fileName) =>
+        fileName.endsWith(".html") &&
+        fileName !== "index.html" &&
+        !fileName.includes("/"),
     )
     .sort((a, b) => a.localeCompare(b));
 }
 
-function metadataForFile(fileName, indexEntries, existingEntries, overrides) {
+function metadataForFile(fileName, catalogEntries, existingEntries, overrides) {
   const slug = slugFromHref(fileName);
-  const indexEntry = indexEntries.get(slug);
+  const catalogEntry = catalogEntries.get(slug);
   const existingEntry = existingEntries.get(slug);
   const override = overrides[slug] ?? {};
-  const baseTags = indexEntry?.tags ?? existingEntry?.tags ?? [];
+  const catalogTags = catalogEntry?.tags ?? [];
+  const existingTags = preserveExisting ? (existingEntry?.tags ?? []) : [];
   const overrideTags = Array.isArray(override.tags) ? override.tags : [];
+  const category =
+    typeof override.category === "string"
+      ? override.category
+      : (catalogEntry?.category ??
+        (preserveExisting ? existingEntry?.category : undefined) ??
+        "Uncategorized");
 
   return {
     slug,
     title: titleFromSlug(slug),
     href: fileName,
-    category: indexEntry?.category ?? existingEntry?.category ?? "Uncategorized",
-    tags: normalizeTags([...baseTags, ...overrideTags]),
+    category,
+    tags: normalizeTags([...catalogTags, ...existingTags, ...overrideTags]),
     description:
       typeof override.description === "string" ? override.description : "",
     createdAt: createdAtFor(fileName),
@@ -277,13 +197,15 @@ function metadataForFile(fileName, indexEntries, existingEntries, overrides) {
 }
 
 function main() {
-  const indexEntries = readIndexEntries();
-  const existingEntries = readExistingMetadataEntries();
+  const catalogEntries = readCatalogEntries();
+  const existingEntries = preserveExisting
+    ? readExistingMetadataEntries()
+    : new Map();
   const overrides = readOverrides();
   const htmlFiles = listEffectHtmlFiles();
   const metadata = htmlFiles
     .map((fileName) =>
-      metadataForFile(fileName, indexEntries, existingEntries, overrides),
+      metadataForFile(fileName, catalogEntries, existingEntries, overrides),
     )
     .sort((a, b) => a.slug.localeCompare(b.slug));
 

@@ -5,13 +5,13 @@
     "href": "accretion-disk-cam.html",
     "category": "Webcam Borders",
     "tags": [
-      "Shader",
-      "Webcam",
-      "Border",
-      "Space",
-      "Glow",
-      "Accretion Disk",
-      "Orbit"
+      "shader",
+      "webcam",
+      "border",
+      "space",
+      "glow",
+      "accretion disk",
+      "orbit"
     ],
     "description": "Webcam frame built from a luminous accretion disk, combining orbital streaks with a transparent central window.",
     "createdAt": "2026-05-02T12:02:12+03:00"
@@ -22,10 +22,10 @@
     "href": "aether-drift.html",
     "category": "Backgrounds",
     "tags": [
-      "Shader",
-      "Silk",
-      "Cinematic",
-      "Fluid"
+      "shader",
+      "silk",
+      "cinematic",
+      "fluid"
     ],
     "description": "",
     "createdAt": "2026-06-14T13:10:36+03:00"
@@ -36,12 +36,12 @@
     "href": "ai-character-final.html",
     "category": "3D",
     "tags": [
-      "Three.js",
-      "GLB",
-      "Avatar",
-      "Gesture",
-      "Expressive",
-      "Transparent"
+      "three.js",
+      "glb",
+      "avatar",
+      "gesture",
+      "expressive",
+      "transparent"
     ],
     "description": "",
     "createdAt": "2026-05-22T18:17:00+03:00"
@@ -52,12 +52,12 @@
     "href": "ai-character-natural.html",
     "category": "3D",
     "tags": [
-      "Three.js",
-      "GLB",
-      "Avatar",
-      "Gesture",
-      "Conversation",
-      "Transparent"
+      "three.js",
+      "glb",
+      "avatar",
+      "gesture",
+      "conversation",
+      "transparent"
     ],
     "description": "",
     "createdAt": "2026-05-22T18:17:00+03:00"
@@ -68,10 +68,10 @@
     "href": "ai-inference.html",
     "category": "Backgrounds",
     "tags": [
-      "AI",
-      "Neural",
-      "Ambient",
-      "Sci-Fi"
+      "ai",
+      "neural",
+      "ambient",
+      "sci-fi"
     ],
     "description": "",
     "createdAt": "2026-05-17T09:15:40+03:00"
@@ -82,9 +82,9 @@
     "href": "ambient-energy.html",
     "category": "Backgrounds",
     "tags": [
-      "Fog",
-      "Nebula",
-      "Ambient"
+      "fog",
+      "nebula",
+      "ambient"
     ],
     "description": "",
     "createdAt": "2026-05-17T01:42:36+03:00"
@@ -95,8 +95,8 @@
     "href": "amorphous-blob-cam.html",
     "category": "Webcam Borders",
     "tags": [
-      "Fluid",
-      "Border"
+      "fluid",
+      "border"
     ],
     "description": "",
     "createdAt": "2026-05-01T21:28:37+03:00"
@@ -107,8 +107,8 @@
     "href": "amorphous-square-border.html",
     "category": "Webcam Borders",
     "tags": [
-      "Fluid",
-      "Border"
+      "fluid",
+      "border"
     ],
     "description": "",
     "createdAt": "2026-05-01T01:33:20+03:00"
@@ -119,8 +119,8 @@
     "href": "animated-lines.html",
     "category": "Backgrounds",
     "tags": [
-      "GSAP",
-      "Loop"
+      "gsap",
+      "loop"
     ],
     "description": "",
     "createdAt": "2026-04-25T18:41:53+03:00"
@@ -131,8 +131,8 @@
     "href": "aquarium.html",
     "category": "Backgrounds",
     "tags": [
-      "Scene",
-      "WebGL"
+      "scene",
+      "webgl"
     ],
     "description": "",
     "createdAt": "2026-04-17T18:10:32+03:00"
@@ -143,10 +143,10 @@
     "href": "artificial-life.html",
     "category": "Backgrounds",
     "tags": [
-      "Biology",
-      "Swarm",
-      "AI",
-      "GPU"
+      "biology",
+      "swarm",
+      "ai",
+      "gpu"
     ],
     "description": "",
     "createdAt": "2026-05-17T01:42:36+03:00"
@@ -157,8 +157,8 @@
     "href": "atom.html",
     "category": "Particle Systems",
     "tags": [
-      "Physics",
-      "Loop"
+      "physics",
+      "loop"
     ],
     "description": "",
     "createdAt": "2026-04-17T18:38:11+03:00"
@@ -169,14 +169,14 @@
     "href": "audio-flow-turbulence.html",
     "category": "Backgrounds",
     "tags": [
-      "Audio",
-      "Physics",
-      "Fluid",
-      "Particles",
-      "Flow Field",
-      "Turbulence",
-      "Particle",
-      "Reactive"
+      "audio",
+      "physics",
+      "fluid",
+      "particles",
+      "flow field",
+      "turbulence",
+      "particle",
+      "reactive"
     ],
     "description": "Audio-driven flow field with turbulent ribbons and responsive particle movement shaped by sound intensity.",
     "createdAt": "2026-05-17T01:42:36+03:00"
@@ -187,13 +187,13 @@
     "href": "audio-neural-net.html",
     "category": "Backgrounds",
     "tags": [
-      "Audio",
-      "Network",
-      "AI",
-      "Reactive",
-      "Neural",
-      "Particle",
-      "Tech"
+      "audio",
+      "network",
+      "ai",
+      "reactive",
+      "neural",
+      "particle",
+      "tech"
     ],
     "description": "Audio-reactive neural network visualization with pulsing nodes, signal paths, and machine-learning interface energy.",
     "createdAt": "2026-05-17T01:42:36+03:00"
@@ -204,8 +204,8 @@
     "href": "aurora-borealis.html",
     "category": "Backgrounds",
     "tags": [
-      "Shader",
-      "Atmospheric"
+      "shader",
+      "atmospheric"
     ],
     "description": "",
     "createdAt": "2026-04-19T13:13:02+03:00"
@@ -216,8 +216,8 @@
     "href": "avatar.html",
     "category": "Particle Systems",
     "tags": [
-      "3D",
-      "Mascot"
+      "3d",
+      "mascot"
     ],
     "description": "",
     "createdAt": "2026-04-23T23:39:14+03:00"
@@ -228,7 +228,7 @@
     "href": "background.html",
     "category": "Backgrounds",
     "tags": [
-      "Loop"
+      "loop"
     ],
     "description": "",
     "createdAt": "2026-04-16T02:42:20+03:00"
@@ -239,8 +239,8 @@
     "href": "bioluminescent-cell.html",
     "category": "Particle Systems",
     "tags": [
-      "Mascot",
-      "Fluid"
+      "mascot",
+      "fluid"
     ],
     "description": "",
     "createdAt": "2026-04-29T00:47:10+03:00"
@@ -251,14 +251,14 @@
     "href": "black-hole-cam.html",
     "category": "Webcam Borders",
     "tags": [
-      "Shader",
-      "WebGL",
-      "Webcam",
-      "Border",
-      "Black Hole",
-      "Space",
-      "Glow",
-      "Transparent"
+      "shader",
+      "webgl",
+      "webcam",
+      "border",
+      "black hole",
+      "space",
+      "glow",
+      "transparent"
     ],
     "description": "Transparent webcam border inspired by a black hole, with accretion glow wrapping around an open camera center.",
     "createdAt": "2026-04-19T13:58:14+03:00"
@@ -269,8 +269,8 @@
     "href": "blob-face-cam.html",
     "category": "Particle Systems",
     "tags": [
-      "Mascot",
-      "Overlay"
+      "mascot",
+      "overlay"
     ],
     "description": "",
     "createdAt": "2026-05-02T17:09:27+03:00"
@@ -281,12 +281,12 @@
     "href": "blue-mosaic-flow.html",
     "category": "Backgrounds",
     "tags": [
-      "Halftone",
-      "Dots",
-      "Blue",
-      "Mosaic",
-      "Fluid",
-      "Abstract"
+      "halftone",
+      "dots",
+      "blue",
+      "mosaic",
+      "fluid",
+      "abstract"
     ],
     "description": "",
     "createdAt": "2026-06-19T18:57:59+03:00"
@@ -297,12 +297,12 @@
     "href": "blueprint-globe.html",
     "category": "Uncategorized",
     "tags": [
-      "3D",
-      "Globe",
-      "Blueprint",
-      "Grid",
-      "Tech",
-      "Blue"
+      "3d",
+      "globe",
+      "blueprint",
+      "grid",
+      "tech",
+      "blue"
     ],
     "description": "Technical blueprint-style globe with gridded geometry, schematic accents, and a crisp engineering display mood.",
     "createdAt": "2026-05-08T17:47:06+03:00"
@@ -313,8 +313,8 @@
     "href": "boids.html",
     "category": "Particle Systems",
     "tags": [
-      "Boids",
-      "Particles"
+      "boids",
+      "particles"
     ],
     "description": "",
     "createdAt": "2026-04-19T13:58:14+03:00"
@@ -325,8 +325,8 @@
     "href": "break.html",
     "category": "Particle Systems",
     "tags": [
-      "Scene",
-      "Loop"
+      "scene",
+      "loop"
     ],
     "description": "",
     "createdAt": "2026-04-16T22:13:38+03:00"
@@ -337,8 +337,8 @@
     "href": "break-water-text.html",
     "category": "Particle Systems",
     "tags": [
-      "Fluid",
-      "Text"
+      "fluid",
+      "text"
     ],
     "description": "",
     "createdAt": "2026-05-07T22:47:32+03:00"
@@ -349,8 +349,8 @@
     "href": "cam-frame-overlay.html",
     "category": "Webcam Borders",
     "tags": [
-      "Overlay",
-      "Border"
+      "overlay",
+      "border"
     ],
     "description": "",
     "createdAt": "2026-04-19T19:49:50+03:00"
@@ -361,8 +361,8 @@
     "href": "cat-circle-cam.html",
     "category": "Webcam Borders",
     "tags": [
-      "Mascot",
-      "Border"
+      "mascot",
+      "border"
     ],
     "description": "",
     "createdAt": "2026-04-25T14:19:01+03:00"
@@ -373,8 +373,8 @@
     "href": "cat-mesh.html",
     "category": "Particle Systems",
     "tags": [
-      "Mesh",
-      "Mascot"
+      "mesh",
+      "mascot"
     ],
     "description": "",
     "createdAt": "2026-04-25T13:42:04+03:00"
@@ -385,8 +385,8 @@
     "href": "catppuccin-linux-overlay.html",
     "category": "Particle Systems",
     "tags": [
-      "Mesh",
-      "Mascot"
+      "mesh",
+      "mascot"
     ],
     "description": "",
     "createdAt": "2026-04-24T19:48:12+03:00"
@@ -397,10 +397,10 @@
     "href": "cellular-slime.html",
     "category": "Backgrounds",
     "tags": [
-      "Biology",
-      "Swarm",
-      "GPU",
-      "Shader"
+      "biology",
+      "swarm",
+      "gpu",
+      "shader"
     ],
     "description": "",
     "createdAt": "2026-05-17T01:42:36+03:00"
@@ -429,11 +429,11 @@
     "href": "city-view.html",
     "category": "3D",
     "tags": [
-      "Three.js",
-      "FBX",
-      "City",
-      "Architecture",
-      "3D"
+      "three.js",
+      "fbx",
+      "city",
+      "architecture",
+      "3d"
     ],
     "description": "",
     "createdAt": "2026-05-17T01:42:36+03:00"
@@ -444,15 +444,15 @@
     "href": "code-ocean.html",
     "category": "Backgrounds",
     "tags": [
-      "Code",
-      "Shader",
-      "Hex",
-      "Ambient",
-      "Ocean",
-      "Fluid",
-      "Text",
-      "Blue",
-      "Background"
+      "code",
+      "shader",
+      "hex",
+      "ambient",
+      "ocean",
+      "fluid",
+      "text",
+      "blue",
+      "background"
     ],
     "description": "Immersive code-themed ocean background where text-like currents and layered waves create a developer stream atmosphere.",
     "createdAt": "2026-05-17T01:42:36+03:00"
@@ -472,8 +472,8 @@
     "href": "collatz.html",
     "category": "Particle Systems",
     "tags": [
-      "Math",
-      "Generative"
+      "math",
+      "generative"
     ],
     "description": "",
     "createdAt": "2026-04-18T23:38:25+03:00"
@@ -484,10 +484,10 @@
     "href": "color-wave-ribbons.html",
     "category": "Backgrounds",
     "tags": [
-      "Waves",
-      "Fluid",
-      "Memphis",
-      "Gradient"
+      "waves",
+      "fluid",
+      "memphis",
+      "gradient"
     ],
     "description": "",
     "createdAt": "2026-06-14T16:26:59+03:00"
@@ -498,8 +498,8 @@
     "href": "confidential.html",
     "category": "Particle Systems",
     "tags": [
-      "Overlay",
-      "Text"
+      "overlay",
+      "text"
     ],
     "description": "",
     "createdAt": "2026-04-16T22:13:38+03:00"
@@ -510,13 +510,13 @@
     "href": "cosmic-portal.html",
     "category": "Backgrounds",
     "tags": [
-      "Shader",
-      "Space",
-      "Portal",
-      "Energy",
-      "Vortex",
-      "Glow",
-      "Loop"
+      "shader",
+      "space",
+      "portal",
+      "energy",
+      "vortex",
+      "glow",
+      "loop"
     ],
     "description": "Circular cosmic portal effect with radiant energy, starfield depth, and a dimensional gateway composition.",
     "createdAt": "2026-04-19T15:37:53+03:00"
@@ -536,8 +536,8 @@
     "href": "crystalcam.html",
     "category": "Webcam Borders",
     "tags": [
-      "Geometric",
-      "3D"
+      "geometric",
+      "3d"
     ],
     "description": "",
     "createdAt": "2026-04-22T21:21:54+03:00"
@@ -548,8 +548,8 @@
     "href": "cubic-blob-face-overlay.html",
     "category": "Particle Systems",
     "tags": [
-      "Mascot",
-      "Fluid"
+      "mascot",
+      "fluid"
     ],
     "description": "",
     "createdAt": "2026-04-24T19:48:12+03:00"
@@ -560,8 +560,8 @@
     "href": "cubic-blob-overlay.html",
     "category": "Particle Systems",
     "tags": [
-      "Mascot",
-      "Fluid"
+      "mascot",
+      "fluid"
     ],
     "description": "",
     "createdAt": "2026-04-24T19:48:12+03:00"
@@ -572,12 +572,12 @@
     "href": "cyber-marble.html",
     "category": "Backgrounds",
     "tags": [
-      "Fluid",
-      "Marble",
-      "Magenta",
-      "Teal",
-      "Cyber",
-      "Abstract"
+      "fluid",
+      "marble",
+      "magenta",
+      "teal",
+      "cyber",
+      "abstract"
     ],
     "description": "",
     "createdAt": "2026-06-19T18:57:59+03:00"
@@ -588,14 +588,14 @@
     "href": "cyber-terrain.html",
     "category": "Backgrounds",
     "tags": [
-      "Wireframe",
-      "3D",
-      "Cyberpunk",
-      "Ambient",
-      "Terrain",
-      "Grid",
-      "Landscape",
-      "Glow"
+      "wireframe",
+      "3d",
+      "cyberpunk",
+      "ambient",
+      "terrain",
+      "grid",
+      "landscape",
+      "glow"
     ],
     "description": "Cybernetic terrain field with gridded relief, scan-like movement, and glowing landscape depth.",
     "createdAt": "2026-05-17T01:42:36+03:00"
@@ -624,12 +624,12 @@
     "href": "cyclops-avatar.html",
     "category": "3D",
     "tags": [
-      "Three.js",
-      "GLB",
-      "VTuber",
-      "Character",
-      "Skeleton",
-      "Mic Reactive"
+      "three.js",
+      "glb",
+      "vtuber",
+      "character",
+      "skeleton",
+      "mic reactive"
     ],
     "description": "",
     "createdAt": "2026-05-17T01:42:36+03:00"
@@ -640,12 +640,12 @@
     "href": "dark-fluid-swirl.html",
     "category": "Backgrounds",
     "tags": [
-      "Fluid",
-      "Marble",
-      "Pink",
-      "Coral",
-      "Dark",
-      "Abstract"
+      "fluid",
+      "marble",
+      "pink",
+      "coral",
+      "dark",
+      "abstract"
     ],
     "description": "",
     "createdAt": "2026-06-19T18:57:59+03:00"
@@ -656,9 +656,9 @@
     "href": "dark-glass-lattice.html",
     "category": "Backgrounds",
     "tags": [
-      "Shader",
-      "Neon",
-      "Depth"
+      "shader",
+      "neon",
+      "depth"
     ],
     "description": "",
     "createdAt": "2026-06-14T15:17:17+03:00"
@@ -669,8 +669,8 @@
     "href": "dark-sun-cam.html",
     "category": "Webcam Borders",
     "tags": [
-      "Fluid",
-      "Border"
+      "fluid",
+      "border"
     ],
     "description": "",
     "createdAt": "2026-05-01T02:16:33+03:00"
@@ -681,11 +681,11 @@
     "href": "data-corruption.html",
     "category": "Overlays",
     "tags": [
-      "Glitch",
-      "Codec",
-      "RGB",
-      "Transparent",
-      "Cinematic"
+      "glitch",
+      "codec",
+      "rgb",
+      "transparent",
+      "cinematic"
     ],
     "description": "",
     "createdAt": "2026-05-17T09:15:40+03:00"
@@ -696,10 +696,10 @@
     "href": "diagonal-streaks.html",
     "category": "Backgrounds",
     "tags": [
-      "Lines",
-      "Neon",
-      "Looping",
-      "Parallax"
+      "lines",
+      "neon",
+      "looping",
+      "parallax"
     ],
     "description": "",
     "createdAt": "2026-06-14T16:26:59+03:00"
@@ -710,9 +710,9 @@
     "href": "digital-fluid-ink.html",
     "category": "Backgrounds",
     "tags": [
-      "Fluid",
-      "Shader",
-      "Artistic"
+      "fluid",
+      "shader",
+      "artistic"
     ],
     "description": "",
     "createdAt": "2026-05-17T15:34:25+03:00"
@@ -723,9 +723,9 @@
     "href": "digital-rain.html",
     "category": "Backgrounds",
     "tags": [
-      "Shader",
-      "Matrix",
-      "Loop"
+      "shader",
+      "matrix",
+      "loop"
     ],
     "description": "",
     "createdAt": "2026-05-23T18:24:51+03:00"
@@ -736,12 +736,12 @@
     "href": "discord-robot.html",
     "category": "3D",
     "tags": [
-      "Three.js",
-      "Robot",
-      "Discord",
-      "Cinematic",
-      "Procedural",
-      "Bloom"
+      "three.js",
+      "robot",
+      "discord",
+      "cinematic",
+      "procedural",
+      "bloom"
     ],
     "description": "",
     "createdAt": "2026-05-18T21:49:36+03:00"
@@ -752,10 +752,10 @@
     "href": "distributed-systems.html",
     "category": "Backgrounds",
     "tags": [
-      "Cloud",
-      "Network",
-      "Infra",
-      "Ambient"
+      "cloud",
+      "network",
+      "infra",
+      "ambient"
     ],
     "description": "",
     "createdAt": "2026-05-17T01:42:36+03:00"
@@ -766,11 +766,11 @@
     "href": "dji-fpv.html",
     "category": "3D",
     "tags": [
-      "Three.js",
-      "GLB",
-      "Drone",
-      "DJI",
-      "Transparent"
+      "three.js",
+      "glb",
+      "drone",
+      "dji",
+      "transparent"
     ],
     "description": "",
     "createdAt": "2026-05-19T02:18:45+03:00"
@@ -781,8 +781,8 @@
     "href": "dotted-mesh.html",
     "category": "Backgrounds",
     "tags": [
-      "Mesh",
-      "Particles"
+      "mesh",
+      "particles"
     ],
     "description": "",
     "createdAt": "2026-04-23T22:42:10+03:00"
@@ -793,11 +793,11 @@
     "href": "drone-visualization.html",
     "category": "3D",
     "tags": [
-      "Three.js",
-      "GLB",
-      "Drone",
-      "Transparent",
-      "Overlay"
+      "three.js",
+      "glb",
+      "drone",
+      "transparent",
+      "overlay"
     ],
     "description": "",
     "createdAt": "2026-05-18T21:49:36+03:00"
@@ -808,9 +808,9 @@
     "href": "eclipse-glow.html",
     "category": "Backgrounds",
     "tags": [
-      "Shader",
-      "Atmospheric",
-      "Space"
+      "shader",
+      "atmospheric",
+      "space"
     ],
     "description": "",
     "createdAt": "2026-05-23T18:24:51+03:00"
@@ -821,8 +821,8 @@
     "href": "elastic-rings.html",
     "category": "Particle Systems",
     "tags": [
-      "Physics",
-      "Loop"
+      "physics",
+      "loop"
     ],
     "description": "",
     "createdAt": "2026-04-19T19:49:50+03:00"
@@ -833,8 +833,8 @@
     "href": "ember-pentagram-overlay.html",
     "category": "Particle Systems",
     "tags": [
-      "Particles",
-      "Overlay"
+      "particles",
+      "overlay"
     ],
     "description": "",
     "createdAt": "2026-04-24T19:48:12+03:00"
@@ -845,11 +845,11 @@
     "href": "energy-orb.html",
     "category": "3D",
     "tags": [
-      "Three.js",
-      "GLB",
-      "Energy",
-      "Orb",
-      "Transparent"
+      "three.js",
+      "glb",
+      "energy",
+      "orb",
+      "transparent"
     ],
     "description": "",
     "createdAt": "2026-05-20T14:55:14+03:00"
@@ -860,11 +860,11 @@
     "href": "ergodox-showroom.html",
     "category": "3D",
     "tags": [
-      "Three.js",
-      "GLB",
-      "Keyboard",
-      "Transparent",
-      "Showroom"
+      "three.js",
+      "glb",
+      "keyboard",
+      "transparent",
+      "showroom"
     ],
     "description": "",
     "createdAt": "2026-05-20T12:34:16+03:00"
@@ -875,8 +875,8 @@
     "href": "figure-eight-torus.html",
     "category": "Particle Systems",
     "tags": [
-      "3D",
-      "Geometric"
+      "3d",
+      "geometric"
     ],
     "description": "",
     "createdAt": "2026-04-22T21:21:54+03:00"
@@ -887,10 +887,10 @@
     "href": "fire-orb.html",
     "category": "Backgrounds",
     "tags": [
-      "Fire",
-      "3D",
-      "Three.js",
-      "Shader"
+      "fire",
+      "3d",
+      "three.js",
+      "shader"
     ],
     "description": "",
     "createdAt": "2026-05-18T07:35:06+03:00"
@@ -901,8 +901,8 @@
     "href": "fireball.html",
     "category": "Particle Systems",
     "tags": [
-      "Fire",
-      "Audio"
+      "fire",
+      "audio"
     ],
     "description": "",
     "createdAt": "2026-05-08T00:37:27+03:00"
@@ -913,8 +913,8 @@
     "href": "flight-simulation.html",
     "category": "Backgrounds",
     "tags": [
-      "Scene",
-      "3D"
+      "scene",
+      "3d"
     ],
     "description": "",
     "createdAt": "2026-04-18T01:52:44+03:00"
@@ -934,8 +934,8 @@
     "href": "flow-field.html",
     "category": "Particle Systems",
     "tags": [
-      "Particles",
-      "Generative"
+      "particles",
+      "generative"
     ],
     "description": "",
     "createdAt": "2026-04-19T03:01:01+03:00"
@@ -946,10 +946,10 @@
     "href": "fluid-blob-frame.html",
     "category": "Backgrounds",
     "tags": [
-      "Blobs",
-      "Fluid",
-      "Memphis",
-      "Frame"
+      "blobs",
+      "fluid",
+      "memphis",
+      "frame"
     ],
     "description": "",
     "createdAt": "2026-06-14T16:26:59+03:00"
@@ -960,8 +960,8 @@
     "href": "fluid-catppuccin-rings-cam.html",
     "category": "Webcam Borders",
     "tags": [
-      "Fluid",
-      "Border"
+      "fluid",
+      "border"
     ],
     "description": "",
     "createdAt": "2026-04-24T19:48:12+03:00"
@@ -972,8 +972,8 @@
     "href": "fluid-circle-cam.html",
     "category": "Webcam Borders",
     "tags": [
-      "Fluid",
-      "Border"
+      "fluid",
+      "border"
     ],
     "description": "",
     "createdAt": "2026-04-22T23:23:20+03:00"
@@ -984,13 +984,13 @@
     "href": "fluid-dotted-ring-cam.html",
     "category": "Webcam Borders",
     "tags": [
-      "Fluid",
-      "Particles",
-      "Webcam",
-      "Border",
-      "Dots",
-      "Particle",
-      "Transparent"
+      "fluid",
+      "particles",
+      "webcam",
+      "border",
+      "dots",
+      "particle",
+      "transparent"
     ],
     "description": "Dotted circular webcam frame with fluid spacing and soft particle shimmer around an open center.",
     "createdAt": "2026-04-24T19:48:12+03:00"
@@ -1001,12 +1001,12 @@
     "href": "fluid-mesh-ring-cam.html",
     "category": "Webcam Borders",
     "tags": [
-      "Fluid",
-      "Mesh",
-      "Webcam",
-      "Border",
-      "Ring",
-      "Transparent"
+      "fluid",
+      "mesh",
+      "webcam",
+      "border",
+      "ring",
+      "transparent"
     ],
     "description": "Transparent webcam ring where fluid motion distorts a connected mesh around the camera opening.",
     "createdAt": "2026-04-24T19:48:12+03:00"
@@ -1017,8 +1017,8 @@
     "href": "fluid-paint.html",
     "category": "Particle Systems",
     "tags": [
-      "WebGPU",
-      "Fluid"
+      "webgpu",
+      "fluid"
     ],
     "description": "",
     "createdAt": "2026-04-25T08:07:59+03:00"
@@ -1029,8 +1029,8 @@
     "href": "forest-ambient-bg.html",
     "category": "Backgrounds",
     "tags": [
-      "Scene",
-      "Parallax"
+      "scene",
+      "parallax"
     ],
     "description": "",
     "createdAt": "2026-05-07T22:47:32+03:00"
@@ -1041,8 +1041,8 @@
     "href": "fourier-epicycles.html",
     "category": "Particle Systems",
     "tags": [
-      "Math",
-      "Generative"
+      "math",
+      "generative"
     ],
     "description": "",
     "createdAt": "2026-04-19T13:13:02+03:00"
@@ -1053,9 +1053,9 @@
     "href": "fpv-blueprint-bg.html",
     "category": "Backgrounds",
     "tags": [
-      "Scene",
-      "Tech",
-      "FPV"
+      "scene",
+      "tech",
+      "fpv"
     ],
     "description": "",
     "createdAt": "2026-05-08T17:47:06+03:00"
@@ -1066,8 +1066,8 @@
     "href": "galaxy-bg.html",
     "category": "Backgrounds",
     "tags": [
-      "Scene",
-      "Space"
+      "scene",
+      "space"
     ],
     "description": "",
     "createdAt": "2026-04-19T20:18:29+03:00"
@@ -1078,8 +1078,8 @@
     "href": "gas-cam.html",
     "category": "Webcam Borders",
     "tags": [
-      "Fluid",
-      "Overlay"
+      "fluid",
+      "overlay"
     ],
     "description": "",
     "createdAt": "2026-04-22T23:33:09+03:00"
@@ -1090,8 +1090,8 @@
     "href": "gaussian-distribution-bg.html",
     "category": "Backgrounds",
     "tags": [
-      "Generative",
-      "Mesh"
+      "generative",
+      "mesh"
     ],
     "description": "",
     "createdAt": "2026-05-03T14:17:11+03:00"
@@ -1102,7 +1102,7 @@
     "href": "generative.html",
     "category": "Backgrounds",
     "tags": [
-      "Generative"
+      "generative"
     ],
     "description": "",
     "createdAt": "2026-04-17T20:33:15+03:00"
@@ -1113,13 +1113,13 @@
     "href": "geodesic-sphere.html",
     "category": "Particle Systems",
     "tags": [
-      "3D",
-      "Geometric",
-      "Geodesic",
-      "Mesh",
-      "Sphere",
-      "Wireframe",
-      "Geometry"
+      "3d",
+      "geometric",
+      "geodesic",
+      "mesh",
+      "sphere",
+      "wireframe",
+      "geometry"
     ],
     "description": "Faceted geodesic sphere with connected triangular structure and dimensional rotation for a crystalline mesh look.",
     "createdAt": "2026-04-22T20:01:16+03:00"
@@ -1130,9 +1130,9 @@
     "href": "geometric-lines.html",
     "category": "Backgrounds",
     "tags": [
-      "Geometric",
-      "Ambient",
-      "Minimal"
+      "geometric",
+      "ambient",
+      "minimal"
     ],
     "description": "",
     "createdAt": "2026-05-17T01:42:36+03:00"
@@ -1143,9 +1143,9 @@
     "href": "git-activity.html",
     "category": "Backgrounds",
     "tags": [
-      "Dev",
-      "Network",
-      "Ambient"
+      "dev",
+      "network",
+      "ambient"
     ],
     "description": "",
     "createdAt": "2026-05-17T01:42:36+03:00"
@@ -1156,11 +1156,11 @@
     "href": "glitch-circle-ring-cam.html",
     "category": "Webcam Borders",
     "tags": [
-      "Shader",
-      "Glitch",
-      "Neon",
-      "Chromatic",
-      "Transparent"
+      "shader",
+      "glitch",
+      "neon",
+      "chromatic",
+      "transparent"
     ],
     "description": "",
     "createdAt": "2026-06-19T18:57:59+03:00"
@@ -1171,10 +1171,10 @@
     "href": "glitch-overlay.html",
     "category": "Overlays",
     "tags": [
-      "VHS",
-      "Glitch",
-      "Cyberpunk",
-      "Transparent"
+      "vhs",
+      "glitch",
+      "cyberpunk",
+      "transparent"
     ],
     "description": "",
     "createdAt": "2026-05-17T01:42:36+03:00"
@@ -1185,12 +1185,12 @@
     "href": "glitch-terminal.html",
     "category": "Backgrounds",
     "tags": [
-      "Glitch",
-      "Terminal",
-      "Lime",
-      "ASCII",
-      "Matrix",
-      "Abstract"
+      "glitch",
+      "terminal",
+      "lime",
+      "ascii",
+      "matrix",
+      "abstract"
     ],
     "description": "",
     "createdAt": "2026-06-19T18:57:59+03:00"
@@ -1201,10 +1201,10 @@
     "href": "glitch-veil.html",
     "category": "Overlays",
     "tags": [
-      "Glitch",
-      "RGB",
-      "Transparent",
-      "Subtle"
+      "glitch",
+      "rgb",
+      "transparent",
+      "subtle"
     ],
     "description": "",
     "createdAt": "2026-06-14T13:10:36+03:00"
@@ -1224,12 +1224,12 @@
     "href": "gold-marble-dots.html",
     "category": "Backgrounds",
     "tags": [
-      "Halftone",
-      "Dots",
-      "Gold",
-      "Marble",
-      "Luxury",
-      "Abstract"
+      "halftone",
+      "dots",
+      "gold",
+      "marble",
+      "luxury",
+      "abstract"
     ],
     "description": "",
     "createdAt": "2026-06-19T18:57:59+03:00"
@@ -1240,14 +1240,14 @@
     "href": "gpu-boids.html",
     "category": "Backgrounds",
     "tags": [
-      "Physics",
-      "Swarm",
-      "AI",
-      "Particle",
-      "Boids",
-      "GPU",
-      "Simulation",
-      "Motion"
+      "physics",
+      "swarm",
+      "ai",
+      "particle",
+      "boids",
+      "gpu",
+      "simulation",
+      "motion"
     ],
     "description": "High-density flocking simulation using GPU-style motion, emergent swarms, and fast particle coordination.",
     "createdAt": "2026-05-17T01:42:36+03:00"
@@ -1258,7 +1258,7 @@
     "href": "graph-bg.html",
     "category": "Backgrounds",
     "tags": [
-      "Generative"
+      "generative"
     ],
     "description": "",
     "createdAt": "2026-04-18T18:25:49+03:00"
@@ -1269,8 +1269,8 @@
     "href": "grass.html",
     "category": "Backgrounds",
     "tags": [
-      "Scene",
-      "Nature"
+      "scene",
+      "nature"
     ],
     "description": "",
     "createdAt": "2026-04-18T11:51:21+03:00"
@@ -1281,8 +1281,8 @@
     "href": "gravity-sphere.html",
     "category": "Particle Systems",
     "tags": [
-      "Particles",
-      "Physics"
+      "particles",
+      "physics"
     ],
     "description": "",
     "createdAt": "2026-04-19T03:01:01+03:00"
@@ -1293,8 +1293,8 @@
     "href": "green-fireball.html",
     "category": "Particle Systems",
     "tags": [
-      "Fire",
-      "Audio"
+      "fire",
+      "audio"
     ],
     "description": "",
     "createdAt": "2026-05-08T17:47:06+03:00"
@@ -1305,11 +1305,11 @@
     "href": "gunan-skeleton.html",
     "category": "3D",
     "tags": [
-      "Three.js",
-      "FBX",
-      "Transparent",
-      "Bust",
-      "Skeleton"
+      "three.js",
+      "fbx",
+      "transparent",
+      "bust",
+      "skeleton"
     ],
     "description": "",
     "createdAt": "2026-05-19T02:18:45+03:00"
@@ -1320,12 +1320,12 @@
     "href": "halftone-fade.html",
     "category": "Backgrounds",
     "tags": [
-      "Halftone",
-      "Dots",
-      "Monochrome",
-      "Fade",
-      "Minimal",
-      "Abstract"
+      "halftone",
+      "dots",
+      "monochrome",
+      "fade",
+      "minimal",
+      "abstract"
     ],
     "description": "",
     "createdAt": "2026-06-19T18:57:59+03:00"
@@ -1336,10 +1336,10 @@
     "href": "halftone-gradient.html",
     "category": "Backgrounds",
     "tags": [
-      "Shader",
-      "Halftone",
-      "Gradient",
-      "Retro"
+      "shader",
+      "halftone",
+      "gradient",
+      "retro"
     ],
     "description": "",
     "createdAt": "2026-06-14T16:26:59+03:00"
@@ -1350,8 +1350,8 @@
     "href": "handwritten-notebook.html",
     "category": "Particle Systems",
     "tags": [
-      "Scene",
-      "Text"
+      "scene",
+      "text"
     ],
     "description": "",
     "createdAt": "2026-05-08T17:47:06+03:00"
@@ -1362,8 +1362,8 @@
     "href": "hex-ripple.html",
     "category": "Particle Systems",
     "tags": [
-      "Geometric",
-      "Wave"
+      "geometric",
+      "wave"
     ],
     "description": "",
     "createdAt": "2026-04-19T13:13:02+03:00"
@@ -1374,12 +1374,12 @@
     "href": "hex-water-island.html",
     "category": "3D",
     "tags": [
-      "Three.js",
-      "Water",
-      "Hexagonal",
-      "Island",
-      "Transparent",
-      "Simulation"
+      "three.js",
+      "water",
+      "hexagonal",
+      "island",
+      "transparent",
+      "simulation"
     ],
     "description": "",
     "createdAt": "2026-05-20T02:08:38+03:00"
@@ -1390,8 +1390,8 @@
     "href": "hexcam.html",
     "category": "Webcam Borders",
     "tags": [
-      "Geometric",
-      "Border"
+      "geometric",
+      "border"
     ],
     "description": "",
     "createdAt": "2026-04-17T21:11:06+03:00"
@@ -1402,8 +1402,8 @@
     "href": "hexgridcam.html",
     "category": "Webcam Borders",
     "tags": [
-      "Geometric",
-      "Border"
+      "geometric",
+      "border"
     ],
     "description": "",
     "createdAt": "2026-04-17T21:11:06+03:00"
@@ -1414,8 +1414,8 @@
     "href": "hexlayercam.html",
     "category": "Webcam Borders",
     "tags": [
-      "Geometric",
-      "Border"
+      "geometric",
+      "border"
     ],
     "description": "",
     "createdAt": "2026-04-17T21:11:06+03:00"
@@ -1426,9 +1426,9 @@
     "href": "hologram-glitch.html",
     "category": "Backgrounds",
     "tags": [
-      "Shader",
-      "Glitch",
-      "Sci-Fi"
+      "shader",
+      "glitch",
+      "sci-fi"
     ],
     "description": "",
     "createdAt": "2026-05-23T18:24:51+03:00"
@@ -1439,8 +1439,8 @@
     "href": "hype-meter-cam.html",
     "category": "Webcam Borders",
     "tags": [
-      "Audio-Reactive",
-      "Border"
+      "audio-reactive",
+      "border"
     ],
     "description": "",
     "createdAt": "2026-05-01T23:11:11+03:00"
@@ -1451,8 +1451,8 @@
     "href": "infinity.html",
     "category": "Particle Systems",
     "tags": [
-      "Loop",
-      "Geometric"
+      "loop",
+      "geometric"
     ],
     "description": "",
     "createdAt": "2026-04-21T16:09:36+03:00"
@@ -1463,9 +1463,9 @@
     "href": "ink-dissolve.html",
     "category": "Backgrounds",
     "tags": [
-      "Fluid",
-      "Artistic",
-      "Atmospheric"
+      "fluid",
+      "artistic",
+      "atmospheric"
     ],
     "description": "",
     "createdAt": "2026-05-23T18:24:51+03:00"
@@ -1476,8 +1476,8 @@
     "href": "ink-in-water.html",
     "category": "Audio Visualizers",
     "tags": [
-      "Audio-Reactive",
-      "Fluid"
+      "audio-reactive",
+      "fluid"
     ],
     "description": "",
     "createdAt": "2026-05-03T14:17:11+03:00"
@@ -1488,8 +1488,8 @@
     "href": "iridescent-blobs.html",
     "category": "Particle Systems",
     "tags": [
-      "Fluid",
-      "Overlay"
+      "fluid",
+      "overlay"
     ],
     "description": "",
     "createdAt": "2026-04-30T09:40:19+03:00"
@@ -1500,9 +1500,9 @@
     "href": "japanese-temple-lofi.html",
     "category": "Backgrounds",
     "tags": [
-      "Scene",
-      "Ambient",
-      "Lofi"
+      "scene",
+      "ambient",
+      "lofi"
     ],
     "description": "",
     "createdAt": "2026-05-17T01:42:36+03:00"
@@ -1513,11 +1513,11 @@
     "href": "jelly-blob-face.html",
     "category": "3D",
     "tags": [
-      "Three.js",
-      "Audio Reactive",
-      "Character",
-      "Soft Body",
-      "3D"
+      "three.js",
+      "audio reactive",
+      "character",
+      "soft body",
+      "3d"
     ],
     "description": "",
     "createdAt": "2026-05-18T02:00:33+03:00"
@@ -1528,11 +1528,11 @@
     "href": "jelly-blobs.html",
     "category": "Backgrounds",
     "tags": [
-      "Jelly",
-      "3D",
-      "Three.js",
-      "Physics",
-      "Soft Body"
+      "jelly",
+      "3d",
+      "three.js",
+      "physics",
+      "soft body"
     ],
     "description": "",
     "createdAt": "2026-05-18T21:49:36+03:00"
@@ -1543,10 +1543,10 @@
     "href": "jelly-ring-cam-border.html",
     "category": "Webcam Borders",
     "tags": [
-      "3D",
-      "Three.js",
-      "Jelly",
-      "Physics"
+      "3d",
+      "three.js",
+      "jelly",
+      "physics"
     ],
     "description": "",
     "createdAt": "2026-05-19T16:55:17+03:00"
@@ -1557,9 +1557,9 @@
     "href": "lava-cell-membrane.html",
     "category": "Backgrounds",
     "tags": [
-      "Shader",
-      "Organic",
-      "Neon"
+      "shader",
+      "organic",
+      "neon"
     ],
     "description": "",
     "createdAt": "2026-06-14T15:17:17+03:00"
@@ -1570,8 +1570,8 @@
     "href": "lavender-dashes-cam.html",
     "category": "Webcam Borders",
     "tags": [
-      "Geometric",
-      "Border"
+      "geometric",
+      "border"
     ],
     "description": "",
     "createdAt": "2026-05-01T02:26:17+03:00"
@@ -1582,8 +1582,8 @@
     "href": "life.html",
     "category": "Particle Systems",
     "tags": [
-      "WebGPU",
-      "Particles"
+      "webgpu",
+      "particles"
     ],
     "description": "",
     "createdAt": "2026-04-19T03:33:23+03:00"
@@ -1603,8 +1603,8 @@
     "href": "linux-boids.html",
     "category": "Particle Systems",
     "tags": [
-      "Boids",
-      "Mascot"
+      "boids",
+      "mascot"
     ],
     "description": "",
     "createdAt": "2026-04-22T23:07:49+03:00"
@@ -1615,8 +1615,8 @@
     "href": "linux-icon-mesh.html",
     "category": "Particle Systems",
     "tags": [
-      "Mesh",
-      "Mascot"
+      "mesh",
+      "mascot"
     ],
     "description": "",
     "createdAt": "2026-04-24T19:48:12+03:00"
@@ -1627,8 +1627,8 @@
     "href": "liquid-aurora-field.html",
     "category": "Audio Visualizers",
     "tags": [
-      "Audio-Reactive",
-      "Fluid"
+      "audio-reactive",
+      "fluid"
     ],
     "description": "",
     "createdAt": "2026-05-03T14:17:11+03:00"
@@ -1639,10 +1639,10 @@
     "href": "liquid-paper-frame.html",
     "category": "Backgrounds",
     "tags": [
-      "Blobs",
-      "Paper Cut",
-      "Halftone",
-      "Frame"
+      "blobs",
+      "paper cut",
+      "halftone",
+      "frame"
     ],
     "description": "",
     "createdAt": "2026-06-14T16:26:59+03:00"
@@ -1653,8 +1653,8 @@
     "href": "lissajous.html",
     "category": "Particle Systems",
     "tags": [
-      "Generative",
-      "Math"
+      "generative",
+      "math"
     ],
     "description": "",
     "createdAt": "2026-04-19T13:13:02+03:00"
@@ -1665,8 +1665,8 @@
     "href": "logo.html",
     "category": "Particle Systems",
     "tags": [
-      "Brand",
-      "Loop"
+      "brand",
+      "loop"
     ],
     "description": "",
     "createdAt": "2026-04-16T02:09:21+03:00"
@@ -1677,12 +1677,12 @@
     "href": "magenta-dot-flow.html",
     "category": "Backgrounds",
     "tags": [
-      "Halftone",
-      "Dots",
-      "Magenta",
-      "Pink",
-      "Fluid",
-      "Abstract"
+      "halftone",
+      "dots",
+      "magenta",
+      "pink",
+      "fluid",
+      "abstract"
     ],
     "description": "",
     "createdAt": "2026-06-19T18:57:59+03:00"
@@ -1693,9 +1693,9 @@
     "href": "magma-core.html",
     "category": "Backgrounds",
     "tags": [
-      "Shader",
-      "Fire",
-      "Atmospheric"
+      "shader",
+      "fire",
+      "atmospheric"
     ],
     "description": "",
     "createdAt": "2026-05-23T18:24:51+03:00"
@@ -1715,8 +1715,8 @@
     "href": "magnetic-field.html",
     "category": "Particle Systems",
     "tags": [
-      "Physics",
-      "Generative"
+      "physics",
+      "generative"
     ],
     "description": "",
     "createdAt": "2026-04-19T03:01:01+03:00"
@@ -1727,8 +1727,8 @@
     "href": "main-audio-activated-border.html",
     "category": "Webcam Borders",
     "tags": [
-      "Audio-Reactive",
-      "Border"
+      "audio-reactive",
+      "border"
     ],
     "description": "",
     "createdAt": "2026-05-02T03:03:20+03:00"
@@ -1739,8 +1739,8 @@
     "href": "main-web-cam-border.html",
     "category": "Webcam Borders",
     "tags": [
-      "Overlay",
-      "Border"
+      "overlay",
+      "border"
     ],
     "description": "",
     "createdAt": "2026-04-18T18:28:36+03:00"
@@ -1751,8 +1751,8 @@
     "href": "matrix-dots.html",
     "category": "Backgrounds",
     "tags": [
-      "Generative",
-      "Loop"
+      "generative",
+      "loop"
     ],
     "description": "",
     "createdAt": "2026-04-17T19:07:21+03:00"
@@ -1763,8 +1763,8 @@
     "href": "maurer-rose.html",
     "category": "Particle Systems",
     "tags": [
-      "Math",
-      "Generative"
+      "math",
+      "generative"
     ],
     "description": "",
     "createdAt": "2026-04-18T23:38:25+03:00"
@@ -1775,12 +1775,12 @@
     "href": "meshy-avatar.html",
     "category": "3D",
     "tags": [
-      "Three.js",
-      "GLB",
-      "Rigged",
-      "Skeleton",
-      "Transparent",
-      "Avatar"
+      "three.js",
+      "glb",
+      "rigged",
+      "skeleton",
+      "transparent",
+      "avatar"
     ],
     "description": "",
     "createdAt": "2026-05-20T02:30:23+03:00"
@@ -1800,8 +1800,8 @@
     "href": "meta-blobs.html",
     "category": "Particle Systems",
     "tags": [
-      "SDF",
-      "Fluid"
+      "sdf",
+      "fluid"
     ],
     "description": "",
     "createdAt": "2026-04-29T19:54:45+03:00"
@@ -1821,9 +1821,9 @@
     "href": "metamorphosis.html",
     "category": "Backgrounds",
     "tags": [
-      "Shader",
-      "Organic",
-      "Generative"
+      "shader",
+      "organic",
+      "generative"
     ],
     "description": "",
     "createdAt": "2026-05-23T18:24:51+03:00"
@@ -1834,8 +1834,8 @@
     "href": "microbial-colony.html",
     "category": "Particle Systems",
     "tags": [
-      "Boids",
-      "Sim"
+      "boids",
+      "sim"
     ],
     "description": "",
     "createdAt": "2026-04-24T19:48:12+03:00"
@@ -1846,8 +1846,8 @@
     "href": "minimalist-gradient-breathing.html",
     "category": "Audio Visualizers",
     "tags": [
-      "Audio-Reactive",
-      "Shader"
+      "audio-reactive",
+      "shader"
     ],
     "description": "",
     "createdAt": "2026-05-03T14:17:11+03:00"
@@ -1858,11 +1858,11 @@
     "href": "monolithic-black-geometry.html",
     "category": "Backgrounds",
     "tags": [
-      "Geometry",
-      "Dark",
-      "Emissive",
-      "Procedural",
-      "High-End"
+      "geometry",
+      "dark",
+      "emissive",
+      "procedural",
+      "high-end"
     ],
     "description": "",
     "createdAt": "2026-05-17T15:34:25+03:00"
@@ -1873,8 +1873,8 @@
     "href": "mountain-night-railway.html",
     "category": "Backgrounds",
     "tags": [
-      "Scene",
-      "Parallax"
+      "scene",
+      "parallax"
     ],
     "description": "",
     "createdAt": "2026-04-25T19:44:06+03:00"
@@ -1885,8 +1885,8 @@
     "href": "music-break.html",
     "category": "Particle Systems",
     "tags": [
-      "Audio-Reactive",
-      "Scene"
+      "audio-reactive",
+      "scene"
     ],
     "description": "",
     "createdAt": "2026-04-16T13:25:11+03:00"
@@ -1897,8 +1897,8 @@
     "href": "mycelium-network.html",
     "category": "Particle Systems",
     "tags": [
-      "Generative",
-      "Sim"
+      "generative",
+      "sim"
     ],
     "description": "",
     "createdAt": "2026-05-03T14:17:11+03:00"
@@ -1909,8 +1909,8 @@
     "href": "nbody.html",
     "category": "Particle Systems",
     "tags": [
-      "Physics",
-      "Space"
+      "physics",
+      "space"
     ],
     "description": "",
     "createdAt": "2026-04-19T13:58:14+03:00"
@@ -1921,8 +1921,8 @@
     "href": "nebula.html",
     "category": "Backgrounds",
     "tags": [
-      "Shader",
-      "Space"
+      "shader",
+      "space"
     ],
     "description": "",
     "createdAt": "2026-04-19T13:58:14+03:00"
@@ -1933,9 +1933,9 @@
     "href": "neon-drip.html",
     "category": "Backgrounds",
     "tags": [
-      "Shader",
-      "Neon",
-      "Artistic"
+      "shader",
+      "neon",
+      "artistic"
     ],
     "description": "",
     "createdAt": "2026-05-23T18:24:51+03:00"
@@ -1955,12 +1955,12 @@
     "href": "neon-ribbon-pattern.html",
     "category": "Backgrounds",
     "tags": [
-      "Pattern",
-      "Neon",
-      "Loop"
+      "pattern",
+      "neon",
+      "loop"
     ],
     "description": "",
-    "createdAt": "2026-06-19T15:06:55.998Z"
+    "createdAt": "2026-06-19T19:20:08+03:00"
   },
   {
     "slug": "neon-starburst",
@@ -1968,11 +1968,11 @@
     "href": "neon-starburst.html",
     "category": "Backgrounds",
     "tags": [
-      "Neon",
-      "Starburst",
-      "Psychedelic",
-      "Lime",
-      "Magenta"
+      "neon",
+      "starburst",
+      "psychedelic",
+      "lime",
+      "magenta"
     ],
     "description": "",
     "createdAt": "2026-06-19T18:57:59+03:00"
@@ -1983,12 +1983,12 @@
     "href": "neon-topo.html",
     "category": "Backgrounds",
     "tags": [
-      "Topo",
-      "Contour",
-      "Red",
-      "Pink",
-      "Neon",
-      "Abstract"
+      "topo",
+      "contour",
+      "red",
+      "pink",
+      "neon",
+      "abstract"
     ],
     "description": "",
     "createdAt": "2026-06-19T18:57:59+03:00"
@@ -1999,9 +1999,9 @@
     "href": "neon-vein-network.html",
     "category": "Backgrounds",
     "tags": [
-      "Shader",
-      "Organic",
-      "Loop"
+      "shader",
+      "organic",
+      "loop"
     ],
     "description": "",
     "createdAt": "2026-06-14T15:17:17+03:00"
@@ -2012,9 +2012,9 @@
     "href": "network-surge.html",
     "category": "Backgrounds",
     "tags": [
-      "Physics",
-      "Network",
-      "Ambient"
+      "physics",
+      "network",
+      "ambient"
     ],
     "description": "",
     "createdAt": "2026-05-17T01:42:36+03:00"
@@ -2025,12 +2025,12 @@
     "href": "neural-datacenter.html",
     "category": "Uncategorized",
     "tags": [
-      "Tech",
-      "Neural",
-      "Datacenter",
-      "Network",
-      "Sci-Fi",
-      "Grid"
+      "tech",
+      "neural",
+      "datacenter",
+      "network",
+      "sci-fi",
+      "grid"
     ],
     "description": "Futuristic datacenter scene with neural signal motifs, grid depth, and abstract infrastructure visualization.",
     "createdAt": "2026-05-17T01:42:36+03:00"
@@ -2041,8 +2041,8 @@
     "href": "night-city-horizon.html",
     "category": "Backgrounds",
     "tags": [
-      "Scene",
-      "Parallax"
+      "scene",
+      "parallax"
     ],
     "description": "",
     "createdAt": "2026-04-24T19:48:12+03:00"
@@ -2053,13 +2053,13 @@
     "href": "octocat-robot.html",
     "category": "3D",
     "tags": [
-      "Three.js",
-      "GitHub",
-      "Octocat",
-      "Robot",
-      "Tentacles",
-      "Cinematic",
-      "Bloom"
+      "three.js",
+      "github",
+      "octocat",
+      "robot",
+      "tentacles",
+      "cinematic",
+      "bloom"
     ],
     "description": "",
     "createdAt": "2026-05-18T21:49:36+03:00"
@@ -2070,8 +2070,8 @@
     "href": "orbital-mechanics.html",
     "category": "Particle Systems",
     "tags": [
-      "Physics",
-      "Space"
+      "physics",
+      "space"
     ],
     "description": "",
     "createdAt": "2026-04-19T13:58:14+03:00"
@@ -2082,10 +2082,10 @@
     "href": "paint-vortex.html",
     "category": "Backgrounds",
     "tags": [
-      "Shader",
-      "Spiral",
-      "Paint",
-      "Vortex"
+      "shader",
+      "spiral",
+      "paint",
+      "vortex"
     ],
     "description": "",
     "createdAt": "2026-06-19T18:57:59+03:00"
@@ -2096,10 +2096,10 @@
     "href": "particle-border-overlay.html",
     "category": "Overlays",
     "tags": [
-      "Particles",
-      "Border",
-      "Transparent",
-      "Ambient"
+      "particles",
+      "border",
+      "transparent",
+      "ambient"
     ],
     "description": "",
     "createdAt": "2026-05-17T01:42:36+03:00"
@@ -2110,8 +2110,8 @@
     "href": "particle-constellation.html",
     "category": "Audio Visualizers",
     "tags": [
-      "Audio-Reactive",
-      "Particles"
+      "audio-reactive",
+      "particles"
     ],
     "description": "",
     "createdAt": "2026-05-03T14:17:11+03:00"
@@ -2122,12 +2122,12 @@
     "href": "particle-globe.html",
     "category": "Particle Systems",
     "tags": [
-      "3D",
-      "Globe",
-      "Particle",
-      "Blue",
-      "Network",
-      "Space"
+      "3d",
+      "globe",
+      "particle",
+      "blue",
+      "network",
+      "space"
     ],
     "description": "Depth-sorted particle globe built from luminous points and orbital connections for a clean planet-like data visualization.",
     "createdAt": "2026-04-19T03:51:36+03:00"
@@ -2138,8 +2138,8 @@
     "href": "particle-splash.html",
     "category": "Particle Systems",
     "tags": [
-      "Particles",
-      "Physics"
+      "particles",
+      "physics"
     ],
     "description": "",
     "createdAt": "2026-04-19T03:01:01+03:00"
@@ -2150,10 +2150,10 @@
     "href": "particle-swarm-excitement.html",
     "category": "Backgrounds",
     "tags": [
-      "Audio",
-      "Swarm",
-      "AI",
-      "Physics"
+      "audio",
+      "swarm",
+      "ai",
+      "physics"
     ],
     "description": "",
     "createdAt": "2026-05-17T01:42:36+03:00"
@@ -2164,8 +2164,8 @@
     "href": "pcb-bg.html",
     "category": "Backgrounds",
     "tags": [
-      "Scene",
-      "Tech"
+      "scene",
+      "tech"
     ],
     "description": "",
     "createdAt": "2026-04-19T20:56:53+03:00"
@@ -2176,8 +2176,8 @@
     "href": "perlin-blobs.html",
     "category": "Particle Systems",
     "tags": [
-      "Fluid",
-      "Sim"
+      "fluid",
+      "sim"
     ],
     "description": "",
     "createdAt": "2026-04-18T23:38:25+03:00"
@@ -2188,16 +2188,16 @@
     "href": "physarum-gol.html",
     "category": "Backgrounds",
     "tags": [
-      "Biology",
-      "Swarm",
-      "GPU",
-      "Shader",
-      "Cellular",
-      "Physarum",
-      "Simulation",
-      "Organic",
-      "Growth",
-      "Generative"
+      "biology",
+      "swarm",
+      "gpu",
+      "shader",
+      "cellular",
+      "physarum",
+      "simulation",
+      "organic",
+      "growth",
+      "generative"
     ],
     "description": "Hybrid cellular automata and physarum-inspired growth pattern with living texture and emergent structure.",
     "createdAt": "2026-05-17T01:42:36+03:00"
@@ -2208,8 +2208,8 @@
     "href": "physics-particles.html",
     "category": "Particle Systems",
     "tags": [
-      "Physics",
-      "Particles"
+      "physics",
+      "particles"
     ],
     "description": "",
     "createdAt": "2026-04-30T18:43:00+03:00"
@@ -2220,8 +2220,8 @@
     "href": "planet.html",
     "category": "Particle Systems",
     "tags": [
-      "3D",
-      "Space"
+      "3d",
+      "space"
     ],
     "description": "",
     "createdAt": "2026-04-17T17:06:24+03:00"
@@ -2232,8 +2232,8 @@
     "href": "planet-circle-webcam-border.html",
     "category": "Webcam Borders",
     "tags": [
-      "Overlay",
-      "3D"
+      "overlay",
+      "3d"
     ],
     "description": "",
     "createdAt": "2026-04-18T18:28:36+03:00"
@@ -2244,13 +2244,13 @@
     "href": "planet-hologram.html",
     "category": "Particle Systems",
     "tags": [
-      "Shader",
-      "3D",
-      "Planet",
-      "Hologram",
-      "Sci-Fi",
-      "Blue",
-      "Scanlines"
+      "shader",
+      "3d",
+      "planet",
+      "hologram",
+      "sci-fi",
+      "blue",
+      "scanlines"
     ],
     "description": "Holographic planet display with translucent scan lines, orbital accents, and sci-fi projection styling.",
     "createdAt": "2026-04-19T03:01:01+03:00"
@@ -2261,8 +2261,8 @@
     "href": "plasma-wave.html",
     "category": "Backgrounds",
     "tags": [
-      "Shader",
-      "Loop"
+      "shader",
+      "loop"
     ],
     "description": "",
     "createdAt": "2026-04-19T13:28:28+03:00"
@@ -2273,8 +2273,8 @@
     "href": "plexus-constellation.html",
     "category": "Particle Systems",
     "tags": [
-      "Particles",
-      "Mesh"
+      "particles",
+      "mesh"
     ],
     "description": "",
     "createdAt": "2026-04-19T03:01:01+03:00"
@@ -2285,9 +2285,9 @@
     "href": "prism-biofoam.html",
     "category": "Backgrounds",
     "tags": [
-      "Shader",
-      "Organic",
-      "Color"
+      "shader",
+      "organic",
+      "color"
     ],
     "description": "",
     "createdAt": "2026-06-14T15:17:17+03:00"
@@ -2298,8 +2298,8 @@
     "href": "procedural-logo.html",
     "category": "Particle Systems",
     "tags": [
-      "Brand",
-      "Generative"
+      "brand",
+      "generative"
     ],
     "description": "",
     "createdAt": "2026-04-23T20:59:28+03:00"
@@ -2310,10 +2310,10 @@
     "href": "psychedelic-marble.html",
     "category": "Backgrounds",
     "tags": [
-      "Shader",
-      "Groovy",
-      "Marble",
-      "Psychedelic"
+      "shader",
+      "groovy",
+      "marble",
+      "psychedelic"
     ],
     "description": "",
     "createdAt": "2026-06-19T18:57:59+03:00"
@@ -2324,8 +2324,8 @@
     "href": "radial-energy-core.html",
     "category": "Audio Visualizers",
     "tags": [
-      "Audio-Reactive",
-      "Shader"
+      "audio-reactive",
+      "shader"
     ],
     "description": "",
     "createdAt": "2026-05-03T14:17:11+03:00"
@@ -2336,8 +2336,8 @@
     "href": "rain.html",
     "category": "Backgrounds",
     "tags": [
-      "Atmospheric",
-      "Loop"
+      "atmospheric",
+      "loop"
     ],
     "description": "",
     "createdAt": "2026-04-17T22:51:00+03:00"
@@ -2348,10 +2348,10 @@
     "href": "rain-on-glass.html",
     "category": "Overlays",
     "tags": [
-      "Rain",
-      "Shader",
-      "Transparent",
-      "Atmospheric"
+      "rain",
+      "shader",
+      "transparent",
+      "atmospheric"
     ],
     "description": "",
     "createdAt": "2026-05-17T01:42:36+03:00"
@@ -2362,9 +2362,9 @@
     "href": "rain-umbrella.html",
     "category": "Backgrounds",
     "tags": [
-      "Atmospheric",
-      "Rain",
-      "Scene"
+      "atmospheric",
+      "rain",
+      "scene"
     ],
     "description": "",
     "createdAt": "2026-05-23T18:24:51+03:00"
@@ -2384,11 +2384,11 @@
     "href": "rainbow-lightning-ring-cam.html",
     "category": "Webcam Borders",
     "tags": [
-      "Shader",
-      "Rainbow",
-      "Lightning",
-      "Ring",
-      "Transparent"
+      "shader",
+      "rainbow",
+      "lightning",
+      "ring",
+      "transparent"
     ],
     "description": "",
     "createdAt": "2026-06-19T18:57:59+03:00"
@@ -2399,11 +2399,11 @@
     "href": "reactive-energy-membrane.html",
     "category": "Backgrounds",
     "tags": [
-      "Mesh",
-      "Organic",
-      "Procedural",
-      "Purple",
-      "Breathing"
+      "mesh",
+      "organic",
+      "procedural",
+      "purple",
+      "breathing"
     ],
     "description": "",
     "createdAt": "2026-05-17T15:34:25+03:00"
@@ -2414,10 +2414,10 @@
     "href": "retro-screen-filter.html",
     "category": "Overlays",
     "tags": [
-      "CRT",
-      "Grid",
-      "Transparent",
-      "Subtle"
+      "crt",
+      "grid",
+      "transparent",
+      "subtle"
     ],
     "description": "",
     "createdAt": "2026-05-18T21:49:36+03:00"
@@ -2428,10 +2428,10 @@
     "href": "sci-fi-hud.html",
     "category": "Backgrounds",
     "tags": [
-      "HUD",
-      "Hologram",
-      "Radar",
-      "Ambient"
+      "hud",
+      "hologram",
+      "radar",
+      "ambient"
     ],
     "description": "",
     "createdAt": "2026-05-17T01:42:36+03:00"
@@ -2442,8 +2442,8 @@
     "href": "screen-capture-border.html",
     "category": "Webcam Borders",
     "tags": [
-      "Fluid",
-      "Overlay"
+      "fluid",
+      "overlay"
     ],
     "description": "",
     "createdAt": "2026-05-18T21:49:36+03:00"
@@ -2454,9 +2454,9 @@
     "href": "sequin-wave.html",
     "category": "Backgrounds",
     "tags": [
-      "Shader",
-      "Geometric",
-      "Loop"
+      "shader",
+      "geometric",
+      "loop"
     ],
     "description": "",
     "createdAt": "2026-05-23T18:24:51+03:00"
@@ -2467,9 +2467,9 @@
     "href": "shifting-veils.html",
     "category": "Backgrounds",
     "tags": [
-      "Shader",
-      "Fluid",
-      "Atmospheric"
+      "shader",
+      "fluid",
+      "atmospheric"
     ],
     "description": "",
     "createdAt": "2026-05-23T18:24:51+03:00"
@@ -2489,8 +2489,8 @@
     "href": "shock-wave.html",
     "category": "Particle Systems",
     "tags": [
-      "Physics",
-      "Space"
+      "physics",
+      "space"
     ],
     "description": "",
     "createdAt": "2026-04-19T13:58:14+03:00"
@@ -2501,8 +2501,8 @@
     "href": "simple-web-cam-border.html",
     "category": "Webcam Borders",
     "tags": [
-      "Overlay",
-      "Border"
+      "overlay",
+      "border"
     ],
     "description": "",
     "createdAt": "2026-04-18T18:28:36+03:00"
@@ -2513,14 +2513,14 @@
     "href": "slime-mold-network.html",
     "category": "Backgrounds",
     "tags": [
-      "Biology",
-      "Network",
-      "Particles",
-      "Organic",
-      "Bioluminescent",
-      "Slime Mold",
-      "Growth",
-      "Particle"
+      "biology",
+      "network",
+      "particles",
+      "organic",
+      "bioluminescent",
+      "slime mold",
+      "growth",
+      "particle"
     ],
     "description": "Organic slime-mold network with branching trails, glowing paths, and adaptive colony-like growth.",
     "createdAt": "2026-05-17T15:34:25+03:00"
@@ -2531,8 +2531,8 @@
     "href": "smoke-bar.html",
     "category": "Webcam Borders",
     "tags": [
-      "Fluid",
-      "Overlay"
+      "fluid",
+      "overlay"
     ],
     "description": "",
     "createdAt": "2026-04-19T15:37:53+03:00"
@@ -2543,8 +2543,8 @@
     "href": "smoke-ring-cam.html",
     "category": "Webcam Borders",
     "tags": [
-      "Fluid",
-      "Border"
+      "fluid",
+      "border"
     ],
     "description": "",
     "createdAt": "2026-04-19T19:49:50+03:00"
@@ -2555,9 +2555,9 @@
     "href": "smolder.html",
     "category": "Backgrounds",
     "tags": [
-      "Shader",
-      "Fire",
-      "Atmospheric"
+      "shader",
+      "fire",
+      "atmospheric"
     ],
     "description": "",
     "createdAt": "2026-05-23T18:24:51+03:00"
@@ -2577,10 +2577,10 @@
     "href": "soft-body-cube.html",
     "category": "3D",
     "tags": [
-      "Three.js",
-      "Physics",
-      "Soft Body",
-      "3D"
+      "three.js",
+      "physics",
+      "soft body",
+      "3d"
     ],
     "description": "",
     "createdAt": "2026-05-17T01:42:36+03:00"
@@ -2591,9 +2591,9 @@
     "href": "soft-body-organisms.html",
     "category": "Backgrounds",
     "tags": [
-      "Physics",
-      "Soft-Body",
-      "Verlet"
+      "physics",
+      "soft-body",
+      "verlet"
     ],
     "description": "",
     "createdAt": "2026-05-17T01:42:36+03:00"
@@ -2604,10 +2604,10 @@
     "href": "soft-vol-fog.html",
     "category": "Overlays",
     "tags": [
-      "Fog",
-      "Ambient",
-      "Transparent",
-      "Interactive"
+      "fog",
+      "ambient",
+      "transparent",
+      "interactive"
     ],
     "description": "",
     "createdAt": "2026-05-17T09:15:40+03:00"
@@ -2618,13 +2618,13 @@
     "href": "solar-system.html",
     "category": "Backgrounds",
     "tags": [
-      "3D",
-      "Space",
-      "Three.js",
-      "Planet",
-      "Orbit",
-      "Simulation",
-      "Loop"
+      "3d",
+      "space",
+      "three.js",
+      "planet",
+      "orbit",
+      "simulation",
+      "loop"
     ],
     "description": "Procedural solar system visualization with orbiting bodies, orbital paths, and layered space motion.",
     "createdAt": "2026-05-18T07:35:06+03:00"
@@ -2635,8 +2635,8 @@
     "href": "solar-wind.html",
     "category": "Particle Systems",
     "tags": [
-      "Physics",
-      "Space"
+      "physics",
+      "space"
     ],
     "description": "",
     "createdAt": "2026-04-19T13:58:14+03:00"
@@ -2647,14 +2647,14 @@
     "href": "space-earth.html",
     "category": "Backgrounds",
     "tags": [
-      "3D",
-      "Space",
-      "PixiJS",
-      "Three.js",
-      "Earth",
-      "Planet",
-      "Atmosphere",
-      "Globe"
+      "3d",
+      "space",
+      "pixijs",
+      "three.js",
+      "earth",
+      "planet",
+      "atmosphere",
+      "globe"
     ],
     "description": "Earth-in-space scene with atmospheric glow, orbital framing, and a broadcast-ready cosmic background feel.",
     "createdAt": "2026-05-20T14:55:14+03:00"
@@ -2665,8 +2665,8 @@
     "href": "space-war-boids.html",
     "category": "Particle Systems",
     "tags": [
-      "Boids",
-      "Combat"
+      "boids",
+      "combat"
     ],
     "description": "",
     "createdAt": "2026-04-30T20:35:55+03:00"
@@ -2677,8 +2677,8 @@
     "href": "sph.html",
     "category": "Particle Systems",
     "tags": [
-      "Physics",
-      "Fluid"
+      "physics",
+      "fluid"
     ],
     "description": "",
     "createdAt": "2026-04-19T13:58:14+03:00"
@@ -2689,8 +2689,8 @@
     "href": "spiral-pull.html",
     "category": "Backgrounds",
     "tags": [
-      "Shader",
-      "Loop"
+      "shader",
+      "loop"
     ],
     "description": "",
     "createdAt": "2026-04-19T13:28:28+03:00"
@@ -2701,8 +2701,8 @@
     "href": "star-field.html",
     "category": "Backgrounds",
     "tags": [
-      "Space",
-      "Loop"
+      "space",
+      "loop"
     ],
     "description": "",
     "createdAt": "2026-04-18T23:38:25+03:00"
@@ -2713,8 +2713,8 @@
     "href": "starting-soon.html",
     "category": "Particle Systems",
     "tags": [
-      "Scene",
-      "Text"
+      "scene",
+      "text"
     ],
     "description": "",
     "createdAt": "2026-04-18T18:28:36+03:00"
@@ -2725,8 +2725,8 @@
     "href": "starting-soon-fluid.html",
     "category": "Particle Systems",
     "tags": [
-      "Fluid",
-      "Text"
+      "fluid",
+      "text"
     ],
     "description": "",
     "createdAt": "2026-04-23T18:25:30+03:00"
@@ -2737,8 +2737,8 @@
     "href": "starting-soon-jelly.html",
     "category": "Particle Systems",
     "tags": [
-      "Fluid",
-      "Text"
+      "fluid",
+      "text"
     ],
     "description": "",
     "createdAt": "2026-05-07T22:47:32+03:00"
@@ -2749,8 +2749,8 @@
     "href": "starting-soon-particle-mesh.html",
     "category": "Particle Systems",
     "tags": [
-      "Mesh",
-      "Text"
+      "mesh",
+      "text"
     ],
     "description": "",
     "createdAt": "2026-04-24T19:48:12+03:00"
@@ -2761,13 +2761,13 @@
     "href": "stippled-geodesic.html",
     "category": "Particle Systems",
     "tags": [
-      "Particles",
-      "3D",
-      "Geodesic",
-      "Particle",
-      "Stipple",
-      "Mesh",
-      "Sphere"
+      "particles",
+      "3d",
+      "geodesic",
+      "particle",
+      "stipple",
+      "mesh",
+      "sphere"
     ],
     "description": "Geodesic form expressed through stippled points and subtle connective structure for a scientific scan aesthetic.",
     "createdAt": "2026-04-22T20:01:16+03:00"
@@ -2778,8 +2778,8 @@
     "href": "stream-ended-particle-mesh.html",
     "category": "Particle Systems",
     "tags": [
-      "Mesh",
-      "Text"
+      "mesh",
+      "text"
     ],
     "description": "",
     "createdAt": "2026-04-24T19:48:12+03:00"
@@ -2790,10 +2790,10 @@
     "href": "sunken-light.html",
     "category": "Backgrounds",
     "tags": [
-      "Shader",
-      "Underwater",
-      "Caustics",
-      "Cinematic"
+      "shader",
+      "underwater",
+      "caustics",
+      "cinematic"
     ],
     "description": "",
     "createdAt": "2026-06-14T13:10:36+03:00"
@@ -2804,9 +2804,9 @@
     "href": "synth-ribbon.html",
     "category": "Backgrounds",
     "tags": [
-      "Shader",
-      "Neon",
-      "Loop"
+      "shader",
+      "neon",
+      "loop"
     ],
     "description": "",
     "createdAt": "2026-05-23T18:24:51+03:00"
@@ -2826,10 +2826,10 @@
     "href": "three-ring-cam-border.html",
     "category": "Webcam Borders",
     "tags": [
-      "3D",
-      "Three.js",
-      "Sparks",
-      "Lightning"
+      "3d",
+      "three.js",
+      "sparks",
+      "lightning"
     ],
     "description": "",
     "createdAt": "2026-05-19T16:55:17+03:00"
@@ -2840,8 +2840,8 @@
     "href": "title-powerline.html",
     "category": "Particle Systems",
     "tags": [
-      "Overlay",
-      "Text"
+      "overlay",
+      "text"
     ],
     "description": "",
     "createdAt": "2026-04-16T02:09:21+03:00"
@@ -2852,8 +2852,8 @@
     "href": "topo-landscape.html",
     "category": "Backgrounds",
     "tags": [
-      "Generative",
-      "Terrain"
+      "generative",
+      "terrain"
     ],
     "description": "",
     "createdAt": "2026-04-21T16:09:36+03:00"
@@ -2864,8 +2864,8 @@
     "href": "topography.html",
     "category": "Backgrounds",
     "tags": [
-      "Generative",
-      "Terrain"
+      "generative",
+      "terrain"
     ],
     "description": "",
     "createdAt": "2026-04-23T18:25:30+03:00"
@@ -2876,8 +2876,8 @@
     "href": "trapcam.html",
     "category": "Webcam Borders",
     "tags": [
-      "Audio-Reactive",
-      "Border"
+      "audio-reactive",
+      "border"
     ],
     "description": "",
     "createdAt": "2026-04-17T19:54:00+03:00"
@@ -2888,8 +2888,8 @@
     "href": "trapnation.html",
     "category": "Audio Visualizers",
     "tags": [
-      "Audio-Reactive",
-      "Visualizer"
+      "audio-reactive",
+      "visualizer"
     ],
     "description": "",
     "createdAt": "2026-04-24T01:54:08+03:00"
@@ -2900,8 +2900,8 @@
     "href": "triangulation.html",
     "category": "Particle Systems",
     "tags": [
-      "Mesh",
-      "Generative"
+      "mesh",
+      "generative"
     ],
     "description": "",
     "createdAt": "2026-04-17T22:36:07+03:00"
@@ -2912,13 +2912,13 @@
     "href": "tunnel-vortex.html",
     "category": "Backgrounds",
     "tags": [
-      "Shader",
-      "Loop",
-      "Tunnel",
-      "Vortex",
-      "Motion",
-      "Perspective",
-      "Background"
+      "shader",
+      "loop",
+      "tunnel",
+      "vortex",
+      "motion",
+      "perspective",
+      "background"
     ],
     "description": "Animated vortex tunnel with layered rings and perspective motion for a fast procedural background.",
     "createdAt": "2026-04-19T13:28:28+03:00"
@@ -2929,8 +2929,8 @@
     "href": "tux-blob.html",
     "category": "Particle Systems",
     "tags": [
-      "Mascot",
-      "Fluid"
+      "mascot",
+      "fluid"
     ],
     "description": "",
     "createdAt": "2026-04-28T23:57:18+03:00"
@@ -2941,12 +2941,12 @@
     "href": "tux-penguin.html",
     "category": "3D",
     "tags": [
-      "Three.js",
-      "GLB",
-      "Linux",
-      "Tux",
-      "Transparent",
-      "Character"
+      "three.js",
+      "glb",
+      "linux",
+      "tux",
+      "transparent",
+      "character"
     ],
     "description": "",
     "createdAt": "2026-05-22T18:17:00+03:00"
@@ -2957,8 +2957,8 @@
     "href": "ua-red-black-mesh.html",
     "category": "Particle Systems",
     "tags": [
-      "Mesh",
-      "Flag"
+      "mesh",
+      "flag"
     ],
     "description": "",
     "createdAt": "2026-05-01T22:16:14+03:00"
@@ -2969,8 +2969,8 @@
     "href": "ukrainian-wave-mesh.html",
     "category": "Particle Systems",
     "tags": [
-      "Mesh",
-      "Flag"
+      "mesh",
+      "flag"
     ],
     "description": "",
     "createdAt": "2026-05-01T21:56:08+03:00"
@@ -2981,8 +2981,8 @@
     "href": "vector-field-bg.html",
     "category": "Backgrounds",
     "tags": [
-      "Generative",
-      "Particles"
+      "generative",
+      "particles"
     ],
     "description": "",
     "createdAt": "2026-05-03T14:17:11+03:00"
@@ -2993,9 +2993,9 @@
     "href": "velvet-spotlight.html",
     "category": "Backgrounds",
     "tags": [
-      "Shader",
-      "Atmospheric",
-      "Subtle"
+      "shader",
+      "atmospheric",
+      "subtle"
     ],
     "description": "",
     "createdAt": "2026-05-23T18:24:51+03:00"
@@ -3006,8 +3006,8 @@
     "href": "verlet-cloth.html",
     "category": "Particle Systems",
     "tags": [
-      "Physics",
-      "Cloth"
+      "physics",
+      "cloth"
     ],
     "description": "",
     "createdAt": "2026-04-19T13:58:14+03:00"
@@ -3018,8 +3018,8 @@
     "href": "void-implode.html",
     "category": "Particle Systems",
     "tags": [
-      "Catppuccin",
-      "Implosion"
+      "catppuccin",
+      "implosion"
     ],
     "description": "",
     "createdAt": "2026-05-09T12:33:38+03:00"
@@ -3030,8 +3030,8 @@
     "href": "voronoi-stippling.html",
     "category": "Particle Systems",
     "tags": [
-      "Generative",
-      "Stippling"
+      "generative",
+      "stippling"
     ],
     "description": "",
     "createdAt": "2026-04-22T19:26:50+03:00"
@@ -3042,11 +3042,11 @@
     "href": "warp-tunnel-rush.html",
     "category": "Backgrounds",
     "tags": [
-      "Three.js",
-      "3D",
-      "Tunnel",
-      "Cel Shader",
-      "Anime"
+      "three.js",
+      "3d",
+      "tunnel",
+      "cel shader",
+      "anime"
     ],
     "description": "",
     "createdAt": "2026-06-19T18:57:59+03:00"
@@ -3057,11 +3057,11 @@
     "href": "water-goldfish.html",
     "category": "Backgrounds",
     "tags": [
-      "Shader",
-      "Water",
-      "Caustics",
-      "Boids",
-      "Goldfish"
+      "shader",
+      "water",
+      "caustics",
+      "boids",
+      "goldfish"
     ],
     "description": "",
     "createdAt": "2026-06-19T18:57:59+03:00"
@@ -3072,11 +3072,11 @@
     "href": "water-splash-ring-cam.html",
     "category": "Webcam Borders",
     "tags": [
-      "Shader",
-      "Water",
-      "Splash",
-      "Ring",
-      "Transparent"
+      "shader",
+      "water",
+      "splash",
+      "ring",
+      "transparent"
     ],
     "description": "",
     "createdAt": "2026-06-19T18:57:59+03:00"
@@ -3087,8 +3087,8 @@
     "href": "wave-border-cam.html",
     "category": "Webcam Borders",
     "tags": [
-      "Fluid",
-      "Border"
+      "fluid",
+      "border"
     ],
     "description": "",
     "createdAt": "2026-04-25T08:07:59+03:00"
@@ -3099,9 +3099,9 @@
     "href": "wave-interference.html",
     "category": "Backgrounds",
     "tags": [
-      "Physics",
-      "Waves",
-      "Scientific"
+      "physics",
+      "waves",
+      "scientific"
     ],
     "description": "",
     "createdAt": "2026-05-17T01:42:36+03:00"
@@ -3112,9 +3112,9 @@
     "href": "wave-simulation.html",
     "category": "Backgrounds",
     "tags": [
-      "Physics",
-      "Waves",
-      "Ambient"
+      "physics",
+      "waves",
+      "ambient"
     ],
     "description": "",
     "createdAt": "2026-05-17T01:42:36+03:00"
@@ -3125,8 +3125,8 @@
     "href": "wavecam.html",
     "category": "Webcam Borders",
     "tags": [
-      "Fluid",
-      "Border"
+      "fluid",
+      "border"
     ],
     "description": "",
     "createdAt": "2026-04-17T19:42:31+03:00"
@@ -3137,8 +3137,8 @@
     "href": "wavy-cam.html",
     "category": "Webcam Borders",
     "tags": [
-      "Fluid",
-      "Border"
+      "fluid",
+      "border"
     ],
     "description": "",
     "createdAt": "2026-04-22T23:14:50+03:00"
@@ -3149,13 +3149,13 @@
     "href": "wavy-planet-mesh.html",
     "category": "Particle Systems",
     "tags": [
-      "3D",
-      "Globe",
-      "Mesh",
-      "Fluid",
-      "Blue",
-      "Particle",
-      "Topography"
+      "3d",
+      "globe",
+      "mesh",
+      "fluid",
+      "blue",
+      "particle",
+      "topography"
     ],
     "description": "Rotating latitude and longitude mesh sphere with layered wave displacement, depth-aware dots, and calm topographic surface motion.",
     "createdAt": "2026-04-24T19:48:12+03:00"
@@ -3166,13 +3166,13 @@
     "href": "wireframe-icosphere.html",
     "category": "Particle Systems",
     "tags": [
-      "3D",
-      "Geometric",
-      "Wireframe",
-      "Sphere",
-      "Geometry",
-      "Mesh",
-      "Loop"
+      "3d",
+      "geometric",
+      "wireframe",
+      "sphere",
+      "geometry",
+      "mesh",
+      "loop"
     ],
     "description": "Rotating icosphere rendered as a clean wireframe shell with depth and angular geometric motion.",
     "createdAt": "2026-04-19T13:13:02+03:00"
@@ -3192,8 +3192,8 @@
     "href": "wireframe-sphere-cam.html",
     "category": "Webcam Borders",
     "tags": [
-      "3D",
-      "Border"
+      "3d",
+      "border"
     ],
     "description": "",
     "createdAt": "2026-04-19T14:21:09+03:00"
@@ -3204,13 +3204,13 @@
     "href": "wormhole-dive.html",
     "category": "Backgrounds",
     "tags": [
-      "Shader",
-      "Space",
-      "Tunnel",
-      "Vortex",
-      "Sci-Fi",
-      "Warp",
-      "Motion"
+      "shader",
+      "space",
+      "tunnel",
+      "vortex",
+      "sci-fi",
+      "warp",
+      "motion"
     ],
     "description": "Forward-motion wormhole tunnel with streaked depth cues and a high-energy dive through abstract space.",
     "createdAt": "2026-05-03T14:17:11+03:00"
@@ -3221,9 +3221,9 @@
     "href": "worxbend-3d-text.html",
     "category": "3D",
     "tags": [
-      "Three.js",
-      "Brand",
-      "Text"
+      "three.js",
+      "brand",
+      "text"
     ],
     "description": "",
     "createdAt": "2026-05-19T16:55:17+03:00"
@@ -3234,8 +3234,8 @@
     "href": "worxbend-fluid.html",
     "category": "Particle Systems",
     "tags": [
-      "Fluid",
-      "Brand"
+      "fluid",
+      "brand"
     ],
     "description": "",
     "createdAt": "2026-04-23T17:08:46+03:00"
@@ -3246,8 +3246,8 @@
     "href": "worxbend-molecular.html",
     "category": "Particle Systems",
     "tags": [
-      "Particles",
-      "Brand"
+      "particles",
+      "brand"
     ],
     "description": "",
     "createdAt": "2026-04-23T17:08:46+03:00"
@@ -3258,8 +3258,8 @@
     "href": "worxbend-text.html",
     "category": "Particle Systems",
     "tags": [
-      "Particles",
-      "Text"
+      "particles",
+      "text"
     ],
     "description": "",
     "createdAt": "2026-04-23T17:08:46+03:00"
@@ -3270,11 +3270,11 @@
     "href": "zombie-fbx.html",
     "category": "3D",
     "tags": [
-      "Three.js",
-      "FBX",
-      "Zombie",
-      "Transparent",
-      "Animation"
+      "three.js",
+      "fbx",
+      "zombie",
+      "transparent",
+      "animation"
     ],
     "description": "",
     "createdAt": "2026-05-19T02:18:45+03:00"

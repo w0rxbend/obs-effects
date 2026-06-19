@@ -866,7 +866,11 @@
       }
 
       async function loadEffects() {
-        const attempts = ["/effects-meta.json", "effects-meta.json"];
+        const attempts = [
+          "effects-meta.json",
+          "public/effects-meta.json",
+          "/effects-meta.json",
+        ];
         const errors = [];
 
         for (const path of attempts) {
@@ -1084,7 +1088,8 @@
       function setSourceNotice(result) {
         if (result.fallback) {
           els.sourceNotice.textContent =
-            "Using degraded inline fallback metadata. Start a local server or generate public/effects-meta.json for the full directory.";
+            "Browser fetch failed, so this direct preview is using degraded inline fallback metadata. " +
+            "Opening index.html with file:// may be limited; serve the repo with Vite or another local server to load the full generated catalog.";
           els.sourceNotice.classList.add("is-visible");
           els.sourceLabel.textContent = "Degraded inline metadata";
           return;

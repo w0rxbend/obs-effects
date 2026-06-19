@@ -1,0 +1,2281 @@
+{
+  "version": 1,
+  "effects": [
+    {
+      "href": "accretion-disk-cam.html",
+      "category": "Webcam Borders",
+      "tags": [
+        "Shader",
+        "Webcam",
+        "Border",
+        "Space",
+        "Glow",
+        "Accretion Disk",
+        "Orbit"
+      ]
+    },
+    {
+      "href": "aether-drift.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Shader",
+        "Silk",
+        "Cinematic",
+        "Fluid"
+      ]
+    },
+    {
+      "href": "ai-character-final.html",
+      "category": "3D",
+      "tags": [
+        "Three.js",
+        "GLB",
+        "Avatar",
+        "Gesture",
+        "Expressive",
+        "Transparent"
+      ]
+    },
+    {
+      "href": "ai-character-natural.html",
+      "category": "3D",
+      "tags": [
+        "Three.js",
+        "GLB",
+        "Avatar",
+        "Gesture",
+        "Conversation",
+        "Transparent"
+      ]
+    },
+    {
+      "href": "ai-inference.html",
+      "category": "Backgrounds",
+      "tags": [
+        "AI",
+        "Neural",
+        "Ambient",
+        "Sci-Fi"
+      ]
+    },
+    {
+      "href": "ambient-energy.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Fog",
+        "Nebula",
+        "Ambient"
+      ]
+    },
+    {
+      "href": "amorphous-blob-cam.html",
+      "category": "Webcam Borders",
+      "tags": [
+        "Fluid",
+        "Border"
+      ]
+    },
+    {
+      "href": "amorphous-square-border.html",
+      "category": "Webcam Borders",
+      "tags": [
+        "Fluid",
+        "Border"
+      ]
+    },
+    {
+      "href": "animated-lines.html",
+      "category": "Backgrounds",
+      "tags": [
+        "GSAP",
+        "Loop"
+      ]
+    },
+    {
+      "href": "aquarium.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Scene",
+        "WebGL"
+      ]
+    },
+    {
+      "href": "artificial-life.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Biology",
+        "Swarm",
+        "AI",
+        "GPU"
+      ]
+    },
+    {
+      "href": "atom.html",
+      "category": "Particle Systems",
+      "tags": [
+        "Physics",
+        "Loop"
+      ]
+    },
+    {
+      "href": "audio-flow-turbulence.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Audio",
+        "Physics",
+        "Fluid",
+        "Particles",
+        "Flow Field",
+        "Turbulence",
+        "Particle",
+        "Reactive"
+      ]
+    },
+    {
+      "href": "audio-neural-net.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Audio",
+        "Network",
+        "AI",
+        "Reactive",
+        "Neural",
+        "Particle",
+        "Tech"
+      ]
+    },
+    {
+      "href": "aurora-borealis.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Shader",
+        "Atmospheric"
+      ]
+    },
+    {
+      "href": "avatar.html",
+      "category": "Particle Systems",
+      "tags": [
+        "3D",
+        "Mascot"
+      ]
+    },
+    {
+      "href": "background.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Loop"
+      ]
+    },
+    {
+      "href": "bioluminescent-cell.html",
+      "category": "Particle Systems",
+      "tags": [
+        "Mascot",
+        "Fluid"
+      ]
+    },
+    {
+      "href": "black-hole-cam.html",
+      "category": "Webcam Borders",
+      "tags": [
+        "Shader",
+        "WebGL",
+        "Webcam",
+        "Border",
+        "Black Hole",
+        "Space",
+        "Glow",
+        "Transparent"
+      ]
+    },
+    {
+      "href": "blob-face-cam.html",
+      "category": "Particle Systems",
+      "tags": [
+        "Mascot",
+        "Overlay"
+      ]
+    },
+    {
+      "href": "blue-mosaic-flow.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Halftone",
+        "Dots",
+        "Blue",
+        "Mosaic",
+        "Fluid",
+        "Abstract"
+      ]
+    },
+    {
+      "href": "blueprint-globe.html",
+      "category": "Uncategorized",
+      "tags": [
+        "3D",
+        "Globe",
+        "Blueprint",
+        "Grid",
+        "Tech",
+        "Blue"
+      ]
+    },
+    {
+      "href": "boids.html",
+      "category": "Particle Systems",
+      "tags": [
+        "Boids",
+        "Particles"
+      ]
+    },
+    {
+      "href": "break-water-text.html",
+      "category": "Particle Systems",
+      "tags": [
+        "Fluid",
+        "Text"
+      ]
+    },
+    {
+      "href": "break.html",
+      "category": "Particle Systems",
+      "tags": [
+        "Scene",
+        "Loop"
+      ]
+    },
+    {
+      "href": "cam-frame-overlay.html",
+      "category": "Webcam Borders",
+      "tags": [
+        "Overlay",
+        "Border"
+      ]
+    },
+    {
+      "href": "cat-circle-cam.html",
+      "category": "Webcam Borders",
+      "tags": [
+        "Mascot",
+        "Border"
+      ]
+    },
+    {
+      "href": "cat-mesh.html",
+      "category": "Particle Systems",
+      "tags": [
+        "Mesh",
+        "Mascot"
+      ]
+    },
+    {
+      "href": "catppuccin-linux-overlay.html",
+      "category": "Particle Systems",
+      "tags": [
+        "Mesh",
+        "Mascot"
+      ]
+    },
+    {
+      "href": "cellular-slime.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Biology",
+        "Swarm",
+        "GPU",
+        "Shader"
+      ]
+    },
+    {
+      "href": "chaos-attractor.html",
+      "category": "Uncategorized",
+      "tags": []
+    },
+    {
+      "href": "chaotic-particles.html",
+      "category": "Uncategorized",
+      "tags": []
+    },
+    {
+      "href": "city-view.html",
+      "category": "3D",
+      "tags": [
+        "Three.js",
+        "FBX",
+        "City",
+        "Architecture",
+        "3D"
+      ]
+    },
+    {
+      "href": "code-ocean.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Code",
+        "Shader",
+        "Hex",
+        "Ambient",
+        "Ocean",
+        "Fluid",
+        "Text",
+        "Blue",
+        "Background"
+      ]
+    },
+    {
+      "href": "coding-stream-overlay.html",
+      "category": "Uncategorized",
+      "tags": []
+    },
+    {
+      "href": "collatz.html",
+      "category": "Particle Systems",
+      "tags": [
+        "Math",
+        "Generative"
+      ]
+    },
+    {
+      "href": "color-wave-ribbons.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Waves",
+        "Fluid",
+        "Memphis",
+        "Gradient"
+      ]
+    },
+    {
+      "href": "confidential.html",
+      "category": "Particle Systems",
+      "tags": [
+        "Overlay",
+        "Text"
+      ]
+    },
+    {
+      "href": "cosmic-portal.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Shader",
+        "Space",
+        "Portal",
+        "Energy",
+        "Vortex",
+        "Glow",
+        "Loop"
+      ]
+    },
+    {
+      "href": "crystal-growth.html",
+      "category": "Uncategorized",
+      "tags": []
+    },
+    {
+      "href": "crystalcam.html",
+      "category": "Webcam Borders",
+      "tags": [
+        "Geometric",
+        "3D"
+      ]
+    },
+    {
+      "href": "cubic-blob-face-overlay.html",
+      "category": "Particle Systems",
+      "tags": [
+        "Mascot",
+        "Fluid"
+      ]
+    },
+    {
+      "href": "cubic-blob-overlay.html",
+      "category": "Particle Systems",
+      "tags": [
+        "Mascot",
+        "Fluid"
+      ]
+    },
+    {
+      "href": "cyber-marble.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Fluid",
+        "Marble",
+        "Magenta",
+        "Teal",
+        "Cyber",
+        "Abstract"
+      ]
+    },
+    {
+      "href": "cyber-terrain.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Wireframe",
+        "3D",
+        "Cyberpunk",
+        "Ambient",
+        "Terrain",
+        "Grid",
+        "Landscape",
+        "Glow"
+      ]
+    },
+    {
+      "href": "cyberpunk-particles.html",
+      "category": "Uncategorized",
+      "tags": []
+    },
+    {
+      "href": "cyberpunk-spectrum.html",
+      "category": "Uncategorized",
+      "tags": []
+    },
+    {
+      "href": "cyclops-avatar.html",
+      "category": "3D",
+      "tags": [
+        "Three.js",
+        "GLB",
+        "VTuber",
+        "Character",
+        "Skeleton",
+        "Mic Reactive"
+      ]
+    },
+    {
+      "href": "dark-fluid-swirl.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Fluid",
+        "Marble",
+        "Pink",
+        "Coral",
+        "Dark",
+        "Abstract"
+      ]
+    },
+    {
+      "href": "dark-glass-lattice.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Shader",
+        "Neon",
+        "Depth"
+      ]
+    },
+    {
+      "href": "dark-sun-cam.html",
+      "category": "Webcam Borders",
+      "tags": [
+        "Fluid",
+        "Border"
+      ]
+    },
+    {
+      "href": "data-corruption.html",
+      "category": "Overlays",
+      "tags": [
+        "Glitch",
+        "Codec",
+        "RGB",
+        "Transparent",
+        "Cinematic"
+      ]
+    },
+    {
+      "href": "diagonal-streaks.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Lines",
+        "Neon",
+        "Looping",
+        "Parallax"
+      ]
+    },
+    {
+      "href": "digital-fluid-ink.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Fluid",
+        "Shader",
+        "Artistic"
+      ]
+    },
+    {
+      "href": "digital-rain.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Shader",
+        "Matrix",
+        "Loop"
+      ]
+    },
+    {
+      "href": "discord-robot.html",
+      "category": "3D",
+      "tags": [
+        "Three.js",
+        "Robot",
+        "Discord",
+        "Cinematic",
+        "Procedural",
+        "Bloom"
+      ]
+    },
+    {
+      "href": "distributed-systems.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Cloud",
+        "Network",
+        "Infra",
+        "Ambient"
+      ]
+    },
+    {
+      "href": "dji-fpv.html",
+      "category": "3D",
+      "tags": [
+        "Three.js",
+        "GLB",
+        "Drone",
+        "DJI",
+        "Transparent"
+      ]
+    },
+    {
+      "href": "dotted-mesh.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Mesh",
+        "Particles"
+      ]
+    },
+    {
+      "href": "drone-visualization.html",
+      "category": "3D",
+      "tags": [
+        "Three.js",
+        "GLB",
+        "Drone",
+        "Transparent",
+        "Overlay"
+      ]
+    },
+    {
+      "href": "eclipse-glow.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Shader",
+        "Atmospheric",
+        "Space"
+      ]
+    },
+    {
+      "href": "elastic-rings.html",
+      "category": "Particle Systems",
+      "tags": [
+        "Physics",
+        "Loop"
+      ]
+    },
+    {
+      "href": "ember-pentagram-overlay.html",
+      "category": "Particle Systems",
+      "tags": [
+        "Particles",
+        "Overlay"
+      ]
+    },
+    {
+      "href": "energy-orb.html",
+      "category": "3D",
+      "tags": [
+        "Three.js",
+        "GLB",
+        "Energy",
+        "Orb",
+        "Transparent"
+      ]
+    },
+    {
+      "href": "ergodox-showroom.html",
+      "category": "3D",
+      "tags": [
+        "Three.js",
+        "GLB",
+        "Keyboard",
+        "Transparent",
+        "Showroom"
+      ]
+    },
+    {
+      "href": "figure-eight-torus.html",
+      "category": "Particle Systems",
+      "tags": [
+        "3D",
+        "Geometric"
+      ]
+    },
+    {
+      "href": "fire-orb.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Fire",
+        "3D",
+        "Three.js",
+        "Shader"
+      ]
+    },
+    {
+      "href": "fireball.html",
+      "category": "Particle Systems",
+      "tags": [
+        "Fire",
+        "Audio"
+      ]
+    },
+    {
+      "href": "flight-simulation.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Scene",
+        "3D"
+      ]
+    },
+    {
+      "href": "floating-dust.html",
+      "category": "Uncategorized",
+      "tags": []
+    },
+    {
+      "href": "flow-field.html",
+      "category": "Particle Systems",
+      "tags": [
+        "Particles",
+        "Generative"
+      ]
+    },
+    {
+      "href": "fluid-blob-frame.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Blobs",
+        "Fluid",
+        "Memphis",
+        "Frame"
+      ]
+    },
+    {
+      "href": "fluid-catppuccin-rings-cam.html",
+      "category": "Webcam Borders",
+      "tags": [
+        "Fluid",
+        "Border"
+      ]
+    },
+    {
+      "href": "fluid-circle-cam.html",
+      "category": "Webcam Borders",
+      "tags": [
+        "Fluid",
+        "Border"
+      ]
+    },
+    {
+      "href": "fluid-dotted-ring-cam.html",
+      "category": "Webcam Borders",
+      "tags": [
+        "Fluid",
+        "Particles",
+        "Webcam",
+        "Border",
+        "Dots",
+        "Particle",
+        "Transparent"
+      ]
+    },
+    {
+      "href": "fluid-mesh-ring-cam.html",
+      "category": "Webcam Borders",
+      "tags": [
+        "Fluid",
+        "Mesh",
+        "Webcam",
+        "Border",
+        "Ring",
+        "Transparent"
+      ]
+    },
+    {
+      "href": "fluid-paint.html",
+      "category": "Particle Systems",
+      "tags": [
+        "WebGPU",
+        "Fluid"
+      ]
+    },
+    {
+      "href": "forest-ambient-bg.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Scene",
+        "Parallax"
+      ]
+    },
+    {
+      "href": "fourier-epicycles.html",
+      "category": "Particle Systems",
+      "tags": [
+        "Math",
+        "Generative"
+      ]
+    },
+    {
+      "href": "fpv-blueprint-bg.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Scene",
+        "Tech",
+        "FPV"
+      ]
+    },
+    {
+      "href": "galaxy-bg.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Scene",
+        "Space"
+      ]
+    },
+    {
+      "href": "gas-cam.html",
+      "category": "Webcam Borders",
+      "tags": [
+        "Fluid",
+        "Overlay"
+      ]
+    },
+    {
+      "href": "gaussian-distribution-bg.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Generative",
+        "Mesh"
+      ]
+    },
+    {
+      "href": "generative.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Generative"
+      ]
+    },
+    {
+      "href": "geodesic-sphere.html",
+      "category": "Particle Systems",
+      "tags": [
+        "3D",
+        "Geometric",
+        "Geodesic",
+        "Mesh",
+        "Sphere",
+        "Wireframe",
+        "Geometry"
+      ]
+    },
+    {
+      "href": "geometric-lines.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Geometric",
+        "Ambient",
+        "Minimal"
+      ]
+    },
+    {
+      "href": "git-activity.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Dev",
+        "Network",
+        "Ambient"
+      ]
+    },
+    {
+      "href": "glitch-circle-ring-cam.html",
+      "category": "Webcam Borders",
+      "tags": [
+        "Shader",
+        "Glitch",
+        "Neon",
+        "Chromatic",
+        "Transparent"
+      ]
+    },
+    {
+      "href": "glitch-overlay.html",
+      "category": "Overlays",
+      "tags": [
+        "VHS",
+        "Glitch",
+        "Cyberpunk",
+        "Transparent"
+      ]
+    },
+    {
+      "href": "glitch-terminal.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Glitch",
+        "Terminal",
+        "Lime",
+        "ASCII",
+        "Matrix",
+        "Abstract"
+      ]
+    },
+    {
+      "href": "glitch-veil.html",
+      "category": "Overlays",
+      "tags": [
+        "Glitch",
+        "RGB",
+        "Transparent",
+        "Subtle"
+      ]
+    },
+    {
+      "href": "gol-slime-mold.html",
+      "category": "Uncategorized",
+      "tags": []
+    },
+    {
+      "href": "gold-marble-dots.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Halftone",
+        "Dots",
+        "Gold",
+        "Marble",
+        "Luxury",
+        "Abstract"
+      ]
+    },
+    {
+      "href": "gpu-boids.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Physics",
+        "Swarm",
+        "AI",
+        "Particle",
+        "Boids",
+        "GPU",
+        "Simulation",
+        "Motion"
+      ]
+    },
+    {
+      "href": "graph-bg.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Generative"
+      ]
+    },
+    {
+      "href": "grass.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Scene",
+        "Nature"
+      ]
+    },
+    {
+      "href": "gravity-sphere.html",
+      "category": "Particle Systems",
+      "tags": [
+        "Particles",
+        "Physics"
+      ]
+    },
+    {
+      "href": "green-fireball.html",
+      "category": "Particle Systems",
+      "tags": [
+        "Fire",
+        "Audio"
+      ]
+    },
+    {
+      "href": "gunan-skeleton.html",
+      "category": "3D",
+      "tags": [
+        "Three.js",
+        "FBX",
+        "Transparent",
+        "Bust",
+        "Skeleton"
+      ]
+    },
+    {
+      "href": "halftone-fade.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Halftone",
+        "Dots",
+        "Monochrome",
+        "Fade",
+        "Minimal",
+        "Abstract"
+      ]
+    },
+    {
+      "href": "halftone-gradient.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Shader",
+        "Halftone",
+        "Gradient",
+        "Retro"
+      ]
+    },
+    {
+      "href": "handwritten-notebook.html",
+      "category": "Particle Systems",
+      "tags": [
+        "Scene",
+        "Text"
+      ]
+    },
+    {
+      "href": "hex-ripple.html",
+      "category": "Particle Systems",
+      "tags": [
+        "Geometric",
+        "Wave"
+      ]
+    },
+    {
+      "href": "hex-water-island.html",
+      "category": "3D",
+      "tags": [
+        "Three.js",
+        "Water",
+        "Hexagonal",
+        "Island",
+        "Transparent",
+        "Simulation"
+      ]
+    },
+    {
+      "href": "hexcam.html",
+      "category": "Webcam Borders",
+      "tags": [
+        "Geometric",
+        "Border"
+      ]
+    },
+    {
+      "href": "hexgridcam.html",
+      "category": "Webcam Borders",
+      "tags": [
+        "Geometric",
+        "Border"
+      ]
+    },
+    {
+      "href": "hexlayercam.html",
+      "category": "Webcam Borders",
+      "tags": [
+        "Geometric",
+        "Border"
+      ]
+    },
+    {
+      "href": "hologram-glitch.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Shader",
+        "Glitch",
+        "Sci-Fi"
+      ]
+    },
+    {
+      "href": "hype-meter-cam.html",
+      "category": "Webcam Borders",
+      "tags": [
+        "Audio-Reactive",
+        "Border"
+      ]
+    },
+    {
+      "href": "infinity.html",
+      "category": "Particle Systems",
+      "tags": [
+        "Loop",
+        "Geometric"
+      ]
+    },
+    {
+      "href": "ink-dissolve.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Fluid",
+        "Artistic",
+        "Atmospheric"
+      ]
+    },
+    {
+      "href": "ink-in-water.html",
+      "category": "Audio Visualizers",
+      "tags": [
+        "Audio-Reactive",
+        "Fluid"
+      ]
+    },
+    {
+      "href": "iridescent-blobs.html",
+      "category": "Particle Systems",
+      "tags": [
+        "Fluid",
+        "Overlay"
+      ]
+    },
+    {
+      "href": "japanese-temple-lofi.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Scene",
+        "Ambient",
+        "Lofi"
+      ]
+    },
+    {
+      "href": "jelly-blob-face.html",
+      "category": "3D",
+      "tags": [
+        "Three.js",
+        "Audio Reactive",
+        "Character",
+        "Soft Body",
+        "3D"
+      ]
+    },
+    {
+      "href": "jelly-blobs.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Jelly",
+        "3D",
+        "Three.js",
+        "Physics",
+        "Soft Body"
+      ]
+    },
+    {
+      "href": "jelly-ring-cam-border.html",
+      "category": "Webcam Borders",
+      "tags": [
+        "3D",
+        "Three.js",
+        "Jelly",
+        "Physics"
+      ]
+    },
+    {
+      "href": "lava-cell-membrane.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Shader",
+        "Organic",
+        "Neon"
+      ]
+    },
+    {
+      "href": "lavender-dashes-cam.html",
+      "category": "Webcam Borders",
+      "tags": [
+        "Geometric",
+        "Border"
+      ]
+    },
+    {
+      "href": "life.html",
+      "category": "Particle Systems",
+      "tags": [
+        "WebGPU",
+        "Particles"
+      ]
+    },
+    {
+      "href": "linux-blueprint.html",
+      "category": "Uncategorized",
+      "tags": []
+    },
+    {
+      "href": "linux-boids.html",
+      "category": "Particle Systems",
+      "tags": [
+        "Boids",
+        "Mascot"
+      ]
+    },
+    {
+      "href": "linux-icon-mesh.html",
+      "category": "Particle Systems",
+      "tags": [
+        "Mesh",
+        "Mascot"
+      ]
+    },
+    {
+      "href": "liquid-aurora-field.html",
+      "category": "Audio Visualizers",
+      "tags": [
+        "Audio-Reactive",
+        "Fluid"
+      ]
+    },
+    {
+      "href": "liquid-paper-frame.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Blobs",
+        "Paper Cut",
+        "Halftone",
+        "Frame"
+      ]
+    },
+    {
+      "href": "lissajous.html",
+      "category": "Particle Systems",
+      "tags": [
+        "Generative",
+        "Math"
+      ]
+    },
+    {
+      "href": "logo.html",
+      "category": "Particle Systems",
+      "tags": [
+        "Brand",
+        "Loop"
+      ]
+    },
+    {
+      "href": "magenta-dot-flow.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Halftone",
+        "Dots",
+        "Magenta",
+        "Pink",
+        "Fluid",
+        "Abstract"
+      ]
+    },
+    {
+      "href": "magma-core.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Shader",
+        "Fire",
+        "Atmospheric"
+      ]
+    },
+    {
+      "href": "magma-core(1).html",
+      "category": "Uncategorized",
+      "tags": []
+    },
+    {
+      "href": "magnetic-field.html",
+      "category": "Particle Systems",
+      "tags": [
+        "Physics",
+        "Generative"
+      ]
+    },
+    {
+      "href": "main-audio-activated-border.html",
+      "category": "Webcam Borders",
+      "tags": [
+        "Audio-Reactive",
+        "Border"
+      ]
+    },
+    {
+      "href": "main-web-cam-border.html",
+      "category": "Webcam Borders",
+      "tags": [
+        "Overlay",
+        "Border"
+      ]
+    },
+    {
+      "href": "matrix-dots.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Generative",
+        "Loop"
+      ]
+    },
+    {
+      "href": "maurer-rose.html",
+      "category": "Particle Systems",
+      "tags": [
+        "Math",
+        "Generative"
+      ]
+    },
+    {
+      "href": "meshy-avatar.html",
+      "category": "3D",
+      "tags": [
+        "Three.js",
+        "GLB",
+        "Rigged",
+        "Skeleton",
+        "Transparent",
+        "Avatar"
+      ]
+    },
+    {
+      "href": "meshy-post1-avatar.html",
+      "category": "Uncategorized",
+      "tags": []
+    },
+    {
+      "href": "meta-blobs.html",
+      "category": "Particle Systems",
+      "tags": [
+        "SDF",
+        "Fluid"
+      ]
+    },
+    {
+      "href": "metaball-plasma.html",
+      "category": "Uncategorized",
+      "tags": []
+    },
+    {
+      "href": "metamorphosis.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Shader",
+        "Organic",
+        "Generative"
+      ]
+    },
+    {
+      "href": "microbial-colony.html",
+      "category": "Particle Systems",
+      "tags": [
+        "Boids",
+        "Sim"
+      ]
+    },
+    {
+      "href": "minimalist-gradient-breathing.html",
+      "category": "Audio Visualizers",
+      "tags": [
+        "Audio-Reactive",
+        "Shader"
+      ]
+    },
+    {
+      "href": "monolithic-black-geometry.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Geometry",
+        "Dark",
+        "Emissive",
+        "Procedural",
+        "High-End"
+      ]
+    },
+    {
+      "href": "mountain-night-railway.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Scene",
+        "Parallax"
+      ]
+    },
+    {
+      "href": "music-break.html",
+      "category": "Particle Systems",
+      "tags": [
+        "Audio-Reactive",
+        "Scene"
+      ]
+    },
+    {
+      "href": "mycelium-network.html",
+      "category": "Particle Systems",
+      "tags": [
+        "Generative",
+        "Sim"
+      ]
+    },
+    {
+      "href": "nbody.html",
+      "category": "Particle Systems",
+      "tags": [
+        "Physics",
+        "Space"
+      ]
+    },
+    {
+      "href": "nebula.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Shader",
+        "Space"
+      ]
+    },
+    {
+      "href": "neon-drip.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Shader",
+        "Neon",
+        "Artistic"
+      ]
+    },
+    {
+      "href": "neon-drip(1).html",
+      "category": "Uncategorized",
+      "tags": []
+    },
+    {
+      "href": "neon-ribbon-pattern.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Pattern",
+        "Neon",
+        "Loop"
+      ]
+    },
+    {
+      "href": "neon-starburst.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Neon",
+        "Starburst",
+        "Psychedelic",
+        "Lime",
+        "Magenta"
+      ]
+    },
+    {
+      "href": "neon-topo.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Topo",
+        "Contour",
+        "Red",
+        "Pink",
+        "Neon",
+        "Abstract"
+      ]
+    },
+    {
+      "href": "neon-vein-network.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Shader",
+        "Organic",
+        "Loop"
+      ]
+    },
+    {
+      "href": "network-surge.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Physics",
+        "Network",
+        "Ambient"
+      ]
+    },
+    {
+      "href": "neural-datacenter.html",
+      "category": "Uncategorized",
+      "tags": [
+        "Tech",
+        "Neural",
+        "Datacenter",
+        "Network",
+        "Sci-Fi",
+        "Grid"
+      ]
+    },
+    {
+      "href": "night-city-horizon.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Scene",
+        "Parallax"
+      ]
+    },
+    {
+      "href": "octocat-robot.html",
+      "category": "3D",
+      "tags": [
+        "Three.js",
+        "GitHub",
+        "Octocat",
+        "Robot",
+        "Tentacles",
+        "Cinematic",
+        "Bloom"
+      ]
+    },
+    {
+      "href": "orbital-mechanics.html",
+      "category": "Particle Systems",
+      "tags": [
+        "Physics",
+        "Space"
+      ]
+    },
+    {
+      "href": "paint-vortex.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Shader",
+        "Spiral",
+        "Paint",
+        "Vortex"
+      ]
+    },
+    {
+      "href": "particle-border-overlay.html",
+      "category": "Overlays",
+      "tags": [
+        "Particles",
+        "Border",
+        "Transparent",
+        "Ambient"
+      ]
+    },
+    {
+      "href": "particle-constellation.html",
+      "category": "Audio Visualizers",
+      "tags": [
+        "Audio-Reactive",
+        "Particles"
+      ]
+    },
+    {
+      "href": "particle-globe.html",
+      "category": "Particle Systems",
+      "tags": [
+        "3D",
+        "Globe",
+        "Particle",
+        "Blue",
+        "Network",
+        "Space"
+      ]
+    },
+    {
+      "href": "particle-splash.html",
+      "category": "Particle Systems",
+      "tags": [
+        "Particles",
+        "Physics"
+      ]
+    },
+    {
+      "href": "particle-swarm-excitement.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Audio",
+        "Swarm",
+        "AI",
+        "Physics"
+      ]
+    },
+    {
+      "href": "pcb-bg.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Scene",
+        "Tech"
+      ]
+    },
+    {
+      "href": "perlin-blobs.html",
+      "category": "Particle Systems",
+      "tags": [
+        "Fluid",
+        "Sim"
+      ]
+    },
+    {
+      "href": "physarum-gol.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Biology",
+        "Swarm",
+        "GPU",
+        "Shader",
+        "Cellular",
+        "Physarum",
+        "Simulation",
+        "Organic",
+        "Growth",
+        "Generative"
+      ]
+    },
+    {
+      "href": "physics-particles.html",
+      "category": "Particle Systems",
+      "tags": [
+        "Physics",
+        "Particles"
+      ]
+    },
+    {
+      "href": "planet-circle-webcam-border.html",
+      "category": "Webcam Borders",
+      "tags": [
+        "Overlay",
+        "3D"
+      ]
+    },
+    {
+      "href": "planet-hologram.html",
+      "category": "Particle Systems",
+      "tags": [
+        "Shader",
+        "3D",
+        "Planet",
+        "Hologram",
+        "Sci-Fi",
+        "Blue",
+        "Scanlines"
+      ]
+    },
+    {
+      "href": "planet.html",
+      "category": "Particle Systems",
+      "tags": [
+        "3D",
+        "Space"
+      ]
+    },
+    {
+      "href": "plasma-wave.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Shader",
+        "Loop"
+      ]
+    },
+    {
+      "href": "plexus-constellation.html",
+      "category": "Particle Systems",
+      "tags": [
+        "Particles",
+        "Mesh"
+      ]
+    },
+    {
+      "href": "prism-biofoam.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Shader",
+        "Organic",
+        "Color"
+      ]
+    },
+    {
+      "href": "procedural-logo.html",
+      "category": "Particle Systems",
+      "tags": [
+        "Brand",
+        "Generative"
+      ]
+    },
+    {
+      "href": "psychedelic-marble.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Shader",
+        "Groovy",
+        "Marble",
+        "Psychedelic"
+      ]
+    },
+    {
+      "href": "radial-energy-core.html",
+      "category": "Audio Visualizers",
+      "tags": [
+        "Audio-Reactive",
+        "Shader"
+      ]
+    },
+    {
+      "href": "rain-on-glass.html",
+      "category": "Overlays",
+      "tags": [
+        "Rain",
+        "Shader",
+        "Transparent",
+        "Atmospheric"
+      ]
+    },
+    {
+      "href": "rain-umbrella.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Atmospheric",
+        "Rain",
+        "Scene"
+      ]
+    },
+    {
+      "href": "rain-umbrella(1).html",
+      "category": "Uncategorized",
+      "tags": []
+    },
+    {
+      "href": "rain.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Atmospheric",
+        "Loop"
+      ]
+    },
+    {
+      "href": "rainbow-lightning-ring-cam.html",
+      "category": "Webcam Borders",
+      "tags": [
+        "Shader",
+        "Rainbow",
+        "Lightning",
+        "Ring",
+        "Transparent"
+      ]
+    },
+    {
+      "href": "reactive-energy-membrane.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Mesh",
+        "Organic",
+        "Procedural",
+        "Purple",
+        "Breathing"
+      ]
+    },
+    {
+      "href": "retro-screen-filter.html",
+      "category": "Overlays",
+      "tags": [
+        "CRT",
+        "Grid",
+        "Transparent",
+        "Subtle"
+      ]
+    },
+    {
+      "href": "sci-fi-hud.html",
+      "category": "Backgrounds",
+      "tags": [
+        "HUD",
+        "Hologram",
+        "Radar",
+        "Ambient"
+      ]
+    },
+    {
+      "href": "screen-capture-border.html",
+      "category": "Webcam Borders",
+      "tags": [
+        "Fluid",
+        "Overlay"
+      ]
+    },
+    {
+      "href": "sequin-wave.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Shader",
+        "Geometric",
+        "Loop"
+      ]
+    },
+    {
+      "href": "shifting-veils.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Shader",
+        "Fluid",
+        "Atmospheric"
+      ]
+    },
+    {
+      "href": "shifting-veils(1).html",
+      "category": "Uncategorized",
+      "tags": []
+    },
+    {
+      "href": "shock-wave.html",
+      "category": "Particle Systems",
+      "tags": [
+        "Physics",
+        "Space"
+      ]
+    },
+    {
+      "href": "simple-web-cam-border.html",
+      "category": "Webcam Borders",
+      "tags": [
+        "Overlay",
+        "Border"
+      ]
+    },
+    {
+      "href": "slime-mold-network.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Biology",
+        "Network",
+        "Particles",
+        "Organic",
+        "Bioluminescent",
+        "Slime Mold",
+        "Growth",
+        "Particle"
+      ]
+    },
+    {
+      "href": "smoke-bar.html",
+      "category": "Webcam Borders",
+      "tags": [
+        "Fluid",
+        "Overlay"
+      ]
+    },
+    {
+      "href": "smoke-ring-cam.html",
+      "category": "Webcam Borders",
+      "tags": [
+        "Fluid",
+        "Border"
+      ]
+    },
+    {
+      "href": "smolder.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Shader",
+        "Fire",
+        "Atmospheric"
+      ]
+    },
+    {
+      "href": "smolder(1).html",
+      "category": "Uncategorized",
+      "tags": []
+    },
+    {
+      "href": "soft-body-cube.html",
+      "category": "3D",
+      "tags": [
+        "Three.js",
+        "Physics",
+        "Soft Body",
+        "3D"
+      ]
+    },
+    {
+      "href": "soft-body-organisms.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Physics",
+        "Soft-Body",
+        "Verlet"
+      ]
+    },
+    {
+      "href": "soft-vol-fog.html",
+      "category": "Overlays",
+      "tags": [
+        "Fog",
+        "Ambient",
+        "Transparent",
+        "Interactive"
+      ]
+    },
+    {
+      "href": "solar-system.html",
+      "category": "Backgrounds",
+      "tags": [
+        "3D",
+        "Space",
+        "Three.js",
+        "Planet",
+        "Orbit",
+        "Simulation",
+        "Loop"
+      ]
+    },
+    {
+      "href": "solar-wind.html",
+      "category": "Particle Systems",
+      "tags": [
+        "Physics",
+        "Space"
+      ]
+    },
+    {
+      "href": "space-earth.html",
+      "category": "Backgrounds",
+      "tags": [
+        "3D",
+        "Space",
+        "PixiJS",
+        "Three.js",
+        "Earth",
+        "Planet",
+        "Atmosphere",
+        "Globe"
+      ]
+    },
+    {
+      "href": "space-war-boids.html",
+      "category": "Particle Systems",
+      "tags": [
+        "Boids",
+        "Combat"
+      ]
+    },
+    {
+      "href": "sph.html",
+      "category": "Particle Systems",
+      "tags": [
+        "Physics",
+        "Fluid"
+      ]
+    },
+    {
+      "href": "spiral-pull.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Shader",
+        "Loop"
+      ]
+    },
+    {
+      "href": "star-field.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Space",
+        "Loop"
+      ]
+    },
+    {
+      "href": "starting-soon-fluid.html",
+      "category": "Particle Systems",
+      "tags": [
+        "Fluid",
+        "Text"
+      ]
+    },
+    {
+      "href": "starting-soon-jelly.html",
+      "category": "Particle Systems",
+      "tags": [
+        "Fluid",
+        "Text"
+      ]
+    },
+    {
+      "href": "starting-soon-particle-mesh.html",
+      "category": "Particle Systems",
+      "tags": [
+        "Mesh",
+        "Text"
+      ]
+    },
+    {
+      "href": "starting-soon.html",
+      "category": "Particle Systems",
+      "tags": [
+        "Scene",
+        "Text"
+      ]
+    },
+    {
+      "href": "stippled-geodesic.html",
+      "category": "Particle Systems",
+      "tags": [
+        "Particles",
+        "3D",
+        "Geodesic",
+        "Particle",
+        "Stipple",
+        "Mesh",
+        "Sphere"
+      ]
+    },
+    {
+      "href": "stream-ended-particle-mesh.html",
+      "category": "Particle Systems",
+      "tags": [
+        "Mesh",
+        "Text"
+      ]
+    },
+    {
+      "href": "sunken-light.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Shader",
+        "Underwater",
+        "Caustics",
+        "Cinematic"
+      ]
+    },
+    {
+      "href": "synth-ribbon.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Shader",
+        "Neon",
+        "Loop"
+      ]
+    },
+    {
+      "href": "synthwave-sunset.html",
+      "category": "Uncategorized",
+      "tags": []
+    },
+    {
+      "href": "three-ring-cam-border.html",
+      "category": "Webcam Borders",
+      "tags": [
+        "3D",
+        "Three.js",
+        "Sparks",
+        "Lightning"
+      ]
+    },
+    {
+      "href": "title-powerline.html",
+      "category": "Particle Systems",
+      "tags": [
+        "Overlay",
+        "Text"
+      ]
+    },
+    {
+      "href": "topo-landscape.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Generative",
+        "Terrain"
+      ]
+    },
+    {
+      "href": "topography.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Generative",
+        "Terrain"
+      ]
+    },
+    {
+      "href": "trapcam.html",
+      "category": "Webcam Borders",
+      "tags": [
+        "Audio-Reactive",
+        "Border"
+      ]
+    },
+    {
+      "href": "trapnation.html",
+      "category": "Audio Visualizers",
+      "tags": [
+        "Audio-Reactive",
+        "Visualizer"
+      ]
+    },
+    {
+      "href": "triangulation.html",
+      "category": "Particle Systems",
+      "tags": [
+        "Mesh",
+        "Generative"
+      ]
+    },
+    {
+      "href": "tunnel-vortex.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Shader",
+        "Loop",
+        "Tunnel",
+        "Vortex",
+        "Motion",
+        "Perspective",
+        "Background"
+      ]
+    },
+    {
+      "href": "tux-blob.html",
+      "category": "Particle Systems",
+      "tags": [
+        "Mascot",
+        "Fluid"
+      ]
+    },
+    {
+      "href": "tux-penguin.html",
+      "category": "3D",
+      "tags": [
+        "Three.js",
+        "GLB",
+        "Linux",
+        "Tux",
+        "Transparent",
+        "Character"
+      ]
+    },
+    {
+      "href": "ua-red-black-mesh.html",
+      "category": "Particle Systems",
+      "tags": [
+        "Mesh",
+        "Flag"
+      ]
+    },
+    {
+      "href": "ukrainian-wave-mesh.html",
+      "category": "Particle Systems",
+      "tags": [
+        "Mesh",
+        "Flag"
+      ]
+    },
+    {
+      "href": "vector-field-bg.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Generative",
+        "Particles"
+      ]
+    },
+    {
+      "href": "velvet-spotlight.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Shader",
+        "Atmospheric",
+        "Subtle"
+      ]
+    },
+    {
+      "href": "verlet-cloth.html",
+      "category": "Particle Systems",
+      "tags": [
+        "Physics",
+        "Cloth"
+      ]
+    },
+    {
+      "href": "void-implode.html",
+      "category": "Particle Systems",
+      "tags": [
+        "Catppuccin",
+        "Implosion"
+      ]
+    },
+    {
+      "href": "voronoi-stippling.html",
+      "category": "Particle Systems",
+      "tags": [
+        "Generative",
+        "Stippling"
+      ]
+    },
+    {
+      "href": "warp-tunnel-rush.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Three.js",
+        "3D",
+        "Tunnel",
+        "Cel Shader",
+        "Anime"
+      ]
+    },
+    {
+      "href": "water-goldfish.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Shader",
+        "Water",
+        "Caustics",
+        "Boids",
+        "Goldfish"
+      ]
+    },
+    {
+      "href": "water-splash-ring-cam.html",
+      "category": "Webcam Borders",
+      "tags": [
+        "Shader",
+        "Water",
+        "Splash",
+        "Ring",
+        "Transparent"
+      ]
+    },
+    {
+      "href": "wave-border-cam.html",
+      "category": "Webcam Borders",
+      "tags": [
+        "Fluid",
+        "Border"
+      ]
+    },
+    {
+      "href": "wave-interference.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Physics",
+        "Waves",
+        "Scientific"
+      ]
+    },
+    {
+      "href": "wave-simulation.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Physics",
+        "Waves",
+        "Ambient"
+      ]
+    },
+    {
+      "href": "wavecam.html",
+      "category": "Webcam Borders",
+      "tags": [
+        "Fluid",
+        "Border"
+      ]
+    },
+    {
+      "href": "wavy-cam.html",
+      "category": "Webcam Borders",
+      "tags": [
+        "Fluid",
+        "Border"
+      ]
+    },
+    {
+      "href": "wavy-planet-mesh.html",
+      "category": "Particle Systems",
+      "tags": [
+        "3D",
+        "Globe",
+        "Mesh",
+        "Fluid",
+        "Blue",
+        "Particle",
+        "Topography"
+      ]
+    },
+    {
+      "href": "wireframe-icosphere.html",
+      "category": "Particle Systems",
+      "tags": [
+        "3D",
+        "Geometric",
+        "Wireframe",
+        "Sphere",
+        "Geometry",
+        "Mesh",
+        "Loop"
+      ]
+    },
+    {
+      "href": "wireframe-overlay.html",
+      "category": "Uncategorized",
+      "tags": []
+    },
+    {
+      "href": "wireframe-sphere-cam.html",
+      "category": "Webcam Borders",
+      "tags": [
+        "3D",
+        "Border"
+      ]
+    },
+    {
+      "href": "wormhole-dive.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Shader",
+        "Space",
+        "Tunnel",
+        "Vortex",
+        "Sci-Fi",
+        "Warp",
+        "Motion"
+      ]
+    },
+    {
+      "href": "worxbend-3d-text.html",
+      "category": "3D",
+      "tags": [
+        "Three.js",
+        "Brand",
+        "Text"
+      ]
+    },
+    {
+      "href": "worxbend-fluid.html",
+      "category": "Particle Systems",
+      "tags": [
+        "Fluid",
+        "Brand"
+      ]
+    },
+    {
+      "href": "worxbend-molecular.html",
+      "category": "Particle Systems",
+      "tags": [
+        "Particles",
+        "Brand"
+      ]
+    },
+    {
+      "href": "worxbend-text.html",
+      "category": "Particle Systems",
+      "tags": [
+        "Particles",
+        "Text"
+      ]
+    },
+    {
+      "href": "zombie-fbx.html",
+      "category": "3D",
+      "tags": [
+        "Three.js",
+        "FBX",
+        "Zombie",
+        "Transparent",
+        "Animation"
+      ]
+    }
+  ]
+}

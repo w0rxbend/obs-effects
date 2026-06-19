@@ -477,3 +477,81 @@ A  scripts/effects-meta-overrides.json
 A  scripts/gen-metadata.js
 A  src/app/screens/NeonRibbonPatternScreen.ts
 A  src/neon-ribbon-pattern.ts
+2026-06-19T16:20:08Z iteration 2 started remaining=16884s
+2026-06-19T16:20:08Z iteration 2 preplanner effective budgets untracked_scan_max_bytes=536870912 untracked_scan_max_count=10000 snapshot_copy_max_bytes=536870912 snapshot_copy_max_count=10000 snapshot_copy_max_file_bytes=134217728
+2026-06-19T16:20:08Z iteration 2 disposable preplanner repo created path=/tmp/agent-loop-preplanner-repo-shy2qtn8/repo copied_entries=811
+2026-06-19T16:20:08Z iteration 2 ideator phase started count=3
+2026-06-19T16:20:08Z iteration 2 ideator phase concurrency workers=3
+2026-06-19T16:20:08Z iteration 2 ideator 1 role="the pragmatist" started
+2026-06-19T16:20:08Z iteration 2 ideator 2 role="the architect" started
+2026-06-19T16:20:08Z iteration 2 ideator 3 role="the contrarian" started
+2026-06-19T16:20:16Z iteration 2 ideator 2 role="the architect" completed status=0
+2026-06-19T16:20:17Z iteration 2 ideator 1 role="the pragmatist" completed status=0
+2026-06-19T16:20:17Z iteration 2 ideator 3 role="the contrarian" completed status=0
+2026-06-19T16:20:17Z iteration 2 ideator phase completed approaches=3
+2026-06-19T16:20:17Z iteration 2 selector started approaches=3
+2026-06-19T16:20:28Z iteration 2 selector completed status=0
+2026-06-19T16:20:28Z iteration 2 disposable preplanner repo cleanup path=/tmp/agent-loop-preplanner-repo-shy2qtn8/repo
+2026-06-19T16:20:28Z iteration 2 selector rejected alternative role="the architect" approach="Source-of-Truth First: stabilize the catalog by treating committed root HTML files plus a durable catalog JSON as the only authoritative inputs, then let generated runtime metad..." reason="Strong and largely correct, but as-is it risks spending too much planning attention on schema migration and taxonomy preservation before first locking the simpler contract: authoritative inputs, verified hrefs, and disposable output."
+2026-06-19T16:20:28Z iteration 2 selector rejected alternative role="the pragmatist" approach="Source-of-Truth First: stabilize the catalog contract before expanding UX. Treat metadata correctness and reproducibility as the product boundary, then let directory features co..." reason="Also strong, but its framing is slightly too broad around downstream UX consumption. The immediate planner needs a sharper stabilization mandate rather than balancing quick UX wins against pipeline work."
+2026-06-19T16:20:28Z iteration 2 selector rejected alternative role="the contrarian" approach="Source-of-Truth Reset: freeze UX work and first convert the catalog into a deterministic, audited data pipeline with explicit ownership boundaries." reason="Useful emphasis on freezing UX, but too absolute as stated. The better strategy keeps UX paused only until the catalog contract is trustworthy, without implying a larger reset than the repo needs."
+2026-06-19T16:20:28Z iteration 2 selector alternatives persisted count=3
+2026-06-19T16:20:28Z iteration 2 selector structured alternatives persisted count=3
+2026-06-19T16:20:28Z iteration 2 planner started
+2026-06-19T16:21:16Z iteration 2 plan: 5 task(s) in 4 phase(s). This decomposition stabilizes the catalog contract first: durable source data is created before the generator is refactored, then independent integrity and runtime fallback work can proceed in parallel, followed by one final regeneration and verification pass.
+2026-06-19T16:21:16Z iteration 2 phase 1 started parallel=False tasks=1
+2026-06-19T16:22:27Z iteration 2 task t1 ('Create durable catalog source') status=0
+2026-06-19T16:22:27Z iteration 2 phase 2 started parallel=False tasks=1
+2026-06-19T16:25:53Z iteration 2 task t2 ('Refactor metadata generator') status=0
+2026-06-19T16:25:53Z iteration 2 phase 3 started parallel=True tasks=2
+2026-06-19T16:26:38Z iteration 2 task t4 ('Make directory loading explicit') status=0
+2026-06-19T16:27:33Z iteration 2 task t3 ('Add metadata integrity check') status=0
+2026-06-19T16:27:33Z iteration 2 phase 4 started parallel=False tasks=1
+2026-06-19T16:28:53Z iteration 2 task t5 ('Regenerate and verify catalog') status=0
+2026-06-19T16:28:53Z iteration 2 reviewer started
+
+## Reviewer Summary - Iteration 2
+
+### What Was Done
+
+- Added `scripts/effects-catalog.json` as a durable source for category and base tag data across all 251 tracked root effect pages.
+- Refactored `scripts/gen-metadata.js` to read the catalog and overrides, remove `index.html` JavaScript parsing, lowercase normalized tags, use ISO git timestamps, and preserve existing generated metadata only behind `--preserve-existing`.
+- Added `scripts/check-effects-meta.js` to reject metadata records whose href is missing, untracked, or not a root-level HTML effect page.
+- Wired the metadata integrity check into `npm run build`.
+- Updated `index.html` metadata loading order to try `effects-meta.json`, `public/effects-meta.json`, then `/effects-meta.json`, and made the degraded direct-file fallback notice explicit.
+- Regenerated `public/effects-meta.json`; validation run by reviewer: `node scripts/gen-metadata.js`, `node scripts/check-effects-meta.js`, `npm run lint`, `npm run build`.
+
+### What Was Found
+
+- No current metadata href points at an untracked or missing root HTML file; metadata and tracked root effect pages both currently contain 251 matching hrefs.
+- The previous reproducibility issue is substantially fixed: generated category/tag data now comes from `scripts/effects-catalog.json`, and `public/effects-meta.json` is not read unless `--preserve-existing` is explicitly passed.
+- High priority: `scripts/check-effects-meta.js` is only one-way. It verifies metadata hrefs against tracked pages, but does not fail if a tracked root HTML page is missing from metadata, if metadata contains duplicate hrefs/slugs, or if the generated output is stale.
+- High priority: `scripts/gen-metadata.js` fails open when the durable catalog is missing or malformed, because it falls back to an empty catalog and emits default `Uncategorized` records.
+- Medium priority: catalog and override inputs are under-validated. Stale catalog hrefs, typos, empty categories, non-array tags, and dead override keys should be reported instead of ignored.
+- Medium priority: `scripts/check-effects-meta.js` still allows `index.html` as a metadata href even though the directory should only contain effect pages.
+- Medium priority: direct `file://` behavior remains degraded to five inline records. The UI now states this clearly, but full direct-file usability is not implemented.
+- Medium priority: metadata coverage is still shallow: 227 of 251 records have empty descriptions, 20 are `Uncategorized`, and 18 have no tags.
+
+### Top Improvement Proposals
+
+- Add a freshness check that regenerates metadata to a temp file and fails if it differs from `public/effects-meta.json`.
+- Make `scripts/check-effects-meta.js` enforce exact set equality between metadata hrefs and tracked root effect pages, plus duplicate href/slug rejection.
+- Make `scripts/gen-metadata.js` fail closed on missing or malformed `scripts/effects-catalog.json`.
+- Validate catalog and override inputs against the tracked root HTML set before writing generated output.
+- Decide whether full direct-file fallback is required; if yes, generate an embedded full fallback from the metadata JSON.
+2026-06-19T16:32:30Z iteration 2 reviewer completed status=0
+2026-06-19T16:32:30Z iteration 2 memory updated
+2026-06-19T16:32:30Z iteration 2 completed validation_status=0
+2026-06-19T16:32:30Z iteration 2 checkpoint started
+2026-06-19T16:32:30Z iteration 2 checkpoint status before commit:
+M  AGENT_LOG.md
+M  ALTERNATIVES.jsonl
+M  MEMORY.md
+M  PLAN.md
+M  SCORES.jsonl
+M  index.html
+M  package.json
+M  public/effects-meta.json
+A  scripts/check-effects-meta.js
+A  scripts/effects-catalog.json
+M  scripts/gen-metadata.js
