@@ -296,6 +296,7 @@ export default defineConfig({
         glitchCircleRingCam: resolve(__dirname, "glitch-circle-ring-cam.html"),
         neonStarburst: resolve(__dirname, "neon-starburst.html"),
         darkFluidSwirl: resolve(__dirname, "dark-fluid-swirl.html"),
+        pinkFluidMarble: resolve(__dirname, "pink-fluid-marble.html"),
         cyberMarble: resolve(__dirname, "cyber-marble.html"),
         glitchTerminal: resolve(__dirname, "glitch-terminal.html"),
         halftoneFade: resolve(__dirname, "halftone-fade.html"),

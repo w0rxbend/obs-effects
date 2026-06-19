@@ -1653,6 +1653,15 @@
     "createdAt": "2026-04-30T18:43:00+03:00"
   },
   {
+    "slug": "pink-fluid-marble",
+    "title": "Pink Fluid Marble",
+    "href": "pink-fluid-marble.html",
+    "category": "Backgrounds",
+    "tags": ["fluid", "marble", "pink", "magenta", "dark", "abstract"],
+    "description": "",
+    "createdAt": "2026-06-19T22:56:06.132Z"
+  },
+  {
     "slug": "planet",
     "title": "Planet",
     "href": "planet.html",

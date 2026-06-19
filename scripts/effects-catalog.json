@@ -321,6 +321,11 @@
       "tags": ["Fluid", "Marble", "Pink", "Coral", "Dark", "Abstract"]
     },
     {
+      "href": "pink-fluid-marble.html",
+      "category": "Backgrounds",
+      "tags": ["Fluid", "Marble", "Pink", "Magenta", "Dark", "Abstract"]
+    },
+    {
       "href": "dark-glass-lattice.html",
       "category": "Backgrounds",
       "tags": ["Shader", "Neon", "Depth"]
