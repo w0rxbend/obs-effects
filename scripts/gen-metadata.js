@@ -2,6 +2,10 @@ import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+  validateCatalogEntry as validateCatalogEntrySchema,
+  validateOverrideEntry,
+} from "./effects-meta-schema.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -132,16 +136,6 @@ function readOptionalJsonObject(filePath, source, diagnostics) {
   }
 }
 
-function isRootHtmlFile(href) {
-  return (
-    typeof href === "string" &&
-    href.endsWith(".html") &&
-    href !== "index.html" &&
-    !href.includes("/") &&
-    !href.includes("\\")
-  );
-}
-
 function readExistingMetadataEntries() {
   if (!fs.existsSync(outputPath)) {
     return new Map();
@@ -172,51 +166,12 @@ function readExistingMetadataEntries() {
 }
 
 function validateCatalogEntry(entry, index, diagnostics) {
-  const label = `effects[${index}]`;
-
-  if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
-    addDiagnostic(diagnostics, catalogSource, `${label} must be an object.`);
-    return undefined;
+  const issues = validateCatalogEntrySchema(entry, index);
+  for (const issue of issues) {
+    addDiagnostic(diagnostics, catalogSource, issue);
   }
 
-  if (typeof entry.href !== "string") {
-    addDiagnostic(
-      diagnostics,
-      catalogSource,
-      `${label}.href must be a root-level .html file.`,
-    );
-  } else if (entry.href === "index.html") {
-    addDiagnostic(
-      diagnostics,
-      catalogSource,
-      `${label}.href must not be index.html.`,
-    );
-  } else if (!isRootHtmlFile(entry.href)) {
-    addDiagnostic(
-      diagnostics,
-      catalogSource,
-      `${label}.href must be a root-level .html file.`,
-    );
-  }
-
-  if (typeof entry.category !== "string" || !entry.category.trim()) {
-    addDiagnostic(
-      diagnostics,
-      catalogSource,
-      `${label}.category must be a non-empty string.`,
-    );
-  }
-
-  if (!Array.isArray(entry.tags)) {
-    addDiagnostic(diagnostics, catalogSource, `${label}.tags must be an array.`);
-  }
-
-  if (
-    !isRootHtmlFile(entry.href) ||
-    typeof entry.category !== "string" ||
-    !entry.category.trim() ||
-    !Array.isArray(entry.tags)
-  ) {
+  if (issues.length > 0) {
     return undefined;
   }
 
@@ -317,6 +272,10 @@ function readOverrides(knownSlugs, diagnostics) {
         overridesSource,
         `Override key ${slug} does not match any generated effect slug.`,
       );
+    }
+
+    for (const issue of validateOverrideEntry(slug, overrides[slug])) {
+      addDiagnostic(diagnostics, overridesSource, issue);
     }
   }
 

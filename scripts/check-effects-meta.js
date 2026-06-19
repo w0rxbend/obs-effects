@@ -3,6 +3,11 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+import {
+  validateGeneratedMetadataRecord,
+  validateRootHtmlHref,
+} from "./effects-meta-schema.js";
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const repoRoot = path.resolve(__dirname, "..");
@@ -39,34 +44,17 @@ function readMetadata() {
   return metadata;
 }
 
-function isRootHtmlHref(href) {
-  return (
-    href.endsWith(".html") &&
-    href !== "index.html" &&
-    !href.includes("/") &&
-    !href.includes("\\")
-  );
-}
-
-function issueForHref(entry, index, trackedPages) {
+function issueForTrackedHref(entry, index, trackedPages) {
   const label = `entry ${index}`;
 
-  if (!entry || typeof entry !== "object") {
-    return `${label}: expected an object metadata record.`;
+  if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
+    return "";
   }
 
   const { href } = entry;
 
-  if (typeof href !== "string" || !href.trim()) {
-    return `${label}: missing string href.`;
-  }
-
-  if (href !== href.trim()) {
-    return `${label}: href "${href}" has leading or trailing whitespace.`;
-  }
-
-  if (!isRootHtmlHref(href)) {
-    return `${label}: href "${href}" is not a root-level HTML effect page.`;
+  if (validateRootHtmlHref(href, `${label}.href`).length > 0) {
+    return "";
   }
 
   if (trackedPages.has(href)) {
@@ -117,9 +105,10 @@ function listMetadataHrefs(metadata) {
 function main() {
   const metadata = readMetadata();
   const trackedPages = listTrackedRootEffectPages();
-  const issues = metadata
-    .map((entry, index) => issueForHref(entry, index, trackedPages))
-    .filter(Boolean);
+  const issues = metadata.flatMap((entry, index) => [
+    ...validateGeneratedMetadataRecord(entry, index),
+    issueForTrackedHref(entry, index, trackedPages),
+  ]).filter(Boolean);
   const metadataHrefs = listMetadataHrefs(metadata);
 
   const duplicateHrefs = collectDuplicateValues(metadata, "href");

@@ -625,3 +625,78 @@ M  SCORES.jsonl
 M  package.json
 M  scripts/check-effects-meta.js
 M  scripts/gen-metadata.js
+2026-06-19T16:41:39Z iteration 4 started remaining=15593s
+2026-06-19T16:41:39Z iteration 4 preplanner effective budgets untracked_scan_max_bytes=536870912 untracked_scan_max_count=10000 snapshot_copy_max_bytes=536870912 snapshot_copy_max_count=10000 snapshot_copy_max_file_bytes=134217728
+2026-06-19T16:41:39Z iteration 4 disposable preplanner repo created path=/tmp/agent-loop-preplanner-repo-1vbvvx_b/repo copied_entries=813
+2026-06-19T16:41:39Z iteration 4 ideator phase started count=3
+2026-06-19T16:41:39Z iteration 4 ideator phase concurrency workers=3
+2026-06-19T16:41:39Z iteration 4 ideator 1 role="the pragmatist" started
+2026-06-19T16:41:39Z iteration 4 ideator 2 role="the architect" started
+2026-06-19T16:41:39Z iteration 4 ideator 3 role="the contrarian" started
+2026-06-19T16:41:47Z iteration 4 ideator 2 role="the architect" completed status=0
+2026-06-19T16:41:48Z iteration 4 ideator 1 role="the pragmatist" completed status=0
+2026-06-19T16:41:48Z iteration 4 ideator 3 role="the contrarian" completed status=0
+2026-06-19T16:41:48Z iteration 4 ideator phase completed approaches=3
+2026-06-19T16:41:48Z iteration 4 selector started approaches=3
+2026-06-19T16:41:57Z iteration 4 selector completed status=0
+2026-06-19T16:41:57Z iteration 4 disposable preplanner repo cleanup path=/tmp/agent-loop-preplanner-repo-1vbvvx_b/repo
+2026-06-19T16:41:58Z iteration 4 selector rejected alternative role="the architect" approach="Schema Gate First: Treat metadata generation as a contract boundary, and strengthen the producer and checker around one shared definition of valid effect metadata before expandi..." reason="Strong direction, but selected approach makes the producer/checker split more explicit so validation does not accidentally become one duplicated schema applied inconsistently."
+2026-06-19T16:41:58Z iteration 4 selector rejected alternative role="the pragmatist" approach="Schema Gate First: stabilize the metadata contract before expanding features, using generation and checking scripts as a single defensive boundary." reason="Correct priority and scope, but selected approach adds a clearer strategic guardrail: avoid mixing schema tightening with large metadata cleanup or visible directory changes."
+2026-06-19T16:41:58Z iteration 4 selector rejected alternative role="the contrarian" approach="Schema Firewall First: treat metadata generation and checking as a contract boundary before any UX or coverage work, but enforce it through a single shared validation model rath..." reason="Useful emphasis on a shared validation model, but selected approach tempers the 'single model' idea to avoid over-centralizing the scripts into a heavier framework than this repository needs."
+2026-06-19T16:41:58Z iteration 4 selector alternatives persisted count=3
+2026-06-19T16:41:58Z iteration 4 selector structured alternatives persisted count=3
+2026-06-19T16:41:58Z iteration 4 planner started
+2026-06-19T16:42:23Z iteration 4 plan: 4 task(s) in 3 phase(s). This slice prioritizes the schema contract first: establish one explicit validation vocabulary, apply it separately to source inputs and generated output, then lock the behavior with targeted regression tests. Phase 2 can run in parallel because the generator and checker touch different scripts after the shared contract exists.
+2026-06-19T16:42:23Z iteration 4 phase 1 started parallel=False tasks=1
+2026-06-19T16:44:35Z iteration 4 task t1 ('Add shared metadata validation contract') status=0
+2026-06-19T16:44:35Z iteration 4 phase 2 started parallel=True tasks=2
+2026-06-19T16:46:08Z iteration 4 task t2 ('Harden catalog and override validation') status=0
+2026-06-19T16:46:22Z iteration 4 task t3 ('Validate generated metadata schema') status=0
+2026-06-19T16:46:22Z iteration 4 phase 3 started parallel=False tasks=1
+2026-06-19T16:48:39Z iteration 4 task t4 ('Add script-level metadata regression tests') status=0
+2026-06-19T16:48:39Z iteration 4 reviewer started
+
+## Reviewer Summary - Iteration 4
+
+### What Was Done
+
+- Added `scripts/effects-meta-schema.js` as a shared metadata validation vocabulary for root HTML hrefs, slugs, ISO-like timestamps, catalog entries, override entries, and generated metadata records.
+- Updated `scripts/gen-metadata.js` to use the shared schema for catalog and override validation, including object-valued overrides, non-empty trimmed categories, and non-empty trimmed tag strings.
+- Updated `scripts/check-effects-meta.js` to validate the full generated metadata record schema and exact `slug`/`href` basename consistency in addition to href coverage and duplicate detection.
+- Added `scripts/test-effects-meta.js` plus `npm run test:effects-meta`, with fixture-backed failure tests for key catalog, override, duplicate, and stale-output invariants.
+- Validation run by reviewer: `npm run test:effects-meta`, `node scripts/gen-metadata.js --check`, `node scripts/check-effects-meta.js`, `npm run lint`, `npm run build`, and `git diff --check`.
+
+### What Was Found
+
+- No high-priority correctness regression was found. The current tree passes the metadata regression script, freshness check, metadata integrity check, lint, build, and whitespace check.
+- The iteration substantially closes the schema gaps from iteration 3: malformed override objects, wrong override field types, invalid catalog tags/categories, generated record field shape, timestamp shape, and slug/href mismatch are now covered by shared validation.
+- Medium priority: the new regression script only asserts expected failures. It does not prove a valid fixture can generate metadata, pass `--check`, and pass `check-effects-meta.js`.
+- Medium priority: `npm run test:effects-meta` is available but not wired into `npm run build` or `npm run check:effects-meta`, so it remains a manual regression gate.
+- Medium priority: an explicit override `description: ""` is still accepted, which leaves the "reject or normalize blank-only override descriptions" requirement only partially resolved.
+- Medium priority: unknown override fields are silently ignored, so typoed metadata fields can still pass validation while doing nothing.
+- Medium priority: `scripts/gen-metadata.js` does not validate the generated records before writing them; `scripts/check-effects-meta.js` catches invalid public metadata later, but direct generation can still write first and fail in a separate command.
+- Medium priority: `scripts/check-effects-meta.js` still uses uncaught Node errors for missing or invalid metadata JSON instead of the generator's grouped, actionable diagnostics.
+
+### Top Improvement Proposals
+
+- Add happy-path fixture tests plus schema-specific checker tests for invalid generated records, timestamps, tags, slugs, and slug/href mismatches.
+- Decide and enforce the semantics for explicit blank override descriptions; reject them unless there is a documented "clear description" use case.
+- Reject unknown fields in override records so typoed metadata fields cannot silently pass.
+- Validate generated records inside `scripts/gen-metadata.js` before writing `public/effects-meta.json`.
+- Decide whether `npm run test:effects-meta` should be wired into the normal build/check gate or remain a documented manual regression suite.
+- Improve `scripts/check-effects-meta.js` error reporting for missing, empty, invalid JSON, and non-array metadata files.
+2026-06-19T16:52:06Z iteration 4 reviewer completed status=0
+2026-06-19T16:52:06Z iteration 4 memory updated
+2026-06-19T16:52:06Z iteration 4 completed validation_status=0
+2026-06-19T16:52:06Z iteration 4 checkpoint started
+2026-06-19T16:52:06Z iteration 4 checkpoint status before commit:
+M  AGENT_LOG.md
+M  ALTERNATIVES.jsonl
+M  MEMORY.md
+M  PLAN.md
+M  SCORES.jsonl
+M  package.json
+M  scripts/check-effects-meta.js
+A  scripts/effects-meta-schema.js
+M  scripts/gen-metadata.js
+A  scripts/test-effects-meta.js
