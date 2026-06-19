@@ -6,7 +6,7 @@ Replace the flat `index.html` effect list with a searchable, sortable, filterabl
 
 ## Current Status
 
-Completed across the last two iterations:
+Completed across the metadata directory work:
 
 - [x] Added `scripts/gen-metadata.js`.
 - [x] Added `scripts/effects-meta-overrides.json` with seed descriptions and enriched tags for 24 key effects.
@@ -21,37 +21,48 @@ Completed across the last two iterations:
 - [x] Updated `loadEffects()` to try `effects-meta.json`, `public/effects-meta.json`, then `/effects-meta.json`.
 - [x] Added an explicit degraded direct-file fallback notice for the five-item inline fallback.
 - [x] Added `scripts/check-effects-meta.js` and wired it into `npm run build`.
-- [x] Verified `node scripts/gen-metadata.js`, `node scripts/check-effects-meta.js`, `npm run lint`, and `npm run build` pass.
+- [x] Made `scripts/check-effects-meta.js` compare tracked root HTML pages and metadata hrefs bidirectionally.
+- [x] Made metadata checking fail on duplicate `href` and duplicate `slug` records.
+- [x] Removed the `index.html` exception from metadata href validation.
+- [x] Added `node scripts/gen-metadata.js --check` as a generated-output freshness check.
+- [x] Wired freshness checking into `npm run build` through `npm run check:effects-meta`.
+- [x] Made `scripts/gen-metadata.js` fail closed when `scripts/effects-catalog.json` is missing, empty, invalid JSON, or missing an `effects` array.
+- [x] Validated catalog entries for root-level `.html` href, non-empty category, and array tags.
+- [x] Made generation fail when tracked root HTML files are absent from `scripts/effects-catalog.json`.
+- [x] Made generation fail when `scripts/effects-catalog.json` references a non-tracked root effect page.
+- [x] Validated `scripts/effects-meta-overrides.json` keys against known effect slugs.
+- [x] Verified `node scripts/gen-metadata.js --check`, `node scripts/check-effects-meta.js`, `npm run lint`, `npm run build`, and `git diff --check` pass.
 
-Review findings from iteration 2:
+Current review findings:
 
-- High priority: `scripts/check-effects-meta.js` is one-way. It verifies every metadata `href` points at a tracked root HTML file, but it does not fail when tracked root HTML files are missing from metadata, when metadata has duplicate `href`s, or when generated output is stale.
-- High priority: `scripts/gen-metadata.js` still treats a missing or malformed `scripts/effects-catalog.json` as an empty catalog and silently emits `Uncategorized` records. A durable source file should fail closed.
-- Medium priority: catalog entries are not validated against the tracked root HTML set. A typo or stale catalog record is currently ignored instead of reported.
-- Medium priority: `scripts/check-effects-meta.js` explicitly allows `index.html` as a metadata href, even though `index.html` is not an effect page.
-- Medium priority: direct `file://` behavior is intentionally degraded to five fallback records. This is now documented in the UI, but it still does not provide a full static directory without a local server.
-- Medium priority: metadata coverage is still shallow: 227 of 251 records have empty descriptions, 20 are `Uncategorized`, and 18 have no tags.
+- No high-priority correctness regression was found in iteration 3. The metadata source contract, generated freshness check, and build wiring are now working on the current tree.
+- Medium priority: override values are only checked by key. Malformed override objects, wrong field types, blank categories/descriptions, and non-string tags are silently ignored or accepted.
+- Medium priority: catalog validation accepts category strings with surrounding whitespace and only checks that `tags` is an array, not that each tag is a non-empty string before normalization.
+- Medium priority: `scripts/check-effects-meta.js` now validates href coverage and duplicate href/slug values, but it still does not validate the full public metadata record schema.
+- Medium priority: direct `file://` behavior remains intentionally degraded to five inline fallback records. The UI states this, but the repo still lacks a documented product decision.
+- Medium priority: metadata coverage remains shallow: 227 of 251 records have empty descriptions, 20 are `Uncategorized`, and 18 have no tags.
 - Medium priority: highlight rendering can still match inside escaped HTML entities because highlighting runs after escaping.
 
-## Phase 1 - Strengthen Catalog Verification
+## Phase 1 - Tighten Metadata Schemas
 
 Priority: high.
 
-- [ ] Extend `scripts/check-effects-meta.js` to compare tracked root HTML files and metadata hrefs bidirectionally.
-- [ ] Fail the metadata check on duplicate `href` or duplicate `slug` records.
-- [ ] Remove the `index.html` exception from the metadata check.
-- [ ] Add a generated-output freshness check, either `node scripts/gen-metadata.js --check` or a `check:effects-meta:fresh` script that regenerates to a temp file and diffs against `public/effects-meta.json`.
-- [ ] Keep the freshness check in `npm run build` so stale committed metadata cannot pass CI.
+- [ ] Validate each override value is an object.
+- [ ] Validate override `category`, when present, is a non-empty trimmed string.
+- [ ] Validate override `description`, when present, is a string and normalize or reject blank-only descriptions.
+- [ ] Validate override `tags`, when present, is an array of non-empty strings.
+- [ ] Validate every catalog tag is a non-empty string before generation.
+- [ ] Reject or normalize catalog categories with leading/trailing whitespace.
+- [ ] Add full generated metadata schema validation in `scripts/check-effects-meta.js`: `slug`, `title`, `href`, `category`, `tags`, `description`, and ISO-like `createdAt`.
+- [ ] Check that each metadata `slug` exactly matches `href` basename.
 
-## Phase 2 - Validate Durable Source Inputs
+## Phase 2 - Add Script-Level Regression Tests
 
 Priority: high.
 
-- [ ] Make `scripts/gen-metadata.js` fail if `scripts/effects-catalog.json` is missing, empty, invalid JSON, or missing an `effects` array.
-- [ ] Validate every catalog entry has a root-level `.html` href, non-empty category, and array tags.
-- [ ] Fail when a tracked root HTML file is absent from `scripts/effects-catalog.json`, unless a documented defaulting mode is explicitly requested.
-- [ ] Fail when `scripts/effects-catalog.json` contains an href that is not a tracked root effect page.
-- [ ] Validate `scripts/effects-meta-overrides.json` keys against known slugs so dead overrides are caught early.
+- [ ] Add focused tests or fixture-based checks for missing catalog file, invalid catalog JSON, missing tracked page, stale catalog href, duplicate metadata href, duplicate metadata slug, stale generated output, and dead override key.
+- [ ] Keep tests independent of the 251-record real catalog where practical so failures identify the broken invariant quickly.
+- [ ] Add a package script such as `test:effects-meta` and include it in the verification checklist.
 
 ## Phase 3 - Finish Static Directory Behavior
 
@@ -93,16 +104,16 @@ Priority: low.
 Run before considering the directory work complete:
 
 ```bash
-node scripts/gen-metadata.js
+node scripts/gen-metadata.js --check
 node scripts/check-effects-meta.js
 npm run lint
 npm run build
+git diff --check
 ```
 
-Additional checks to add next:
+Useful invariant spot-check:
 
 ```bash
-# metadata hrefs should exactly match tracked root effect pages
 comm -3 \
   <(jq -r '.[].href' public/effects-meta.json | sort) \
   <(git ls-files '*.html' | grep -v '^index.html$' | grep -v '/' | sort)

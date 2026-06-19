@@ -6,7 +6,8 @@
   "scripts": {
     "start": "npm run dev",
     "build": "npm run lint && npm run check:effects-meta && tsc && vite build",
-    "check:effects-meta": "node scripts/check-effects-meta.js",
+    "check:effects-meta": "npm run check:effects-meta:fresh && node scripts/check-effects-meta.js",
+    "check:effects-meta:fresh": "node scripts/gen-metadata.js --check",
     "lint": "eslint .",
     "dev": "vite"
   },

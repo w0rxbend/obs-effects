@@ -3,3 +3,5 @@
 [learning] A committed JSON file does not guarantee direct `file://` usability because browser fetch restrictions can force the app onto its inline fallback path.
 [anti-pattern] One-way generated-artifact checks catch bad references but can still pass stale or incomplete output; compare source and output sets bidirectionally.
 [pattern] Durable catalog sources should fail closed when missing or malformed; silent fallback to defaults turns source breakage into plausible generated output.
+[pattern] Put exact generated-output freshness checks in the build after validating durable source inputs, so stale artifacts cannot mask bad sources.
+[learning] Validating override keys is not the same as validating override schema; known keys can still carry malformed values that get silently ignored.

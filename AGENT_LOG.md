@@ -555,3 +555,73 @@ M  public/effects-meta.json
 A  scripts/check-effects-meta.js
 A  scripts/effects-catalog.json
 M  scripts/gen-metadata.js
+2026-06-19T16:32:30Z iteration 3 started remaining=16141s
+2026-06-19T16:32:30Z iteration 3 preplanner effective budgets untracked_scan_max_bytes=536870912 untracked_scan_max_count=10000 snapshot_copy_max_bytes=536870912 snapshot_copy_max_count=10000 snapshot_copy_max_file_bytes=134217728
+2026-06-19T16:32:31Z iteration 3 disposable preplanner repo created path=/tmp/agent-loop-preplanner-repo-8pwtnhu7/repo copied_entries=813
+2026-06-19T16:32:31Z iteration 3 ideator phase started count=3
+2026-06-19T16:32:31Z iteration 3 ideator phase concurrency workers=3
+2026-06-19T16:32:31Z iteration 3 ideator 1 role="the pragmatist" started
+2026-06-19T16:32:31Z iteration 3 ideator 2 role="the architect" started
+2026-06-19T16:32:31Z iteration 3 ideator 3 role="the contrarian" started
+2026-06-19T16:32:39Z iteration 3 ideator 1 role="the pragmatist" completed status=0
+2026-06-19T16:32:40Z iteration 3 ideator 3 role="the contrarian" completed status=0
+2026-06-19T16:32:41Z iteration 3 ideator 2 role="the architect" completed status=0
+2026-06-19T16:32:41Z iteration 3 ideator phase completed approaches=3
+2026-06-19T16:32:41Z iteration 3 selector started approaches=3
+2026-06-19T16:32:50Z iteration 3 selector completed status=0
+2026-06-19T16:32:50Z iteration 3 disposable preplanner repo cleanup path=/tmp/agent-loop-preplanner-repo-8pwtnhu7/repo
+2026-06-19T16:32:50Z iteration 3 selector rejected alternative role="the pragmatist" approach="Contract-First Metadata Gate: Treat the catalog, generated metadata, and tracked root HTML pages as three representations of one strict contract, and make the next iteration est..." reason="Strong and aligned, but selected wording should more explicitly include overrides and build freshness as first-class parts of the contract."
+2026-06-19T16:32:50Z iteration 3 selector rejected alternative role="the contrarian" approach="Make the catalog the contract: treat metadata generation as a compiler pipeline with explicit source validity, deterministic output, and CI-enforced equivalence before touching..." reason="Strong, but the compiler-pipeline framing risks inviting schema or architecture overwork; the next plan should stay focused on repository invariants and CI gates."
+2026-06-19T16:32:50Z iteration 3 selector rejected alternative role="the architect" approach="Invariant-First Metadata Contract: Treat the catalog, generated metadata, and tracked root HTML pages as three views of one strict contract, and make the next iteration center o..." reason="Strong, but it leaves the build check and override validation slightly implicit; the synthesized approach makes those concrete without adding implementation tasks."
+2026-06-19T16:32:50Z iteration 3 selector alternatives persisted count=3
+2026-06-19T16:32:50Z iteration 3 selector structured alternatives persisted count=3
+2026-06-19T16:32:50Z iteration 3 planner started
+2026-06-19T16:33:19Z iteration 3 plan: 4 task(s) in 3 phase(s). This iteration focuses on the contract-first metadata gate: source validation, generated-output validation, freshness, and CI/build wiring. UX, direct file:// fallback behavior, taxonomy cleanup, coverage reporting, and thumbnails are intentionally deferred until the metadata contract is trustworthy.
+2026-06-19T16:33:19Z iteration 3 phase 1 started parallel=True tasks=2
+2026-06-19T16:34:15Z iteration 3 task t2 ('Make metadata checker bidirectional') status=0
+2026-06-19T16:36:26Z iteration 3 task t1 ('Fail closed on metadata source inputs') status=0
+2026-06-19T16:36:26Z iteration 3 phase 2 started parallel=False tasks=1
+2026-06-19T16:37:14Z iteration 3 task t3 ('Add generated metadata freshness check') status=0
+2026-06-19T16:37:14Z iteration 3 phase 3 started parallel=False tasks=1
+2026-06-19T16:38:34Z iteration 3 task t4 ('Wire metadata contract into build') status=0
+2026-06-19T16:38:34Z iteration 3 reviewer started
+
+## Reviewer Summary - Iteration 3
+
+### What Was Done
+
+- `scripts/gen-metadata.js` now fails closed on missing, empty, or invalid `scripts/effects-catalog.json`, missing `effects`, invalid catalog href/category/tags shape, catalog entries not matching tracked root effect pages, and override keys that do not match known slugs.
+- `scripts/check-effects-meta.js` now rejects `index.html`, detects duplicate metadata `href` and `slug` values, and checks that tracked root HTML pages are represented in metadata.
+- `node scripts/gen-metadata.js --check` was added as an exact generated-output freshness check.
+- `package.json` now runs freshness plus integrity checks through `npm run check:effects-meta`, and `npm run build` includes that contract gate.
+- Validation run by reviewer: `node scripts/gen-metadata.js --check`, `node scripts/check-effects-meta.js`, `npm run lint`, `npm run build`, `git diff --check`, and the `comm -3` href set comparison from `PLAN.md`.
+
+### What Was Found
+
+- No high-priority correctness regression was found in the iteration 3 implementation. The current metadata contract passes on the working tree: 251 catalog entries, 251 generated metadata records, and no metadata/tracked-page href delta.
+- The high-priority findings from iteration 2 were addressed: stale generated output now fails the build, metadata href coverage is bidirectional, duplicate href/slug records fail, `index.html` is not allowed as an effect href, catalog inputs fail closed, catalog hrefs are checked against tracked root pages, and dead override keys are reported.
+- Medium priority: override values are still under-validated. A known override slug can contain a non-object value, wrong field types, blank strings, or non-string tags and the generator will ignore or accept the malformed fields instead of reporting them.
+- Medium priority: catalog validation checks only that `tags` is an array and that `category.trim()` is non-empty. It does not reject non-string tag elements or category strings with leading/trailing whitespace.
+- Medium priority: generated metadata integrity checking still validates only href coverage and duplicate href/slug values. It does not verify the full public metadata schema or that each `slug` equals the basename of `href`.
+- Medium priority: direct `file://` behavior remains degraded to the five-record inline fallback, metadata coverage remains shallow, and highlight matching can still split escaped HTML entities. These were intentionally deferred rather than solved in this iteration.
+
+### Top Improvement Proposals
+
+- Add strict override schema validation for object shape, optional field types, non-empty trimmed category, string descriptions, and string-only tags.
+- Tighten catalog validation to reject category whitespace and non-string or blank tag values before generation.
+- Extend `scripts/check-effects-meta.js` into a full generated metadata schema validator, including `slug`/`href` consistency and basic timestamp shape.
+- Add fixture-backed regression tests for the metadata contract so future changes prove failure modes, not just the current happy-path 251-record catalog.
+- Make an explicit product decision on full direct-file directory support; either generate a full embedded fallback or document that the full directory requires Vite or another local static server.
+2026-06-19T16:41:39Z iteration 3 reviewer completed status=0
+2026-06-19T16:41:39Z iteration 3 memory updated
+2026-06-19T16:41:39Z iteration 3 completed validation_status=0
+2026-06-19T16:41:39Z iteration 3 checkpoint started
+2026-06-19T16:41:39Z iteration 3 checkpoint status before commit:
+M  AGENT_LOG.md
+M  ALTERNATIVES.jsonl
+M  MEMORY.md
+M  PLAN.md
+M  SCORES.jsonl
+M  package.json
+M  scripts/check-effects-meta.js
+M  scripts/gen-metadata.js
