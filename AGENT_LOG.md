@@ -775,3 +775,7 @@ M  scripts/check-effects-meta.js
 M  scripts/effects-meta-schema.js
 M  scripts/gen-metadata.js
 M  scripts/test-effects-meta.js
+2026-06-19T17:00:54Z final checkpoint policy behavior=source_and_telemetry terminal_reason=iterations_complete
+2026-06-19T17:00:54Z iteration final-5 checkpoint started
+2026-06-19T17:00:54Z iteration final-5 checkpoint status before commit:
+M  AGENT_LOG.md
