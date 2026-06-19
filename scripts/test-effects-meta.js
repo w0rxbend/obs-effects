@@ -18,6 +18,7 @@ const scriptsUnderTest = [
 ];
 
 const validTimestamp = "2026-05-02T09:02:12.000Z";
+const preservedTimestamp = "2000-01-01T00:00:00.000Z";
 
 function writeText(filePath, contents) {
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
@@ -223,6 +224,17 @@ function expectHappyPath() {
 
   runScriptRequired(root, "gen-metadata.js", ["--check"]);
   runScriptRequired(root, "check-effects-meta.js");
+
+  const generatedPath = path.join(root, "public", "effects-meta.json");
+  const existingMetadata = fs.readFileSync(generatedPath, "utf8");
+  fs.writeFileSync(
+    generatedPath,
+    existingMetadata.replace(
+      /"createdAt": "[^"]+"/,
+      `"createdAt": "${preservedTimestamp}"`,
+    ),
+  );
+  runScriptRequired(root, "gen-metadata.js", ["--check"]);
 }
 
 function expectFailure(testCase) {

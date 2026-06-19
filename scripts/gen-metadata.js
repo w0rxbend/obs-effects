@@ -179,6 +179,7 @@ function readExistingMetadataEntries() {
       category:
         typeof entry.category === "string" ? entry.category : "Uncategorized",
       tags: Array.isArray(entry.tags) ? entry.tags : [],
+      createdAt: typeof entry.createdAt === "string" ? entry.createdAt : "",
     });
   }
 
@@ -332,7 +333,11 @@ function fileCreatedAt(fileName) {
   return stat.birthtime.toISOString();
 }
 
-function createdAtFor(fileName) {
+function createdAtFor(fileName, existingEntry) {
+  if (checkMode && existingEntry?.createdAt) {
+    return existingEntry.createdAt;
+  }
+
   return gitCreatedAt(fileName) || fileCreatedAt(fileName);
 }
 
@@ -390,7 +395,7 @@ function metadataForFile(fileName, catalogEntries, existingEntries, overrides) {
     tags: normalizeTags([...catalogTags, ...existingTags, ...overrideTags]),
     description:
       typeof override.description === "string" ? override.description : "",
-    createdAt: createdAtFor(fileName),
+    createdAt: createdAtFor(fileName, existingEntry),
   };
 }
 
@@ -476,9 +481,8 @@ function main() {
     return;
   }
 
-  const existingEntries = preserveExisting
-    ? readExistingMetadataEntries()
-    : new Map();
+  const existingEntries =
+    preserveExisting || checkMode ? readExistingMetadataEntries() : new Map();
   const metadata = htmlFiles
     .map((fileName) =>
       metadataForFile(fileName, catalogEntries, existingEntries, overrides),
