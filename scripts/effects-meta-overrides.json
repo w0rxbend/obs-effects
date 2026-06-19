@@ -69,7 +69,14 @@
   },
   "audio-flow-turbulence": {
     "description": "Audio-driven flow field with turbulent ribbons and responsive particle movement shaped by sound intensity.",
-    "tags": ["Audio", "Flow Field", "Turbulence", "Particle", "Reactive", "Fluid"]
+    "tags": [
+      "Audio",
+      "Flow Field",
+      "Turbulence",
+      "Particle",
+      "Reactive",
+      "Fluid"
+    ]
   },
   "gpu-boids": {
     "description": "High-density flocking simulation using GPU-style motion, emergent swarms, and fast particle coordination.",
@@ -77,11 +84,25 @@
   },
   "slime-mold-network": {
     "description": "Organic slime-mold network with branching trails, glowing paths, and adaptive colony-like growth.",
-    "tags": ["Organic", "Network", "Slime Mold", "Growth", "Particle", "Biology"]
+    "tags": [
+      "Organic",
+      "Network",
+      "Slime Mold",
+      "Growth",
+      "Particle",
+      "Biology"
+    ]
   },
   "physarum-gol": {
     "description": "Hybrid cellular automata and physarum-inspired growth pattern with living texture and emergent structure.",
-    "tags": ["Cellular", "Physarum", "Simulation", "Organic", "Growth", "Generative"]
+    "tags": [
+      "Cellular",
+      "Physarum",
+      "Simulation",
+      "Organic",
+      "Growth",
+      "Generative"
+    ]
   },
   "neural-datacenter": {
     "description": "Futuristic datacenter scene with neural signal motifs, grid depth, and abstract infrastructure visualization.",

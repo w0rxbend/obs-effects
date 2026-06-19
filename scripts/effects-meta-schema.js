@@ -126,7 +126,9 @@ export function validateIsoLikeTimestampString(value, label) {
 
   const parsedTime = Date.parse(value);
   if (Number.isNaN(parsedTime)) {
-    return [`${label} must be a real parseable timestamp; received "${value}".`];
+    return [
+      `${label} must be a real parseable timestamp; received "${value}".`,
+    ];
   }
 
   return [];
@@ -214,7 +216,9 @@ export function validateOverrideEntry(slug, override) {
   }
 
   if (Object.hasOwn(override, "tags")) {
-    issues.push(...validateArrayOfNonEmptyStrings(override.tags, `${label}.tags`));
+    issues.push(
+      ...validateArrayOfNonEmptyStrings(override.tags, `${label}.tags`),
+    );
   }
 
   return issues;
@@ -233,7 +237,10 @@ export function validateGeneratedMetadataRecord(record, index) {
     ...validateRootHtmlHref(record.href, `${label}.href`),
     ...validateNonEmptyTrimmedString(record.category, `${label}.category`),
     ...validateArrayOfNonEmptyStrings(record.tags, `${label}.tags`),
-    ...validateOptionalTrimmedString(record.description, `${label}.description`),
+    ...validateOptionalTrimmedString(
+      record.description,
+      `${label}.description`,
+    ),
     ...validateIsoLikeTimestampString(record.createdAt, `${label}.createdAt`),
     ...validateSlugMatchesHrefBasename(record.slug, record.href, label),
   ];

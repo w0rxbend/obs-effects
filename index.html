@@ -65,16 +65,34 @@
         min-height: 100vh;
         margin: 0;
         background:
-          radial-gradient(circle at 12% 0%, rgba(139, 211, 255, 0.14), transparent 28rem),
-          radial-gradient(circle at 86% 8%, rgba(203, 166, 247, 0.12), transparent 30rem),
+          radial-gradient(
+            circle at 12% 0%,
+            rgba(139, 211, 255, 0.14),
+            transparent 28rem
+          ),
+          radial-gradient(
+            circle at 86% 8%,
+            rgba(203, 166, 247, 0.12),
+            transparent 30rem
+          ),
           linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
           linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px),
           var(--ink);
-        background-size: auto, auto, 48px 48px, 48px 48px, auto;
+        background-size:
+          auto,
+          auto,
+          48px 48px,
+          48px 48px,
+          auto;
         color: var(--fg);
         font-family:
-          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
-          "Segoe UI", sans-serif;
+          Inter,
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
         line-height: 1.5;
       }
 
@@ -453,8 +471,16 @@
         position: absolute;
         inset: 0;
         background-image:
-          linear-gradient(to right, rgba(255, 255, 255, 0.07) 1px, transparent 1px),
-          linear-gradient(to bottom, rgba(255, 255, 255, 0.055) 1px, transparent 1px);
+          linear-gradient(
+            to right,
+            rgba(255, 255, 255, 0.07) 1px,
+            transparent 1px
+          ),
+          linear-gradient(
+            to bottom,
+            rgba(255, 255, 255, 0.055) 1px,
+            transparent 1px
+          );
         background-size: 24px 24px;
         mask-image: radial-gradient(circle at 50% 50%, #000, transparent 76%);
       }
@@ -655,8 +681,12 @@
           </span>
         </a>
         <div class="top-actions">
-          <span class="status-pill"><span class="status-dot"></span> Static catalog</span>
-          <button class="theme-toggle" id="themeToggle" type="button">Theme</button>
+          <span class="status-pill"
+            ><span class="status-dot"></span> Static catalog</span
+          >
+          <button class="theme-toggle" id="themeToggle" type="button">
+            Theme
+          </button>
         </div>
       </div>
     </header>
@@ -738,7 +768,9 @@
           <h2 class="results-title" id="resultsTitle">All effects</h2>
           <div class="results-meta" id="resultsMeta">Loading metadata</div>
         </div>
-        <button class="clear-filters" id="clearFilters" type="button">Clear filters</button>
+        <button class="clear-filters" id="clearFilters" type="button">
+          Clear filters
+        </button>
       </div>
       <div class="grid" id="effectsGrid" aria-live="polite"></div>
     </main>
@@ -992,33 +1024,54 @@
 
       function filteredEffects() {
         return sortEffects(
-          state.effects.filter((effect) => matchesQuery(effect) && matchesTags(effect)),
+          state.effects.filter(
+            (effect) => matchesQuery(effect) && matchesTags(effect),
+          ),
           state.sort,
         );
       }
 
       function paletteFor(effect) {
-        const text = `${effect.category} ${effect.tags.join(" ")} ${effect.slug}`.toLowerCase();
+        const text =
+          `${effect.category} ${effect.tags.join(" ")} ${effect.slug}`.toLowerCase();
         if (text.includes("webcam") || text.includes("border")) {
           return ["rgba(139,211,255,0.46)", "rgba(52,211,153,0.3)", "#071218"];
         }
-        if (text.includes("globe") || text.includes("space") || text.includes("3d")) {
+        if (
+          text.includes("globe") ||
+          text.includes("space") ||
+          text.includes("3d")
+        ) {
           return ["rgba(93,135,255,0.48)", "rgba(203,166,247,0.34)", "#090a17"];
         }
-        if (text.includes("fluid") || text.includes("water") || text.includes("wave")) {
+        if (
+          text.includes("fluid") ||
+          text.includes("water") ||
+          text.includes("wave")
+        ) {
           return ["rgba(45,212,191,0.42)", "rgba(139,211,255,0.34)", "#061516"];
         }
-        if (text.includes("fire") || text.includes("magma") || text.includes("gold")) {
+        if (
+          text.includes("fire") ||
+          text.includes("magma") ||
+          text.includes("gold")
+        ) {
           return ["rgba(251,146,60,0.46)", "rgba(250,204,21,0.34)", "#190c05"];
         }
-        if (text.includes("glitch") || text.includes("cyber") || text.includes("neon")) {
+        if (
+          text.includes("glitch") ||
+          text.includes("cyber") ||
+          text.includes("neon")
+        ) {
           return ["rgba(244,114,182,0.46)", "rgba(34,211,238,0.34)", "#130817"];
         }
         return ["rgba(139,211,255,0.38)", "rgba(203,166,247,0.3)", "#0e0e12"];
       }
 
       function renderStats(visible) {
-        const categories = new Set(state.effects.map((effect) => effect.category));
+        const categories = new Set(
+          state.effects.map((effect) => effect.category),
+        );
         els.totalCount.textContent = state.effects.length;
         els.categoryCount.textContent = categories.size;
         els.tagCount.textContent = uniqueSortedTags(state.effects).length;
@@ -1080,7 +1133,9 @@
 
         renderStats(visible);
         renderCards(visible);
-        els.resultsTitle.textContent = hasFilters ? "Filtered effects" : "All effects";
+        els.resultsTitle.textContent = hasFilters
+          ? "Filtered effects"
+          : "All effects";
         els.resultsMeta.textContent = `${visible.length} of ${state.effects.length} effects · ${state.sort}`;
         els.clearFilters.classList.toggle("is-visible", Boolean(hasFilters));
       }
@@ -1137,7 +1192,8 @@
         });
 
         els.themeToggle.addEventListener("click", () => {
-          const current = document.documentElement.getAttribute("data-theme") || "dark";
+          const current =
+            document.documentElement.getAttribute("data-theme") || "dark";
           const next = current === "dark" ? "light" : "dark";
           document.documentElement.setAttribute("data-theme", next);
           try {
@@ -1146,7 +1202,10 @@
         });
 
         window.addEventListener("keydown", (event) => {
-          if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+          if (
+            (event.metaKey || event.ctrlKey) &&
+            event.key.toLowerCase() === "k"
+          ) {
             event.preventDefault();
             els.searchInput.focus();
           }

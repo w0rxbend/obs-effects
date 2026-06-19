@@ -263,7 +263,8 @@ const failureCases = [
       writeCatalog(root, validCatalog(["alpha.html"]));
       writeOverrides(root, {});
     },
-    expected: "beta.html is tracked but missing from scripts/effects-catalog.json.",
+    expected:
+      "beta.html is tracked but missing from scripts/effects-catalog.json.",
   },
   {
     name: "stale-catalog-href",
@@ -291,7 +292,8 @@ const failureCases = [
       writeCatalog(root, validCatalog());
       writeOverrides(root, { alpha: "Fixture" });
     },
-    expected: "overrides.alpha must be an object keyed by optional metadata fields.",
+    expected:
+      "overrides.alpha must be an object keyed by optional metadata fields.",
   },
   {
     name: "override-tag-whitespace",
@@ -448,7 +450,7 @@ const failureCases = [
       ]);
     },
     expected:
-      "entry 0.createdAt must be an ISO-like timestamp such as 2026-05-02T12:02:12+03:00 or 2026-05-02T09:02:12.000Z; received \"not-a-date\".",
+      'entry 0.createdAt must be an ISO-like timestamp such as 2026-05-02T12:02:12+03:00 or 2026-05-02T09:02:12.000Z; received "not-a-date".',
   },
   {
     name: "checker-invalid-slug",
@@ -483,7 +485,8 @@ const failureCases = [
         metadataRecord("beta", "beta.html"),
       ]);
     },
-    expected: 'duplicate href "alpha.html" appears in public/effects-meta.json.',
+    expected:
+      'duplicate href "alpha.html" appears in public/effects-meta.json.',
   },
   {
     name: "duplicate-generated-metadata-slug",

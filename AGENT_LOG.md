@@ -460,55 +460,55 @@ UU vite.config.ts
 - Move category/base tag data into a durable source file such as `scripts/effects-catalog.json`; stop preserving most metadata from previous generated output.
 - Replace the five-record inline fallback with generated full embedded fallback data, or explicitly accept and label degraded static-file behavior.
 - Add category filtering and URL-shareable filter state after correctness and reproducibility are fixed.
-2026-06-19T16:20:08Z iteration 1 reviewer completed status=0
-2026-06-19T16:20:08Z iteration 1 memory updated
-2026-06-19T16:20:08Z iteration 1 completed validation_status=0
-2026-06-19T16:20:08Z iteration 1 checkpoint started
-2026-06-19T16:20:08Z iteration 1 checkpoint status before commit:
-M  AGENT_LOG.md
-A  ALTERNATIVES.jsonl
-A  MEMORY.md
-M  PLAN.md
-M  SCORES.jsonl
-M  index.html
-A  neon-ribbon-pattern.html
-A  public/effects-meta.json
-A  scripts/effects-meta-overrides.json
-A  scripts/gen-metadata.js
-A  src/app/screens/NeonRibbonPatternScreen.ts
-A  src/neon-ribbon-pattern.ts
-2026-06-19T16:20:08Z iteration 2 started remaining=16884s
-2026-06-19T16:20:08Z iteration 2 preplanner effective budgets untracked_scan_max_bytes=536870912 untracked_scan_max_count=10000 snapshot_copy_max_bytes=536870912 snapshot_copy_max_count=10000 snapshot_copy_max_file_bytes=134217728
-2026-06-19T16:20:08Z iteration 2 disposable preplanner repo created path=/tmp/agent-loop-preplanner-repo-shy2qtn8/repo copied_entries=811
-2026-06-19T16:20:08Z iteration 2 ideator phase started count=3
-2026-06-19T16:20:08Z iteration 2 ideator phase concurrency workers=3
-2026-06-19T16:20:08Z iteration 2 ideator 1 role="the pragmatist" started
-2026-06-19T16:20:08Z iteration 2 ideator 2 role="the architect" started
-2026-06-19T16:20:08Z iteration 2 ideator 3 role="the contrarian" started
-2026-06-19T16:20:16Z iteration 2 ideator 2 role="the architect" completed status=0
-2026-06-19T16:20:17Z iteration 2 ideator 1 role="the pragmatist" completed status=0
-2026-06-19T16:20:17Z iteration 2 ideator 3 role="the contrarian" completed status=0
-2026-06-19T16:20:17Z iteration 2 ideator phase completed approaches=3
-2026-06-19T16:20:17Z iteration 2 selector started approaches=3
-2026-06-19T16:20:28Z iteration 2 selector completed status=0
-2026-06-19T16:20:28Z iteration 2 disposable preplanner repo cleanup path=/tmp/agent-loop-preplanner-repo-shy2qtn8/repo
-2026-06-19T16:20:28Z iteration 2 selector rejected alternative role="the architect" approach="Source-of-Truth First: stabilize the catalog by treating committed root HTML files plus a durable catalog JSON as the only authoritative inputs, then let generated runtime metad..." reason="Strong and largely correct, but as-is it risks spending too much planning attention on schema migration and taxonomy preservation before first locking the simpler contract: authoritative inputs, verified hrefs, and disposable output."
-2026-06-19T16:20:28Z iteration 2 selector rejected alternative role="the pragmatist" approach="Source-of-Truth First: stabilize the catalog contract before expanding UX. Treat metadata correctness and reproducibility as the product boundary, then let directory features co..." reason="Also strong, but its framing is slightly too broad around downstream UX consumption. The immediate planner needs a sharper stabilization mandate rather than balancing quick UX wins against pipeline work."
-2026-06-19T16:20:28Z iteration 2 selector rejected alternative role="the contrarian" approach="Source-of-Truth Reset: freeze UX work and first convert the catalog into a deterministic, audited data pipeline with explicit ownership boundaries." reason="Useful emphasis on freezing UX, but too absolute as stated. The better strategy keeps UX paused only until the catalog contract is trustworthy, without implying a larger reset than the repo needs."
-2026-06-19T16:20:28Z iteration 2 selector alternatives persisted count=3
-2026-06-19T16:20:28Z iteration 2 selector structured alternatives persisted count=3
-2026-06-19T16:20:28Z iteration 2 planner started
-2026-06-19T16:21:16Z iteration 2 plan: 5 task(s) in 4 phase(s). This decomposition stabilizes the catalog contract first: durable source data is created before the generator is refactored, then independent integrity and runtime fallback work can proceed in parallel, followed by one final regeneration and verification pass.
-2026-06-19T16:21:16Z iteration 2 phase 1 started parallel=False tasks=1
-2026-06-19T16:22:27Z iteration 2 task t1 ('Create durable catalog source') status=0
-2026-06-19T16:22:27Z iteration 2 phase 2 started parallel=False tasks=1
-2026-06-19T16:25:53Z iteration 2 task t2 ('Refactor metadata generator') status=0
-2026-06-19T16:25:53Z iteration 2 phase 3 started parallel=True tasks=2
-2026-06-19T16:26:38Z iteration 2 task t4 ('Make directory loading explicit') status=0
-2026-06-19T16:27:33Z iteration 2 task t3 ('Add metadata integrity check') status=0
-2026-06-19T16:27:33Z iteration 2 phase 4 started parallel=False tasks=1
-2026-06-19T16:28:53Z iteration 2 task t5 ('Regenerate and verify catalog') status=0
-2026-06-19T16:28:53Z iteration 2 reviewer started
+  2026-06-19T16:20:08Z iteration 1 reviewer completed status=0
+  2026-06-19T16:20:08Z iteration 1 memory updated
+  2026-06-19T16:20:08Z iteration 1 completed validation_status=0
+  2026-06-19T16:20:08Z iteration 1 checkpoint started
+  2026-06-19T16:20:08Z iteration 1 checkpoint status before commit:
+  M AGENT_LOG.md
+  A ALTERNATIVES.jsonl
+  A MEMORY.md
+  M PLAN.md
+  M SCORES.jsonl
+  M index.html
+  A neon-ribbon-pattern.html
+  A public/effects-meta.json
+  A scripts/effects-meta-overrides.json
+  A scripts/gen-metadata.js
+  A src/app/screens/NeonRibbonPatternScreen.ts
+  A src/neon-ribbon-pattern.ts
+  2026-06-19T16:20:08Z iteration 2 started remaining=16884s
+  2026-06-19T16:20:08Z iteration 2 preplanner effective budgets untracked_scan_max_bytes=536870912 untracked_scan_max_count=10000 snapshot_copy_max_bytes=536870912 snapshot_copy_max_count=10000 snapshot_copy_max_file_bytes=134217728
+  2026-06-19T16:20:08Z iteration 2 disposable preplanner repo created path=/tmp/agent-loop-preplanner-repo-shy2qtn8/repo copied_entries=811
+  2026-06-19T16:20:08Z iteration 2 ideator phase started count=3
+  2026-06-19T16:20:08Z iteration 2 ideator phase concurrency workers=3
+  2026-06-19T16:20:08Z iteration 2 ideator 1 role="the pragmatist" started
+  2026-06-19T16:20:08Z iteration 2 ideator 2 role="the architect" started
+  2026-06-19T16:20:08Z iteration 2 ideator 3 role="the contrarian" started
+  2026-06-19T16:20:16Z iteration 2 ideator 2 role="the architect" completed status=0
+  2026-06-19T16:20:17Z iteration 2 ideator 1 role="the pragmatist" completed status=0
+  2026-06-19T16:20:17Z iteration 2 ideator 3 role="the contrarian" completed status=0
+  2026-06-19T16:20:17Z iteration 2 ideator phase completed approaches=3
+  2026-06-19T16:20:17Z iteration 2 selector started approaches=3
+  2026-06-19T16:20:28Z iteration 2 selector completed status=0
+  2026-06-19T16:20:28Z iteration 2 disposable preplanner repo cleanup path=/tmp/agent-loop-preplanner-repo-shy2qtn8/repo
+  2026-06-19T16:20:28Z iteration 2 selector rejected alternative role="the architect" approach="Source-of-Truth First: stabilize the catalog by treating committed root HTML files plus a durable catalog JSON as the only authoritative inputs, then let generated runtime metad..." reason="Strong and largely correct, but as-is it risks spending too much planning attention on schema migration and taxonomy preservation before first locking the simpler contract: authoritative inputs, verified hrefs, and disposable output."
+  2026-06-19T16:20:28Z iteration 2 selector rejected alternative role="the pragmatist" approach="Source-of-Truth First: stabilize the catalog contract before expanding UX. Treat metadata correctness and reproducibility as the product boundary, then let directory features co..." reason="Also strong, but its framing is slightly too broad around downstream UX consumption. The immediate planner needs a sharper stabilization mandate rather than balancing quick UX wins against pipeline work."
+  2026-06-19T16:20:28Z iteration 2 selector rejected alternative role="the contrarian" approach="Source-of-Truth Reset: freeze UX work and first convert the catalog into a deterministic, audited data pipeline with explicit ownership boundaries." reason="Useful emphasis on freezing UX, but too absolute as stated. The better strategy keeps UX paused only until the catalog contract is trustworthy, without implying a larger reset than the repo needs."
+  2026-06-19T16:20:28Z iteration 2 selector alternatives persisted count=3
+  2026-06-19T16:20:28Z iteration 2 selector structured alternatives persisted count=3
+  2026-06-19T16:20:28Z iteration 2 planner started
+  2026-06-19T16:21:16Z iteration 2 plan: 5 task(s) in 4 phase(s). This decomposition stabilizes the catalog contract first: durable source data is created before the generator is refactored, then independent integrity and runtime fallback work can proceed in parallel, followed by one final regeneration and verification pass.
+  2026-06-19T16:21:16Z iteration 2 phase 1 started parallel=False tasks=1
+  2026-06-19T16:22:27Z iteration 2 task t1 ('Create durable catalog source') status=0
+  2026-06-19T16:22:27Z iteration 2 phase 2 started parallel=False tasks=1
+  2026-06-19T16:25:53Z iteration 2 task t2 ('Refactor metadata generator') status=0
+  2026-06-19T16:25:53Z iteration 2 phase 3 started parallel=True tasks=2
+  2026-06-19T16:26:38Z iteration 2 task t4 ('Make directory loading explicit') status=0
+  2026-06-19T16:27:33Z iteration 2 task t3 ('Add metadata integrity check') status=0
+  2026-06-19T16:27:33Z iteration 2 phase 4 started parallel=False tasks=1
+  2026-06-19T16:28:53Z iteration 2 task t5 ('Regenerate and verify catalog') status=0
+  2026-06-19T16:28:53Z iteration 2 reviewer started
 
 ## Reviewer Summary - Iteration 2
 
@@ -539,52 +539,52 @@ A  src/neon-ribbon-pattern.ts
 - Make `scripts/gen-metadata.js` fail closed on missing or malformed `scripts/effects-catalog.json`.
 - Validate catalog and override inputs against the tracked root HTML set before writing generated output.
 - Decide whether full direct-file fallback is required; if yes, generate an embedded full fallback from the metadata JSON.
-2026-06-19T16:32:30Z iteration 2 reviewer completed status=0
-2026-06-19T16:32:30Z iteration 2 memory updated
-2026-06-19T16:32:30Z iteration 2 completed validation_status=0
-2026-06-19T16:32:30Z iteration 2 checkpoint started
-2026-06-19T16:32:30Z iteration 2 checkpoint status before commit:
-M  AGENT_LOG.md
-M  ALTERNATIVES.jsonl
-M  MEMORY.md
-M  PLAN.md
-M  SCORES.jsonl
-M  index.html
-M  package.json
-M  public/effects-meta.json
-A  scripts/check-effects-meta.js
-A  scripts/effects-catalog.json
-M  scripts/gen-metadata.js
-2026-06-19T16:32:30Z iteration 3 started remaining=16141s
-2026-06-19T16:32:30Z iteration 3 preplanner effective budgets untracked_scan_max_bytes=536870912 untracked_scan_max_count=10000 snapshot_copy_max_bytes=536870912 snapshot_copy_max_count=10000 snapshot_copy_max_file_bytes=134217728
-2026-06-19T16:32:31Z iteration 3 disposable preplanner repo created path=/tmp/agent-loop-preplanner-repo-8pwtnhu7/repo copied_entries=813
-2026-06-19T16:32:31Z iteration 3 ideator phase started count=3
-2026-06-19T16:32:31Z iteration 3 ideator phase concurrency workers=3
-2026-06-19T16:32:31Z iteration 3 ideator 1 role="the pragmatist" started
-2026-06-19T16:32:31Z iteration 3 ideator 2 role="the architect" started
-2026-06-19T16:32:31Z iteration 3 ideator 3 role="the contrarian" started
-2026-06-19T16:32:39Z iteration 3 ideator 1 role="the pragmatist" completed status=0
-2026-06-19T16:32:40Z iteration 3 ideator 3 role="the contrarian" completed status=0
-2026-06-19T16:32:41Z iteration 3 ideator 2 role="the architect" completed status=0
-2026-06-19T16:32:41Z iteration 3 ideator phase completed approaches=3
-2026-06-19T16:32:41Z iteration 3 selector started approaches=3
-2026-06-19T16:32:50Z iteration 3 selector completed status=0
-2026-06-19T16:32:50Z iteration 3 disposable preplanner repo cleanup path=/tmp/agent-loop-preplanner-repo-8pwtnhu7/repo
-2026-06-19T16:32:50Z iteration 3 selector rejected alternative role="the pragmatist" approach="Contract-First Metadata Gate: Treat the catalog, generated metadata, and tracked root HTML pages as three representations of one strict contract, and make the next iteration est..." reason="Strong and aligned, but selected wording should more explicitly include overrides and build freshness as first-class parts of the contract."
-2026-06-19T16:32:50Z iteration 3 selector rejected alternative role="the contrarian" approach="Make the catalog the contract: treat metadata generation as a compiler pipeline with explicit source validity, deterministic output, and CI-enforced equivalence before touching..." reason="Strong, but the compiler-pipeline framing risks inviting schema or architecture overwork; the next plan should stay focused on repository invariants and CI gates."
-2026-06-19T16:32:50Z iteration 3 selector rejected alternative role="the architect" approach="Invariant-First Metadata Contract: Treat the catalog, generated metadata, and tracked root HTML pages as three views of one strict contract, and make the next iteration center o..." reason="Strong, but it leaves the build check and override validation slightly implicit; the synthesized approach makes those concrete without adding implementation tasks."
-2026-06-19T16:32:50Z iteration 3 selector alternatives persisted count=3
-2026-06-19T16:32:50Z iteration 3 selector structured alternatives persisted count=3
-2026-06-19T16:32:50Z iteration 3 planner started
-2026-06-19T16:33:19Z iteration 3 plan: 4 task(s) in 3 phase(s). This iteration focuses on the contract-first metadata gate: source validation, generated-output validation, freshness, and CI/build wiring. UX, direct file:// fallback behavior, taxonomy cleanup, coverage reporting, and thumbnails are intentionally deferred until the metadata contract is trustworthy.
-2026-06-19T16:33:19Z iteration 3 phase 1 started parallel=True tasks=2
-2026-06-19T16:34:15Z iteration 3 task t2 ('Make metadata checker bidirectional') status=0
-2026-06-19T16:36:26Z iteration 3 task t1 ('Fail closed on metadata source inputs') status=0
-2026-06-19T16:36:26Z iteration 3 phase 2 started parallel=False tasks=1
-2026-06-19T16:37:14Z iteration 3 task t3 ('Add generated metadata freshness check') status=0
-2026-06-19T16:37:14Z iteration 3 phase 3 started parallel=False tasks=1
-2026-06-19T16:38:34Z iteration 3 task t4 ('Wire metadata contract into build') status=0
-2026-06-19T16:38:34Z iteration 3 reviewer started
+  2026-06-19T16:32:30Z iteration 2 reviewer completed status=0
+  2026-06-19T16:32:30Z iteration 2 memory updated
+  2026-06-19T16:32:30Z iteration 2 completed validation_status=0
+  2026-06-19T16:32:30Z iteration 2 checkpoint started
+  2026-06-19T16:32:30Z iteration 2 checkpoint status before commit:
+  M AGENT_LOG.md
+  M ALTERNATIVES.jsonl
+  M MEMORY.md
+  M PLAN.md
+  M SCORES.jsonl
+  M index.html
+  M package.json
+  M public/effects-meta.json
+  A scripts/check-effects-meta.js
+  A scripts/effects-catalog.json
+  M scripts/gen-metadata.js
+  2026-06-19T16:32:30Z iteration 3 started remaining=16141s
+  2026-06-19T16:32:30Z iteration 3 preplanner effective budgets untracked_scan_max_bytes=536870912 untracked_scan_max_count=10000 snapshot_copy_max_bytes=536870912 snapshot_copy_max_count=10000 snapshot_copy_max_file_bytes=134217728
+  2026-06-19T16:32:31Z iteration 3 disposable preplanner repo created path=/tmp/agent-loop-preplanner-repo-8pwtnhu7/repo copied_entries=813
+  2026-06-19T16:32:31Z iteration 3 ideator phase started count=3
+  2026-06-19T16:32:31Z iteration 3 ideator phase concurrency workers=3
+  2026-06-19T16:32:31Z iteration 3 ideator 1 role="the pragmatist" started
+  2026-06-19T16:32:31Z iteration 3 ideator 2 role="the architect" started
+  2026-06-19T16:32:31Z iteration 3 ideator 3 role="the contrarian" started
+  2026-06-19T16:32:39Z iteration 3 ideator 1 role="the pragmatist" completed status=0
+  2026-06-19T16:32:40Z iteration 3 ideator 3 role="the contrarian" completed status=0
+  2026-06-19T16:32:41Z iteration 3 ideator 2 role="the architect" completed status=0
+  2026-06-19T16:32:41Z iteration 3 ideator phase completed approaches=3
+  2026-06-19T16:32:41Z iteration 3 selector started approaches=3
+  2026-06-19T16:32:50Z iteration 3 selector completed status=0
+  2026-06-19T16:32:50Z iteration 3 disposable preplanner repo cleanup path=/tmp/agent-loop-preplanner-repo-8pwtnhu7/repo
+  2026-06-19T16:32:50Z iteration 3 selector rejected alternative role="the pragmatist" approach="Contract-First Metadata Gate: Treat the catalog, generated metadata, and tracked root HTML pages as three representations of one strict contract, and make the next iteration est..." reason="Strong and aligned, but selected wording should more explicitly include overrides and build freshness as first-class parts of the contract."
+  2026-06-19T16:32:50Z iteration 3 selector rejected alternative role="the contrarian" approach="Make the catalog the contract: treat metadata generation as a compiler pipeline with explicit source validity, deterministic output, and CI-enforced equivalence before touching..." reason="Strong, but the compiler-pipeline framing risks inviting schema or architecture overwork; the next plan should stay focused on repository invariants and CI gates."
+  2026-06-19T16:32:50Z iteration 3 selector rejected alternative role="the architect" approach="Invariant-First Metadata Contract: Treat the catalog, generated metadata, and tracked root HTML pages as three views of one strict contract, and make the next iteration center o..." reason="Strong, but it leaves the build check and override validation slightly implicit; the synthesized approach makes those concrete without adding implementation tasks."
+  2026-06-19T16:32:50Z iteration 3 selector alternatives persisted count=3
+  2026-06-19T16:32:50Z iteration 3 selector structured alternatives persisted count=3
+  2026-06-19T16:32:50Z iteration 3 planner started
+  2026-06-19T16:33:19Z iteration 3 plan: 4 task(s) in 3 phase(s). This iteration focuses on the contract-first metadata gate: source validation, generated-output validation, freshness, and CI/build wiring. UX, direct file:// fallback behavior, taxonomy cleanup, coverage reporting, and thumbnails are intentionally deferred until the metadata contract is trustworthy.
+  2026-06-19T16:33:19Z iteration 3 phase 1 started parallel=True tasks=2
+  2026-06-19T16:34:15Z iteration 3 task t2 ('Make metadata checker bidirectional') status=0
+  2026-06-19T16:36:26Z iteration 3 task t1 ('Fail closed on metadata source inputs') status=0
+  2026-06-19T16:36:26Z iteration 3 phase 2 started parallel=False tasks=1
+  2026-06-19T16:37:14Z iteration 3 task t3 ('Add generated metadata freshness check') status=0
+  2026-06-19T16:37:14Z iteration 3 phase 3 started parallel=False tasks=1
+  2026-06-19T16:38:34Z iteration 3 task t4 ('Wire metadata contract into build') status=0
+  2026-06-19T16:38:34Z iteration 3 reviewer started
 
 ## Reviewer Summary - Iteration 3
 
@@ -612,49 +612,49 @@ M  scripts/gen-metadata.js
 - Extend `scripts/check-effects-meta.js` into a full generated metadata schema validator, including `slug`/`href` consistency and basic timestamp shape.
 - Add fixture-backed regression tests for the metadata contract so future changes prove failure modes, not just the current happy-path 251-record catalog.
 - Make an explicit product decision on full direct-file directory support; either generate a full embedded fallback or document that the full directory requires Vite or another local static server.
-2026-06-19T16:41:39Z iteration 3 reviewer completed status=0
-2026-06-19T16:41:39Z iteration 3 memory updated
-2026-06-19T16:41:39Z iteration 3 completed validation_status=0
-2026-06-19T16:41:39Z iteration 3 checkpoint started
-2026-06-19T16:41:39Z iteration 3 checkpoint status before commit:
-M  AGENT_LOG.md
-M  ALTERNATIVES.jsonl
-M  MEMORY.md
-M  PLAN.md
-M  SCORES.jsonl
-M  package.json
-M  scripts/check-effects-meta.js
-M  scripts/gen-metadata.js
-2026-06-19T16:41:39Z iteration 4 started remaining=15593s
-2026-06-19T16:41:39Z iteration 4 preplanner effective budgets untracked_scan_max_bytes=536870912 untracked_scan_max_count=10000 snapshot_copy_max_bytes=536870912 snapshot_copy_max_count=10000 snapshot_copy_max_file_bytes=134217728
-2026-06-19T16:41:39Z iteration 4 disposable preplanner repo created path=/tmp/agent-loop-preplanner-repo-1vbvvx_b/repo copied_entries=813
-2026-06-19T16:41:39Z iteration 4 ideator phase started count=3
-2026-06-19T16:41:39Z iteration 4 ideator phase concurrency workers=3
-2026-06-19T16:41:39Z iteration 4 ideator 1 role="the pragmatist" started
-2026-06-19T16:41:39Z iteration 4 ideator 2 role="the architect" started
-2026-06-19T16:41:39Z iteration 4 ideator 3 role="the contrarian" started
-2026-06-19T16:41:47Z iteration 4 ideator 2 role="the architect" completed status=0
-2026-06-19T16:41:48Z iteration 4 ideator 1 role="the pragmatist" completed status=0
-2026-06-19T16:41:48Z iteration 4 ideator 3 role="the contrarian" completed status=0
-2026-06-19T16:41:48Z iteration 4 ideator phase completed approaches=3
-2026-06-19T16:41:48Z iteration 4 selector started approaches=3
-2026-06-19T16:41:57Z iteration 4 selector completed status=0
-2026-06-19T16:41:57Z iteration 4 disposable preplanner repo cleanup path=/tmp/agent-loop-preplanner-repo-1vbvvx_b/repo
-2026-06-19T16:41:58Z iteration 4 selector rejected alternative role="the architect" approach="Schema Gate First: Treat metadata generation as a contract boundary, and strengthen the producer and checker around one shared definition of valid effect metadata before expandi..." reason="Strong direction, but selected approach makes the producer/checker split more explicit so validation does not accidentally become one duplicated schema applied inconsistently."
-2026-06-19T16:41:58Z iteration 4 selector rejected alternative role="the pragmatist" approach="Schema Gate First: stabilize the metadata contract before expanding features, using generation and checking scripts as a single defensive boundary." reason="Correct priority and scope, but selected approach adds a clearer strategic guardrail: avoid mixing schema tightening with large metadata cleanup or visible directory changes."
-2026-06-19T16:41:58Z iteration 4 selector rejected alternative role="the contrarian" approach="Schema Firewall First: treat metadata generation and checking as a contract boundary before any UX or coverage work, but enforce it through a single shared validation model rath..." reason="Useful emphasis on a shared validation model, but selected approach tempers the 'single model' idea to avoid over-centralizing the scripts into a heavier framework than this repository needs."
-2026-06-19T16:41:58Z iteration 4 selector alternatives persisted count=3
-2026-06-19T16:41:58Z iteration 4 selector structured alternatives persisted count=3
-2026-06-19T16:41:58Z iteration 4 planner started
-2026-06-19T16:42:23Z iteration 4 plan: 4 task(s) in 3 phase(s). This slice prioritizes the schema contract first: establish one explicit validation vocabulary, apply it separately to source inputs and generated output, then lock the behavior with targeted regression tests. Phase 2 can run in parallel because the generator and checker touch different scripts after the shared contract exists.
-2026-06-19T16:42:23Z iteration 4 phase 1 started parallel=False tasks=1
-2026-06-19T16:44:35Z iteration 4 task t1 ('Add shared metadata validation contract') status=0
-2026-06-19T16:44:35Z iteration 4 phase 2 started parallel=True tasks=2
-2026-06-19T16:46:08Z iteration 4 task t2 ('Harden catalog and override validation') status=0
-2026-06-19T16:46:22Z iteration 4 task t3 ('Validate generated metadata schema') status=0
-2026-06-19T16:46:22Z iteration 4 phase 3 started parallel=False tasks=1
-2026-06-19T16:48:39Z iteration 4 task t4 ('Add script-level metadata regression tests') status=0
-2026-06-19T16:48:39Z iteration 4 reviewer started
+  2026-06-19T16:41:39Z iteration 3 reviewer completed status=0
+  2026-06-19T16:41:39Z iteration 3 memory updated
+  2026-06-19T16:41:39Z iteration 3 completed validation_status=0
+  2026-06-19T16:41:39Z iteration 3 checkpoint started
+  2026-06-19T16:41:39Z iteration 3 checkpoint status before commit:
+  M AGENT_LOG.md
+  M ALTERNATIVES.jsonl
+  M MEMORY.md
+  M PLAN.md
+  M SCORES.jsonl
+  M package.json
+  M scripts/check-effects-meta.js
+  M scripts/gen-metadata.js
+  2026-06-19T16:41:39Z iteration 4 started remaining=15593s
+  2026-06-19T16:41:39Z iteration 4 preplanner effective budgets untracked_scan_max_bytes=536870912 untracked_scan_max_count=10000 snapshot_copy_max_bytes=536870912 snapshot_copy_max_count=10000 snapshot_copy_max_file_bytes=134217728
+  2026-06-19T16:41:39Z iteration 4 disposable preplanner repo created path=/tmp/agent-loop-preplanner-repo-1vbvvx_b/repo copied_entries=813
+  2026-06-19T16:41:39Z iteration 4 ideator phase started count=3
+  2026-06-19T16:41:39Z iteration 4 ideator phase concurrency workers=3
+  2026-06-19T16:41:39Z iteration 4 ideator 1 role="the pragmatist" started
+  2026-06-19T16:41:39Z iteration 4 ideator 2 role="the architect" started
+  2026-06-19T16:41:39Z iteration 4 ideator 3 role="the contrarian" started
+  2026-06-19T16:41:47Z iteration 4 ideator 2 role="the architect" completed status=0
+  2026-06-19T16:41:48Z iteration 4 ideator 1 role="the pragmatist" completed status=0
+  2026-06-19T16:41:48Z iteration 4 ideator 3 role="the contrarian" completed status=0
+  2026-06-19T16:41:48Z iteration 4 ideator phase completed approaches=3
+  2026-06-19T16:41:48Z iteration 4 selector started approaches=3
+  2026-06-19T16:41:57Z iteration 4 selector completed status=0
+  2026-06-19T16:41:57Z iteration 4 disposable preplanner repo cleanup path=/tmp/agent-loop-preplanner-repo-1vbvvx_b/repo
+  2026-06-19T16:41:58Z iteration 4 selector rejected alternative role="the architect" approach="Schema Gate First: Treat metadata generation as a contract boundary, and strengthen the producer and checker around one shared definition of valid effect metadata before expandi..." reason="Strong direction, but selected approach makes the producer/checker split more explicit so validation does not accidentally become one duplicated schema applied inconsistently."
+  2026-06-19T16:41:58Z iteration 4 selector rejected alternative role="the pragmatist" approach="Schema Gate First: stabilize the metadata contract before expanding features, using generation and checking scripts as a single defensive boundary." reason="Correct priority and scope, but selected approach adds a clearer strategic guardrail: avoid mixing schema tightening with large metadata cleanup or visible directory changes."
+  2026-06-19T16:41:58Z iteration 4 selector rejected alternative role="the contrarian" approach="Schema Firewall First: treat metadata generation and checking as a contract boundary before any UX or coverage work, but enforce it through a single shared validation model rath..." reason="Useful emphasis on a shared validation model, but selected approach tempers the 'single model' idea to avoid over-centralizing the scripts into a heavier framework than this repository needs."
+  2026-06-19T16:41:58Z iteration 4 selector alternatives persisted count=3
+  2026-06-19T16:41:58Z iteration 4 selector structured alternatives persisted count=3
+  2026-06-19T16:41:58Z iteration 4 planner started
+  2026-06-19T16:42:23Z iteration 4 plan: 4 task(s) in 3 phase(s). This slice prioritizes the schema contract first: establish one explicit validation vocabulary, apply it separately to source inputs and generated output, then lock the behavior with targeted regression tests. Phase 2 can run in parallel because the generator and checker touch different scripts after the shared contract exists.
+  2026-06-19T16:42:23Z iteration 4 phase 1 started parallel=False tasks=1
+  2026-06-19T16:44:35Z iteration 4 task t1 ('Add shared metadata validation contract') status=0
+  2026-06-19T16:44:35Z iteration 4 phase 2 started parallel=True tasks=2
+  2026-06-19T16:46:08Z iteration 4 task t2 ('Harden catalog and override validation') status=0
+  2026-06-19T16:46:22Z iteration 4 task t3 ('Validate generated metadata schema') status=0
+  2026-06-19T16:46:22Z iteration 4 phase 3 started parallel=False tasks=1
+  2026-06-19T16:48:39Z iteration 4 task t4 ('Add script-level metadata regression tests') status=0
+  2026-06-19T16:48:39Z iteration 4 reviewer started
 
 ## Reviewer Summary - Iteration 4
 
@@ -685,53 +685,53 @@ M  scripts/gen-metadata.js
 - Validate generated records inside `scripts/gen-metadata.js` before writing `public/effects-meta.json`.
 - Decide whether `npm run test:effects-meta` should be wired into the normal build/check gate or remain a documented manual regression suite.
 - Improve `scripts/check-effects-meta.js` error reporting for missing, empty, invalid JSON, and non-array metadata files.
-2026-06-19T16:52:06Z iteration 4 reviewer completed status=0
-2026-06-19T16:52:06Z iteration 4 memory updated
-2026-06-19T16:52:06Z iteration 4 completed validation_status=0
-2026-06-19T16:52:06Z iteration 4 checkpoint started
-2026-06-19T16:52:06Z iteration 4 checkpoint status before commit:
-M  AGENT_LOG.md
-M  ALTERNATIVES.jsonl
-M  MEMORY.md
-M  PLAN.md
-M  SCORES.jsonl
-M  package.json
-M  scripts/check-effects-meta.js
-A  scripts/effects-meta-schema.js
-M  scripts/gen-metadata.js
-A  scripts/test-effects-meta.js
-2026-06-19T16:52:06Z iteration 5 started remaining=14966s
-2026-06-19T16:52:06Z iteration 5 preplanner effective budgets untracked_scan_max_bytes=536870912 untracked_scan_max_count=10000 snapshot_copy_max_bytes=536870912 snapshot_copy_max_count=10000 snapshot_copy_max_file_bytes=134217728
-2026-06-19T16:52:06Z iteration 5 disposable preplanner repo created path=/tmp/agent-loop-preplanner-repo-8zr9pay_/repo copied_entries=815
-2026-06-19T16:52:06Z iteration 5 ideator phase started count=3
-2026-06-19T16:52:06Z iteration 5 ideator phase concurrency workers=3
-2026-06-19T16:52:06Z iteration 5 ideator 1 role="the pragmatist" started
-2026-06-19T16:52:06Z iteration 5 ideator 2 role="the architect" started
-2026-06-19T16:52:06Z iteration 5 ideator 3 role="the contrarian" started
-2026-06-19T16:52:15Z iteration 5 ideator 3 role="the contrarian" completed status=0
-2026-06-19T16:52:15Z iteration 5 ideator 1 role="the pragmatist" completed status=0
-2026-06-19T16:52:16Z iteration 5 ideator 2 role="the architect" completed status=0
-2026-06-19T16:52:16Z iteration 5 ideator phase completed approaches=3
-2026-06-19T16:52:16Z iteration 5 selector started approaches=3
-2026-06-19T16:52:27Z iteration 5 selector completed status=0
-2026-06-19T16:52:27Z iteration 5 disposable preplanner repo cleanup path=/tmp/agent-loop-preplanner-repo-8zr9pay_/repo
-2026-06-19T16:52:27Z iteration 5 selector rejected alternative role="the contrarian" approach="Contract-First Freeze: pause UX and coverage expansion, treat the metadata pipeline as a versioned schema boundary, and make every next change prove or preserve that contract be..." reason="Strong directionally, but too freeze-oriented. It correctly deprioritizes UX and coverage expansion, but the Planner should still allow build/test wiring and diagnostics work when they directly support the contract boundary."
-2026-06-19T16:52:27Z iteration 5 selector rejected alternative role="the pragmatist" approach="Contract-First Closure: stabilize the metadata schema boundary before expanding UX or coverage, using one end-to-end valid fixture as the anchor for every tightening decision." reason="Very close to selected, but it frames the work mainly as closure. The stronger framing is end-to-end proof of the contract, because the current test gap is not just missing checks but missing evidence that the valid pipeline works."
-2026-06-19T16:52:27Z iteration 5 selector rejected alternative role="the architect" approach="Contract-First Metadata Hardening: treat the catalog, overrides, generated metadata, checker, and tests as one explicit data contract, then advance only changes that reduce sche..." reason="Also strong, but slightly too broad in treating all components as one explicit contract. The Planner should avoid an expansive redesign and focus only on the remaining enforcement asymmetries and ambiguity already identified in the plan."
-2026-06-19T16:52:27Z iteration 5 selector alternatives persisted count=3
-2026-06-19T16:52:27Z iteration 5 selector structured alternatives persisted count=3
-2026-06-19T16:52:27Z iteration 5 planner started
-2026-06-19T16:52:59Z iteration 5 plan: 5 task(s) in 4 phase(s). This iteration keeps the scope contract-first: define strict shared schema rules, enforce them symmetrically in producer and checker, prove both happy and failure paths, then make the regression suite part of the normal validation path. Parallelism is limited to generator and checker work after the shared schema is settled because later tests depend on the final behavior.
-2026-06-19T16:52:59Z iteration 5 phase 1 started parallel=False tasks=1
-2026-06-19T16:54:03Z iteration 5 task t1 ('Tighten Shared Metadata Schema') status=0
-2026-06-19T16:54:03Z iteration 5 phase 2 started parallel=True tasks=2
-2026-06-19T16:54:58Z iteration 5 task t2 ('Validate Generated Records Before Writing') status=0
-2026-06-19T16:55:38Z iteration 5 task t3 ('Normalize Checker Diagnostics') status=0
-2026-06-19T16:55:38Z iteration 5 phase 3 started parallel=False tasks=1
-2026-06-19T16:57:26Z iteration 5 task t4 ('Expand Metadata Regression Coverage') status=0
-2026-06-19T16:57:26Z iteration 5 phase 4 started parallel=False tasks=1
-2026-06-19T16:58:00Z iteration 5 task t5 ('Wire Regression Tests Into Standard Checks') status=0
-2026-06-19T16:58:00Z iteration 5 reviewer started
+  2026-06-19T16:52:06Z iteration 4 reviewer completed status=0
+  2026-06-19T16:52:06Z iteration 4 memory updated
+  2026-06-19T16:52:06Z iteration 4 completed validation*status=0
+  2026-06-19T16:52:06Z iteration 4 checkpoint started
+  2026-06-19T16:52:06Z iteration 4 checkpoint status before commit:
+  M AGENT_LOG.md
+  M ALTERNATIVES.jsonl
+  M MEMORY.md
+  M PLAN.md
+  M SCORES.jsonl
+  M package.json
+  M scripts/check-effects-meta.js
+  A scripts/effects-meta-schema.js
+  M scripts/gen-metadata.js
+  A scripts/test-effects-meta.js
+  2026-06-19T16:52:06Z iteration 5 started remaining=14966s
+  2026-06-19T16:52:06Z iteration 5 preplanner effective budgets untracked_scan_max_bytes=536870912 untracked_scan_max_count=10000 snapshot_copy_max_bytes=536870912 snapshot_copy_max_count=10000 snapshot_copy_max_file_bytes=134217728
+  2026-06-19T16:52:06Z iteration 5 disposable preplanner repo created path=/tmp/agent-loop-preplanner-repo-8zr9pay*/repo copied*entries=815
+  2026-06-19T16:52:06Z iteration 5 ideator phase started count=3
+  2026-06-19T16:52:06Z iteration 5 ideator phase concurrency workers=3
+  2026-06-19T16:52:06Z iteration 5 ideator 1 role="the pragmatist" started
+  2026-06-19T16:52:06Z iteration 5 ideator 2 role="the architect" started
+  2026-06-19T16:52:06Z iteration 5 ideator 3 role="the contrarian" started
+  2026-06-19T16:52:15Z iteration 5 ideator 3 role="the contrarian" completed status=0
+  2026-06-19T16:52:15Z iteration 5 ideator 1 role="the pragmatist" completed status=0
+  2026-06-19T16:52:16Z iteration 5 ideator 2 role="the architect" completed status=0
+  2026-06-19T16:52:16Z iteration 5 ideator phase completed approaches=3
+  2026-06-19T16:52:16Z iteration 5 selector started approaches=3
+  2026-06-19T16:52:27Z iteration 5 selector completed status=0
+  2026-06-19T16:52:27Z iteration 5 disposable preplanner repo cleanup path=/tmp/agent-loop-preplanner-repo-8zr9pay*/repo
+  2026-06-19T16:52:27Z iteration 5 selector rejected alternative role="the contrarian" approach="Contract-First Freeze: pause UX and coverage expansion, treat the metadata pipeline as a versioned schema boundary, and make every next change prove or preserve that contract be..." reason="Strong directionally, but too freeze-oriented. It correctly deprioritizes UX and coverage expansion, but the Planner should still allow build/test wiring and diagnostics work when they directly support the contract boundary."
+  2026-06-19T16:52:27Z iteration 5 selector rejected alternative role="the pragmatist" approach="Contract-First Closure: stabilize the metadata schema boundary before expanding UX or coverage, using one end-to-end valid fixture as the anchor for every tightening decision." reason="Very close to selected, but it frames the work mainly as closure. The stronger framing is end-to-end proof of the contract, because the current test gap is not just missing checks but missing evidence that the valid pipeline works."
+  2026-06-19T16:52:27Z iteration 5 selector rejected alternative role="the architect" approach="Contract-First Metadata Hardening: treat the catalog, overrides, generated metadata, checker, and tests as one explicit data contract, then advance only changes that reduce sche..." reason="Also strong, but slightly too broad in treating all components as one explicit contract. The Planner should avoid an expansive redesign and focus only on the remaining enforcement asymmetries and ambiguity already identified in the plan."
+  2026-06-19T16:52:27Z iteration 5 selector alternatives persisted count=3
+  2026-06-19T16:52:27Z iteration 5 selector structured alternatives persisted count=3
+  2026-06-19T16:52:27Z iteration 5 planner started
+  2026-06-19T16:52:59Z iteration 5 plan: 5 task(s) in 4 phase(s). This iteration keeps the scope contract-first: define strict shared schema rules, enforce them symmetrically in producer and checker, prove both happy and failure paths, then make the regression suite part of the normal validation path. Parallelism is limited to generator and checker work after the shared schema is settled because later tests depend on the final behavior.
+  2026-06-19T16:52:59Z iteration 5 phase 1 started parallel=False tasks=1
+  2026-06-19T16:54:03Z iteration 5 task t1 ('Tighten Shared Metadata Schema') status=0
+  2026-06-19T16:54:03Z iteration 5 phase 2 started parallel=True tasks=2
+  2026-06-19T16:54:58Z iteration 5 task t2 ('Validate Generated Records Before Writing') status=0
+  2026-06-19T16:55:38Z iteration 5 task t3 ('Normalize Checker Diagnostics') status=0
+  2026-06-19T16:55:38Z iteration 5 phase 3 started parallel=False tasks=1
+  2026-06-19T16:57:26Z iteration 5 task t4 ('Expand Metadata Regression Coverage') status=0
+  2026-06-19T16:57:26Z iteration 5 phase 4 started parallel=False tasks=1
+  2026-06-19T16:58:00Z iteration 5 task t5 ('Wire Regression Tests Into Standard Checks') status=0
+  2026-06-19T16:58:00Z iteration 5 reviewer started
 
 ## Reviewer Summary - Iteration 5
 
@@ -760,22 +760,23 @@ A  scripts/test-effects-meta.js
 - Make duplicate metadata regression fixtures isolate duplicate detection without introducing slug/href mismatch noise.
 - Add explicit checker tests for missing, empty, invalid JSON, and non-array `public/effects-meta.json`.
 - Resolve the static-preview product decision next: either generate a full embedded fallback or document that the complete directory requires Vite or another local static server.
-2026-06-19T17:00:54Z iteration 5 reviewer completed status=0
-2026-06-19T17:00:54Z iteration 5 memory updated
-2026-06-19T17:00:54Z iteration 5 completed validation_status=0
-2026-06-19T17:00:54Z iteration 5 checkpoint started
-2026-06-19T17:00:54Z iteration 5 checkpoint status before commit:
-M  AGENT_LOG.md
-M  ALTERNATIVES.jsonl
-M  MEMORY.md
-M  PLAN.md
-M  SCORES.jsonl
-M  package.json
-M  scripts/check-effects-meta.js
-M  scripts/effects-meta-schema.js
-M  scripts/gen-metadata.js
-M  scripts/test-effects-meta.js
-2026-06-19T17:00:54Z final checkpoint policy behavior=source_and_telemetry terminal_reason=iterations_complete
-2026-06-19T17:00:54Z iteration final-5 checkpoint started
-2026-06-19T17:00:54Z iteration final-5 checkpoint status before commit:
-M  AGENT_LOG.md
+  2026-06-19T17:00:54Z iteration 5 reviewer completed status=0
+  2026-06-19T17:00:54Z iteration 5 memory updated
+  2026-06-19T17:00:54Z iteration 5 completed validation_status=0
+  2026-06-19T17:00:54Z iteration 5 checkpoint started
+  2026-06-19T17:00:54Z iteration 5 checkpoint status before commit:
+  M AGENT_LOG.md
+  M ALTERNATIVES.jsonl
+  M MEMORY.md
+  M PLAN.md
+  M SCORES.jsonl
+  M package.json
+  M scripts/check-effects-meta.js
+  M scripts/effects-meta-schema.js
+  M scripts/gen-metadata.js
+  M scripts/test-effects-meta.js
+  2026-06-19T17:00:54Z final checkpoint policy behavior=source_and_telemetry terminal_reason=iterations_complete
+  2026-06-19T17:00:54Z iteration final-5 checkpoint started
+  2026-06-19T17:00:54Z iteration final-5 checkpoint status before commit:
+  M AGENT_LOG.md
+  2026-06-19T17:00:54Z orchestrator finished iterations_run=5 iterations_attempted=5 iterations_completed_successfully=5 had_nonfatal_failures=false nonfatal_failure_count=0 last_nonfatal_exit_code=0 last_nonfatal_failure_reason=none loop_exit_code=0 process_exit_code=0 fatal=false terminal_reason=iterations_complete final_checkpoint_behavior=source_and_telemetry

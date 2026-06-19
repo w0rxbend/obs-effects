@@ -22,6 +22,10 @@ function addDiagnostic(diagnostics, source, message) {
   diagnostics.get(source).push(message);
 }
 
+function writeStderr(message) {
+  fs.writeSync(process.stderr.fd, `${message}\n`);
+}
+
 function printDiagnosticsAndExit(diagnostics) {
   const groups = [...diagnostics.entries()].filter(
     ([, messages]) => messages.length > 0,
@@ -31,12 +35,12 @@ function printDiagnosticsAndExit(diagnostics) {
     return false;
   }
 
-  console.error("Effects metadata integrity check failed:");
+  writeStderr("Effects metadata integrity check failed:");
 
   for (const [source, messages] of groups) {
-    console.error(`\n${source}:`);
+    writeStderr(`\n${source}:`);
     for (const message of messages) {
-      console.error(`  - ${message}`);
+      writeStderr(`  - ${message}`);
     }
   }
 
@@ -76,7 +80,11 @@ function readMetadata(diagnostics) {
 
   const rawMetadata = fs.readFileSync(metadataPath, "utf8");
   if (!rawMetadata.trim()) {
-    addDiagnostic(diagnostics, metadataSource, "File is required but is empty.");
+    addDiagnostic(
+      diagnostics,
+      metadataSource,
+      "File is required but is empty.",
+    );
     return undefined;
   }
 
@@ -167,20 +175,26 @@ function main() {
   }
 
   const trackedPages = listTrackedRootEffectPages();
-  const issues = metadata.flatMap((entry, index) => [
-    ...validateGeneratedMetadataRecord(entry, index),
-    issueForTrackedHref(entry, index, trackedPages),
-  ]).filter(Boolean);
+  const issues = metadata
+    .flatMap((entry, index) => [
+      ...validateGeneratedMetadataRecord(entry, index),
+      issueForTrackedHref(entry, index, trackedPages),
+    ])
+    .filter(Boolean);
   const metadataHrefs = listMetadataHrefs(metadata);
 
   const duplicateHrefs = collectDuplicateValues(metadata, "href");
   for (const href of duplicateHrefs) {
-    issues.push(`duplicate href "${href}" appears in public/effects-meta.json.`);
+    issues.push(
+      `duplicate href "${href}" appears in public/effects-meta.json.`,
+    );
   }
 
   const duplicateSlugs = collectDuplicateValues(metadata, "slug");
   for (const slug of duplicateSlugs) {
-    issues.push(`duplicate slug "${slug}" appears in public/effects-meta.json.`);
+    issues.push(
+      `duplicate slug "${slug}" appears in public/effects-meta.json.`,
+    );
   }
 
   const missingMetadataPages = [...trackedPages].filter(

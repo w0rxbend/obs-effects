@@ -16,7 +16,8 @@ const overridesPath = path.join(__dirname, "effects-meta-overrides.json");
 const outputDir = path.join(repoRoot, "public");
 const outputPath = path.join(outputDir, "effects-meta.json");
 const checkMode = process.argv.includes("--check");
-const preserveExisting = process.argv.includes("--preserve-existing") && !checkMode;
+const preserveExisting =
+  process.argv.includes("--preserve-existing") && !checkMode;
 const catalogSource = path.relative(repoRoot, catalogPath);
 const overridesSource = path.relative(repoRoot, overridesPath);
 const trackedPagesSource = "git tracked root HTML pages";
@@ -65,25 +66,30 @@ function addDiagnostic(diagnostics, source, message) {
   diagnostics.get(source).push(message);
 }
 
+function writeStderr(message) {
+  fs.writeSync(process.stderr.fd, `${message}\n`);
+}
+
 function printDiagnosticsAndExit(diagnostics) {
   const groups = [...diagnostics.entries()].filter(
     ([, messages]) => messages.length > 0,
   );
 
   if (groups.length === 0) {
-    return;
+    return false;
   }
 
-  console.error("Metadata generation failed due to invalid source inputs:");
+  writeStderr("Metadata generation failed due to invalid source inputs:");
 
   for (const [source, messages] of groups) {
-    console.error(`\n${source}:`);
+    writeStderr(`\n${source}:`);
     for (const message of messages) {
-      console.error(`  - ${message}`);
+      writeStderr(`  - ${message}`);
     }
   }
 
-  process.exit(1);
+  process.exitCode = 1;
+  return true;
 }
 
 function validateGeneratedMetadataRecords(metadata, diagnostics) {
@@ -131,7 +137,11 @@ function readOptionalJsonObject(filePath, source, diagnostics) {
   try {
     const parsed = JSON.parse(rawJson);
     if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-      addDiagnostic(diagnostics, source, "Expected a JSON object keyed by slug.");
+      addDiagnostic(
+        diagnostics,
+        source,
+        "Expected a JSON object keyed by slug.",
+      );
       return {};
     }
 
@@ -275,7 +285,9 @@ function readOverrides(knownSlugs, diagnostics) {
     diagnostics,
   );
 
-  for (const slug of Object.keys(overrides).sort((a, b) => a.localeCompare(b))) {
+  for (const slug of Object.keys(overrides).sort((a, b) =>
+    a.localeCompare(b),
+  )) {
     if (!knownSlugs.has(slug)) {
       addDiagnostic(
         diagnostics,
@@ -383,28 +395,64 @@ function metadataForFile(fileName, catalogEntries, existingEntries, overrides) {
 }
 
 function formatMetadata(metadata) {
-  return `${JSON.stringify(metadata, null, 2)}\n`;
+  const lines = ["["];
+
+  for (const [index, record] of metadata.entries()) {
+    lines.push("  {");
+    lines.push(`    "slug": ${JSON.stringify(record.slug)},`);
+    lines.push(`    "title": ${JSON.stringify(record.title)},`);
+    lines.push(`    "href": ${JSON.stringify(record.href)},`);
+    lines.push(`    "category": ${JSON.stringify(record.category)},`);
+    lines.push(...formatTags(record.tags));
+    lines.push(`    "description": ${JSON.stringify(record.description)},`);
+    lines.push(`    "createdAt": ${JSON.stringify(record.createdAt)}`);
+    lines.push(`  }${index === metadata.length - 1 ? "" : ","}`);
+  }
+
+  lines.push("]");
+
+  return `${lines.join("\n")}\n`;
+}
+
+function formatTags(tags) {
+  const compactTags = `[${tags.map((tag) => JSON.stringify(tag)).join(", ")}]`;
+  const compactLine = `    "tags": ${compactTags},`;
+  if (compactLine.length <= 80) {
+    return [compactLine];
+  }
+
+  return [
+    '    "tags": [',
+    ...tags.map(
+      (tag, index) =>
+        `      ${JSON.stringify(tag)}${index === tags.length - 1 ? "" : ","}`,
+    ),
+    "    ],",
+  ];
 }
 
 function checkMetadataFreshness(generatedMetadata) {
   const outputSource = path.relative(repoRoot, outputPath);
 
   if (!fs.existsSync(outputPath)) {
-    console.error(
+    writeStderr(
       `${outputSource} is missing. Run \`node scripts/gen-metadata.js\` to generate it.`,
     );
-    process.exit(1);
+    process.exitCode = 1;
+    return true;
   }
 
   const existingMetadata = fs.readFileSync(outputPath, "utf8");
   if (existingMetadata !== generatedMetadata) {
-    console.error(
+    writeStderr(
       `${outputSource} is stale. Run \`node scripts/gen-metadata.js\` and commit the updated metadata.`,
     );
-    process.exit(1);
+    process.exitCode = 1;
+    return true;
   }
 
   console.log(`${outputSource} is up to date.`);
+  return false;
 }
 
 function main() {
@@ -413,7 +461,9 @@ function main() {
   const validateTrackedPages =
     !diagnostics.has(trackedPagesSource) ||
     diagnostics.get(trackedPagesSource).length === 0;
-  const knownSlugs = new Set(htmlFiles.map((fileName) => slugFromHref(fileName)));
+  const knownSlugs = new Set(
+    htmlFiles.map((fileName) => slugFromHref(fileName)),
+  );
   const catalogEntries = readCatalogEntries(
     htmlFiles,
     diagnostics,
@@ -422,7 +472,9 @@ function main() {
   const overrides = validateTrackedPages
     ? readOverrides(knownSlugs, diagnostics)
     : {};
-  printDiagnosticsAndExit(diagnostics);
+  if (printDiagnosticsAndExit(diagnostics)) {
+    return;
+  }
 
   const existingEntries = preserveExisting
     ? readExistingMetadataEntries()
@@ -433,7 +485,9 @@ function main() {
     )
     .sort((a, b) => a.slug.localeCompare(b.slug));
   validateGeneratedMetadataRecords(metadata, diagnostics);
-  printDiagnosticsAndExit(diagnostics);
+  if (printDiagnosticsAndExit(diagnostics)) {
+    return;
+  }
 
   const generatedMetadata = formatMetadata(metadata);
 
