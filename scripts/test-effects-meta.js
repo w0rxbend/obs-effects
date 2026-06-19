@@ -46,7 +46,9 @@ function runRequired(command, args, cwd) {
 }
 
 function combinedOutput(result) {
-  return `${result.stdout}${result.stderr}`;
+  return [result.stdout, result.stderr, result.error?.message]
+    .filter(Boolean)
+    .join("");
 }
 
 function assertIncludes(actual, expected, label) {

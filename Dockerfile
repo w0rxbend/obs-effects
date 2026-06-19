@@ -3,6 +3,7 @@ FROM node:25-alpine AS builder
 WORKDIR /app
 COPY package*.json ./
 RUN npm install
+RUN apk add --no-cache git
 COPY . .
 RUN npm run build
 
