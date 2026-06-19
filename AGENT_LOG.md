@@ -424,3 +424,56 @@ UU vite.config.ts
 2026-06-19T16:01:51Z iteration 1 planner started
 2026-06-19T16:02:26Z iteration 1 plan: 5 task(s) in 4 phase(s). The first phase separates the generator and hand-authored override seed because they touch different files and can be implemented against the same metadata contract. Generated metadata depends on both. The index rewrite depends on the generated schema and is kept in one task because UI, styling, filtering, and fallback behavior share `index.html`. Final verification is serialized after implementation.
 2026-06-19T16:02:26Z iteration 1 phase 1 started parallel=True tasks=2
+2026-06-19T16:03:25Z iteration 1 task t2 ('Add metadata overrides seed file') status=0
+2026-06-19T16:04:27Z iteration 1 task t1 ('Create metadata generation script') status=0
+2026-06-19T16:04:27Z iteration 1 phase 2 started parallel=False tasks=1
+2026-06-19T16:06:17Z iteration 1 task t3 ('Generate committed metadata JSON') status=0
+2026-06-19T16:06:17Z iteration 1 phase 3 started parallel=False tasks=1
+2026-06-19T16:11:06Z iteration 1 task t4 ('Rewrite index into metadata-backed directory') status=0
+2026-06-19T16:11:06Z iteration 1 phase 4 started parallel=False tasks=1
+2026-06-19T16:15:49Z iteration 1 task t5 ('Verify metadata directory behavior') status=0
+2026-06-19T16:15:49Z iteration 1 reviewer started
+
+## Reviewer Summary - Iteration 1
+
+### What Was Done
+
+- Added `scripts/gen-metadata.js` to enumerate root effect HTML files, derive titles and creation dates, merge overrides, and write `public/effects-meta.json`.
+- Added `scripts/effects-meta-overrides.json` with descriptions and richer tags for 24 key effects.
+- Generated `public/effects-meta.json` with 251 records.
+- Rewrote `index.html` into a vanilla JS metadata-backed directory with search, sort, tag filtering, highlighted matches, responsive cards, theme persistence, and degraded inline fallback.
+- Validation run by reviewer: `node scripts/gen-metadata.js`, `npm run lint`, `npm run build`, `git diff --check`.
+
+### What Was Found
+
+- High priority: `public/effects-meta.json` includes `neon-ribbon-pattern.html`, but `neon-ribbon-pattern.html`, `src/neon-ribbon-pattern.ts`, and `src/app/screens/NeonRibbonPatternScreen.ts` are untracked. Publishing only the metadata/index work would expose a directory card for a file absent from the commit.
+- High priority: direct static-file behavior is not truly preserved. The committed JSON is fetched at runtime, browser `file://` fetches are unreliable, and the inline fallback contains only five effects.
+- High priority: metadata generation depends on previous `public/effects-meta.json` for most categories/tags after the inline index catalog was removed, so clean regeneration without existing output is not reproducible.
+- Medium priority: `scripts/gen-metadata.js` still parses JavaScript from `index.html` with `Function(...)`; this is brittle and should be replaced by a durable JSON catalog source.
+- Medium priority: the original lowercase tag-normalization requirement was only partially implemented; tags are trimmed and deduplicated case-insensitively but display case is preserved.
+- Medium priority: metadata coverage is still shallow: 227 of 251 generated records have empty descriptions, and 20 records are `Uncategorized`.
+
+### Top Improvement Proposals
+
+- Add a metadata integrity check that fails when generated metadata references missing or untracked root HTML files.
+- Decide whether `neon-ribbon-pattern` belongs in the current commit; either commit the full effect page set or regenerate metadata without it.
+- Move category/base tag data into a durable source file such as `scripts/effects-catalog.json`; stop preserving most metadata from previous generated output.
+- Replace the five-record inline fallback with generated full embedded fallback data, or explicitly accept and label degraded static-file behavior.
+- Add category filtering and URL-shareable filter state after correctness and reproducibility are fixed.
+2026-06-19T16:20:08Z iteration 1 reviewer completed status=0
+2026-06-19T16:20:08Z iteration 1 memory updated
+2026-06-19T16:20:08Z iteration 1 completed validation_status=0
+2026-06-19T16:20:08Z iteration 1 checkpoint started
+2026-06-19T16:20:08Z iteration 1 checkpoint status before commit:
+M  AGENT_LOG.md
+A  ALTERNATIVES.jsonl
+A  MEMORY.md
+M  PLAN.md
+M  SCORES.jsonl
+M  index.html
+A  neon-ribbon-pattern.html
+A  public/effects-meta.json
+A  scripts/effects-meta-overrides.json
+A  scripts/gen-metadata.js
+A  src/app/screens/NeonRibbonPatternScreen.ts
+A  src/neon-ribbon-pattern.ts

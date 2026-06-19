@@ -1,0 +1,98 @@
+{
+  "wavy-planet-mesh": {
+    "description": "Rotating latitude and longitude mesh sphere with layered wave displacement, depth-aware dots, and calm topographic surface motion.",
+    "tags": ["3D", "Globe", "Mesh", "Fluid", "Blue", "Particle", "Topography"]
+  },
+  "particle-globe": {
+    "description": "Depth-sorted particle globe built from luminous points and orbital connections for a clean planet-like data visualization.",
+    "tags": ["3D", "Globe", "Particle", "Network", "Blue", "Space"]
+  },
+  "blueprint-globe": {
+    "description": "Technical blueprint-style globe with gridded geometry, schematic accents, and a crisp engineering display mood.",
+    "tags": ["3D", "Globe", "Blueprint", "Grid", "Tech", "Blue"]
+  },
+  "geodesic-sphere": {
+    "description": "Faceted geodesic sphere with connected triangular structure and dimensional rotation for a crystalline mesh look.",
+    "tags": ["3D", "Geodesic", "Mesh", "Sphere", "Wireframe", "Geometry"]
+  },
+  "wireframe-icosphere": {
+    "description": "Rotating icosphere rendered as a clean wireframe shell with depth and angular geometric motion.",
+    "tags": ["3D", "Wireframe", "Sphere", "Geometry", "Mesh", "Loop"]
+  },
+  "stippled-geodesic": {
+    "description": "Geodesic form expressed through stippled points and subtle connective structure for a scientific scan aesthetic.",
+    "tags": ["3D", "Geodesic", "Particle", "Stipple", "Mesh", "Sphere"]
+  },
+  "planet-hologram": {
+    "description": "Holographic planet display with translucent scan lines, orbital accents, and sci-fi projection styling.",
+    "tags": ["3D", "Planet", "Hologram", "Sci-Fi", "Blue", "Scanlines"]
+  },
+  "space-earth": {
+    "description": "Earth-in-space scene with atmospheric glow, orbital framing, and a broadcast-ready cosmic background feel.",
+    "tags": ["3D", "Earth", "Space", "Planet", "Atmosphere", "Globe"]
+  },
+  "solar-system": {
+    "description": "Procedural solar system visualization with orbiting bodies, orbital paths, and layered space motion.",
+    "tags": ["Space", "Planet", "Orbit", "3D", "Simulation", "Loop"]
+  },
+  "wormhole-dive": {
+    "description": "Forward-motion wormhole tunnel with streaked depth cues and a high-energy dive through abstract space.",
+    "tags": ["Tunnel", "Space", "Warp", "Motion", "Vortex", "Sci-Fi"]
+  },
+  "cosmic-portal": {
+    "description": "Circular cosmic portal effect with radiant energy, starfield depth, and a dimensional gateway composition.",
+    "tags": ["Portal", "Space", "Energy", "Vortex", "Glow", "Loop"]
+  },
+  "tunnel-vortex": {
+    "description": "Animated vortex tunnel with layered rings and perspective motion for a fast procedural background.",
+    "tags": ["Tunnel", "Vortex", "Motion", "Perspective", "Loop", "Background"]
+  },
+  "black-hole-cam": {
+    "description": "Transparent webcam border inspired by a black hole, with accretion glow wrapping around an open camera center.",
+    "tags": ["Webcam", "Border", "Black Hole", "Space", "Glow", "Transparent"]
+  },
+  "accretion-disk-cam": {
+    "description": "Webcam frame built from a luminous accretion disk, combining orbital streaks with a transparent central window.",
+    "tags": ["Webcam", "Border", "Accretion Disk", "Space", "Orbit", "Glow"]
+  },
+  "fluid-mesh-ring-cam": {
+    "description": "Transparent webcam ring where fluid motion distorts a connected mesh around the camera opening.",
+    "tags": ["Webcam", "Border", "Fluid", "Mesh", "Ring", "Transparent"]
+  },
+  "fluid-dotted-ring-cam": {
+    "description": "Dotted circular webcam frame with fluid spacing and soft particle shimmer around an open center.",
+    "tags": ["Webcam", "Border", "Fluid", "Dots", "Particle", "Transparent"]
+  },
+  "audio-neural-net": {
+    "description": "Audio-reactive neural network visualization with pulsing nodes, signal paths, and machine-learning interface energy.",
+    "tags": ["Audio", "Neural", "Network", "Particle", "Tech", "Reactive"]
+  },
+  "audio-flow-turbulence": {
+    "description": "Audio-driven flow field with turbulent ribbons and responsive particle movement shaped by sound intensity.",
+    "tags": ["Audio", "Flow Field", "Turbulence", "Particle", "Reactive", "Fluid"]
+  },
+  "gpu-boids": {
+    "description": "High-density flocking simulation using GPU-style motion, emergent swarms, and fast particle coordination.",
+    "tags": ["Boids", "GPU", "Particle", "Simulation", "Swarm", "Motion"]
+  },
+  "slime-mold-network": {
+    "description": "Organic slime-mold network with branching trails, glowing paths, and adaptive colony-like growth.",
+    "tags": ["Organic", "Network", "Slime Mold", "Growth", "Particle", "Biology"]
+  },
+  "physarum-gol": {
+    "description": "Hybrid cellular automata and physarum-inspired growth pattern with living texture and emergent structure.",
+    "tags": ["Cellular", "Physarum", "Simulation", "Organic", "Growth", "Generative"]
+  },
+  "neural-datacenter": {
+    "description": "Futuristic datacenter scene with neural signal motifs, grid depth, and abstract infrastructure visualization.",
+    "tags": ["Tech", "Neural", "Datacenter", "Network", "Sci-Fi", "Grid"]
+  },
+  "code-ocean": {
+    "description": "Immersive code-themed ocean background where text-like currents and layered waves create a developer stream atmosphere.",
+    "tags": ["Code", "Ocean", "Fluid", "Text", "Blue", "Background"]
+  },
+  "cyber-terrain": {
+    "description": "Cybernetic terrain field with gridded relief, scan-like movement, and glowing landscape depth.",
+    "tags": ["Terrain", "Grid", "Cyberpunk", "Landscape", "3D", "Glow"]
+  }
+}

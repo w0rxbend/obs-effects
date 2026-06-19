@@ -5,2530 +5,1160 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>OBS Effects Directory</title>
     <script>
-      // Pre-paint theme set to avoid flash
       (function () {
         try {
-          var t = localStorage.getItem("obsefx-theme");
-          if (t === "light" || t === "dark")
-            document.documentElement.setAttribute("data-theme", t);
-        } catch (e) {}
+          var theme = localStorage.getItem("obsefx-theme");
+          if (theme === "light" || theme === "dark") {
+            document.documentElement.setAttribute("data-theme", theme);
+          }
+        } catch (error) {}
       })();
     </script>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Geist+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap"
-      rel="stylesheet"
-    />
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            fontFamily: {
-              display: ['"Space Grotesk"', "system-ui", "sans-serif"],
-              mono: ['"Geist Mono"', "ui-monospace", "monospace"],
-              sans: ['"Inter"', "system-ui", "sans-serif"],
-            },
-            colors: {
-              ink: "rgb(var(--c-ink) / <alpha-value>)",
-              panel: "rgb(var(--c-panel) / <alpha-value>)",
-              line: "rgb(var(--c-line) / <alpha-value>)",
-              line2: "rgb(var(--c-line2) / <alpha-value>)",
-              fg: "rgb(var(--c-fg) / <alpha-value>)",
-              dim: "rgb(var(--c-dim) / <alpha-value>)",
-              dimmer: "rgb(var(--c-dimmer) / <alpha-value>)",
-              lav: "rgb(var(--c-lav) / <alpha-value>)",
-              vb: "rgb(var(--c-vb) / <alpha-value>)",
-            },
-          },
-        },
-      };
-    </script>
-    <script
-      src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"
-      crossorigin="anonymous"
-    ></script>
-    <script
-      src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"
-      crossorigin="anonymous"
-    ></script>
-    <script
-      src="https://unpkg.com/framer-motion@11.3.19/dist/framer-motion.js"
-      crossorigin="anonymous"
-    ></script>
-    <script
-      src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js"
-      crossorigin="anonymous"
-    ></script>
     <style>
       :root {
-        /* dark (default) */
-        --c-ink: 0 0 0;
-        --c-panel: 7 7 7;
-        --c-line: 24 24 24;
-        --c-line2: 38 38 38;
-        --c-fg: 237 237 237;
-        --c-dim: 122 122 122;
-        --c-dimmer: 74 74 74;
-        --c-lav: 203 166 247;
-        --c-vb: 0 112 243;
-        --grid-line: rgba(255, 255, 255, 0.025);
-        --shimmer-mask: #000;
+        color-scheme: dark;
+        --ink: #050505;
+        --panel: #0a0a0a;
+        --panel-soft: #101010;
+        --line: #202020;
+        --line-strong: #343434;
+        --fg: #eeeeee;
+        --muted: #9a9a9a;
+        --dim: #686868;
+        --accent: #8bd3ff;
+        --accent-2: #cba6f7;
+        --good: #34d399;
+        --mark-bg: rgba(139, 211, 255, 0.24);
+        --mark-fg: #f7fbff;
+        --shadow: 0 20px 60px rgba(0, 0, 0, 0.28);
+        --grid-line: rgba(255, 255, 255, 0.032);
       }
 
       :root[data-theme="light"] {
-        --c-ink: 255 255 255;
-        --c-panel: 250 250 250;
-        --c-line: 230 230 230;
-        --c-line2: 210 210 210;
-        --c-fg: 10 10 10;
-        --c-dim: 110 110 110;
-        --c-dimmer: 160 160 160;
-        --c-lav: 124 58 237;
-        --c-vb: 0 92 219;
-        --grid-line: rgba(0, 0, 0, 0.04);
-        --shimmer-mask: #fff;
+        color-scheme: light;
+        --ink: #f8f8f6;
+        --panel: #ffffff;
+        --panel-soft: #f1f1ee;
+        --line: #ddddda;
+        --line-strong: #c7c7c2;
+        --fg: #111111;
+        --muted: #62625f;
+        --dim: #8c8c86;
+        --accent: #005cdb;
+        --accent-2: #7c3aed;
+        --good: #059669;
+        --mark-bg: rgba(0, 92, 219, 0.14);
+        --mark-fg: #07111f;
+        --shadow: 0 20px 60px rgba(20, 20, 20, 0.1);
+        --grid-line: rgba(0, 0, 0, 0.045);
       }
 
-      html,
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
       body {
-        background: rgb(var(--c-ink));
-        color: rgb(var(--c-fg));
-      }
-
-      body {
-        font-family: "Inter", system-ui, sans-serif;
-      }
-
-      .font-display {
-        font-family: "Space Grotesk", system-ui, sans-serif;
-        letter-spacing: -0.02em;
-      }
-
-      .font-mono {
-        font-family: "Geist Mono", ui-monospace, monospace;
-      }
-
-      /* Background grid */
-      .bg-grid {
-        background-image:
+        min-height: 100vh;
+        margin: 0;
+        background:
+          radial-gradient(circle at 12% 0%, rgba(139, 211, 255, 0.14), transparent 28rem),
+          radial-gradient(circle at 86% 8%, rgba(203, 166, 247, 0.12), transparent 30rem),
           linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
-          linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
-        background-size: 48px 48px;
-        mask-image: radial-gradient(
-          ellipse 80% 60% at 50% 0%,
-          #000 30%,
-          transparent 80%
-        );
+          linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px),
+          var(--ink);
+        background-size: auto, auto, 48px 48px, 48px 48px, auto;
+        color: var(--fg);
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+        line-height: 1.5;
       }
 
-      /* Card shimmer (Vercel-style) */
-      .shimmer {
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      button,
+      input,
+      select {
+        font: inherit;
+      }
+
+      button,
+      select {
+        cursor: pointer;
+      }
+
+      .shell {
+        width: min(1440px, 100%);
+        margin: 0 auto;
+        padding: 0 24px;
+      }
+
+      .topbar {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        border-bottom: 1px solid var(--line);
+        background: color-mix(in srgb, var(--ink) 82%, transparent);
+        backdrop-filter: blur(16px) saturate(140%);
+      }
+
+      .topbar-inner {
+        min-height: 64px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+      }
+
+      .brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 0;
+      }
+
+      .brand-mark {
+        width: 32px;
+        height: 32px;
+        display: grid;
+        place-items: center;
+        border: 1px solid var(--line-strong);
+        background:
+          linear-gradient(135deg, rgba(139, 211, 255, 0.2), transparent 46%),
+          var(--panel);
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 12px;
+        font-weight: 800;
+      }
+
+      .brand-title {
+        display: grid;
+        gap: 1px;
+      }
+
+      .brand-title strong {
+        font-size: 14px;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      .brand-title span {
+        color: var(--muted);
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 11px;
+        text-transform: uppercase;
+      }
+
+      .top-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .status-pill,
+      .theme-toggle {
+        min-height: 34px;
+        border: 1px solid var(--line);
+        background: var(--panel);
+        color: var(--fg);
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 0 12px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 11px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .status-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--good);
+        box-shadow: 0 0 12px color-mix(in srgb, var(--good) 70%, transparent);
+      }
+
+      .theme-toggle:hover {
+        border-color: var(--accent);
+      }
+
+      .hero {
+        padding: 74px 0 42px;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(260px, 360px);
+        gap: 48px;
+        align-items: end;
+      }
+
+      .eyebrow {
+        color: var(--accent);
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        max-width: 860px;
+        margin: 14px 0 0;
+        font-size: clamp(46px, 7vw, 92px);
+        line-height: 0.94;
+        letter-spacing: 0;
+      }
+
+      .intro {
+        max-width: 720px;
+        margin: 22px 0 0;
+        color: var(--muted);
+        font-size: 17px;
+      }
+
+      .hero-panel {
+        border: 1px solid var(--line);
+        background: color-mix(in srgb, var(--panel) 86%, transparent);
+        box-shadow: var(--shadow);
+        padding: 18px;
+      }
+
+      .metric-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1px;
+        background: var(--line);
+        border: 1px solid var(--line);
+      }
+
+      .metric {
+        background: var(--panel);
+        padding: 16px;
+      }
+
+      .metric strong {
+        display: block;
+        font-size: 28px;
+        line-height: 1;
+      }
+
+      .metric span {
+        display: block;
+        margin-top: 8px;
+        color: var(--muted);
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 11px;
+        text-transform: uppercase;
+      }
+
+      .notice {
+        margin-top: 16px;
+        display: none;
+        border: 1px solid color-mix(in srgb, var(--accent-2) 55%, var(--line));
+        background: color-mix(in srgb, var(--accent-2) 10%, var(--panel));
+        color: var(--fg);
+        padding: 12px;
+        font-size: 13px;
+      }
+
+      .notice.is-visible {
+        display: block;
+      }
+
+      .controls {
+        position: sticky;
+        top: 65px;
+        z-index: 15;
+        border-block: 1px solid var(--line);
+        background: color-mix(in srgb, var(--ink) 86%, transparent);
+        backdrop-filter: blur(16px) saturate(140%);
+      }
+
+      .controls-inner {
+        display: grid;
+        grid-template-columns: minmax(240px, 1fr) minmax(170px, 220px);
+        gap: 14px;
+        padding-block: 16px;
+      }
+
+      .search-wrap {
+        position: relative;
+      }
+
+      .search-wrap svg {
+        position: absolute;
+        top: 50%;
+        left: 14px;
+        width: 18px;
+        height: 18px;
+        transform: translateY(-50%);
+        color: var(--dim);
+        pointer-events: none;
+      }
+
+      .search-input,
+      .sort-select {
+        width: 100%;
+        min-height: 48px;
+        border: 1px solid var(--line);
+        border-radius: 0;
+        background: var(--panel);
+        color: var(--fg);
+        outline: none;
+      }
+
+      .search-input {
+        padding: 0 16px 0 44px;
+      }
+
+      .sort-select {
+        padding: 0 36px 0 12px;
+      }
+
+      .search-input:focus,
+      .sort-select:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 1px var(--accent) inset;
+      }
+
+      .tagbar {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 0 0 18px;
+      }
+
+      .tagbar-label {
+        flex: 0 0 auto;
+        padding-top: 7px;
+        color: var(--muted);
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 11px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      .tag-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .tag-filter,
+      .clear-filters {
+        min-height: 30px;
+        border: 1px solid var(--line);
+        background: var(--panel);
+        color: var(--muted);
+        padding: 0 10px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 11px;
+      }
+
+      .tag-filter:hover,
+      .clear-filters:hover {
+        border-color: var(--line-strong);
+        color: var(--fg);
+      }
+
+      .tag-filter.is-active {
+        border-color: var(--accent);
+        background: color-mix(in srgb, var(--accent) 16%, var(--panel));
+        color: var(--fg);
+      }
+
+      .clear-filters {
+        display: none;
+        color: var(--accent);
+      }
+
+      .clear-filters.is-visible {
+        display: inline-flex;
+        align-items: center;
+      }
+
+      main {
+        padding: 36px 0 72px;
+      }
+
+      .results-head {
+        display: flex;
+        align-items: end;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 18px;
+      }
+
+      .results-title {
+        margin: 0;
+        font-size: 20px;
+      }
+
+      .results-meta {
+        color: var(--muted);
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 12px;
+        text-transform: uppercase;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 14px;
+      }
+
+      .card {
+        min-height: 100%;
+        display: grid;
+        grid-template-rows: auto 1fr;
+        border: 1px solid var(--line);
+        background: color-mix(in srgb, var(--panel) 92%, transparent);
+        transition:
+          border-color 180ms ease,
+          transform 180ms ease,
+          background 180ms ease;
+      }
+
+      .card:hover,
+      .card:focus-visible {
+        border-color: var(--accent);
+        background: var(--panel);
+        transform: translateY(-2px);
+      }
+
+      .card:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 1px var(--accent) inset;
+      }
+
+      .thumb {
+        min-height: 138px;
         position: relative;
         overflow: hidden;
-        isolation: isolate;
+        border-bottom: 1px solid var(--line);
+        background:
+          radial-gradient(circle at 28% 24%, var(--swatch-a), transparent 30%),
+          radial-gradient(circle at 78% 20%, var(--swatch-b), transparent 28%),
+          linear-gradient(135deg, var(--swatch-c), var(--panel-soft));
       }
 
-      .shimmer::before {
+      .thumb::before {
         content: "";
         position: absolute;
-        inset: -1px;
-        border-radius: inherit;
-        padding: 1px;
-        background: conic-gradient(
-          from var(--shimmer-angle, 0deg),
-          transparent 0%,
-          transparent 70%,
-          rgba(203, 166, 247, 0.55) 80%,
-          rgba(0, 112, 243, 0.55) 90%,
-          transparent 100%
-        );
-        -webkit-mask:
-          linear-gradient(var(--shimmer-mask) 0 0) content-box,
-          linear-gradient(var(--shimmer-mask) 0 0);
-        -webkit-mask-composite: xor;
-        mask-composite: exclude;
-        opacity: 0;
-        transition: opacity 0.35s ease;
-        pointer-events: none;
-        z-index: 0;
-      }
-
-      .shimmer:hover::before {
-        opacity: 1;
-        animation: spin 2.4s linear infinite;
-      }
-
-      @keyframes spin {
-        to {
-          --shimmer-angle: 360deg;
-        }
-      }
-
-      @property --shimmer-angle {
-        syntax: "<angle>";
-        inherits: false;
-        initial-value: 0deg;
-      }
-
-      /* Live-preview animated motif backgrounds — purely cosmetic */
-      .preview-base {
-        position: absolute;
         inset: 0;
-        opacity: 0;
-        transition: opacity 0.4s ease;
-        pointer-events: none;
+        background-image:
+          linear-gradient(to right, rgba(255, 255, 255, 0.07) 1px, transparent 1px),
+          linear-gradient(to bottom, rgba(255, 255, 255, 0.055) 1px, transparent 1px);
+        background-size: 24px 24px;
+        mask-image: radial-gradient(circle at 50% 50%, #000, transparent 76%);
       }
 
-      .preview-on .preview-base {
-        opacity: 1;
+      .thumb::after {
+        content: "";
+        position: absolute;
+        width: 72px;
+        height: 72px;
+        right: 22px;
+        bottom: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.28);
+        border-radius: 50%;
+        box-shadow:
+          0 0 0 16px rgba(255, 255, 255, 0.035),
+          0 0 44px rgba(255, 255, 255, 0.12);
       }
 
-      .preview-dots {
-        background-image: radial-gradient(
-          rgba(203, 166, 247, 0.55) 1px,
-          transparent 1.4px
-        );
-        background-size: 10px 10px;
-        animation: drift 6s linear infinite;
+      .card-body {
+        display: grid;
+        gap: 14px;
+        padding: 16px;
       }
 
-      @keyframes drift {
-        from {
-          background-position: 0 0;
-        }
-
-        to {
-          background-position: 40px 40px;
-        }
-      }
-
-      .preview-rings {
-        background: radial-gradient(
-          circle at 50% 50%,
-          transparent 0 22%,
-          rgba(0, 112, 243, 0.35) 22.5% 23%,
-          transparent 23.5% 32%,
-          rgba(203, 166, 247, 0.4) 32.5% 33%,
-          transparent 33.5% 46%,
-          rgba(0, 112, 243, 0.25) 46.5% 47%,
-          transparent 47.5%
-        );
-        animation: pulse 2.4s ease-in-out infinite;
-      }
-
-      @keyframes pulse {
-        0%,
-        100% {
-          transform: scale(1);
-        }
-
-        50% {
-          transform: scale(1.08);
-        }
-      }
-
-      .preview-bars {
-        background: repeating-linear-gradient(
-          90deg,
-          transparent 0 6px,
-          rgba(203, 166, 247, 0.5) 6px 8px,
-          transparent 8px 14px
-        );
-        animation: bars 1.2s steps(8) infinite;
-      }
-
-      @keyframes bars {
-        from {
-          background-position: 0 0;
-        }
-
-        to {
-          background-position: 56px 0;
-        }
-      }
-
-      .preview-particles {
-        background:
-          radial-gradient(
-            2px 2px at 20% 30%,
-            rgba(203, 166, 247, 0.9),
-            transparent 60%
-          ),
-          radial-gradient(
-            1.5px 1.5px at 80% 20%,
-            rgba(0, 112, 243, 0.9),
-            transparent 60%
-          ),
-          radial-gradient(
-            2px 2px at 60% 70%,
-            rgba(203, 166, 247, 0.7),
-            transparent 60%
-          ),
-          radial-gradient(
-            1.5px 1.5px at 30% 80%,
-            rgba(0, 112, 243, 0.7),
-            transparent 60%
-          ),
-          radial-gradient(
-            1.5px 1.5px at 90% 60%,
-            rgba(203, 166, 247, 0.6),
-            transparent 60%
-          );
-        animation: float 4s ease-in-out infinite;
-      }
-
-      @keyframes float {
-        0%,
-        100% {
-          transform: translateY(0);
-        }
-
-        50% {
-          transform: translateY(-4px);
-        }
-      }
-
-      .preview-flow {
-        background:
-          repeating-linear-gradient(
-            45deg,
-            transparent 0 8px,
-            rgba(203, 166, 247, 0.35) 8px 9px,
-            transparent 9px 18px
-          ),
-          repeating-linear-gradient(
-            -45deg,
-            transparent 0 12px,
-            rgba(0, 112, 243, 0.25) 12px 13px,
-            transparent 13px 26px
-          );
-        animation: drift 8s linear infinite;
-      }
-
-      /* DIIA-style chunky number markers */
-      .num-tab {
-        font-family: "Geist Mono", ui-monospace, monospace;
-        font-feature-settings: "tnum" 1;
-      }
-
-      /* Sticky bar blur */
-      .sticky-blur {
-        backdrop-filter: blur(14px) saturate(140%);
-        -webkit-backdrop-filter: blur(14px) saturate(140%);
-        background-color: rgb(var(--c-ink) / 0.72);
-      }
-
-      /* Custom scrollbar (subtle) */
-      ::-webkit-scrollbar {
-        width: 10px;
-        height: 10px;
-      }
-
-      ::-webkit-scrollbar-track {
-        background: rgb(var(--c-ink));
-      }
-
-      ::-webkit-scrollbar-thumb {
-        background: rgb(var(--c-line2));
-        border-radius: 0;
-      }
-
-      ::-webkit-scrollbar-thumb:hover {
-        background: rgb(var(--c-dimmer));
-      }
-
-      /* Focus state — DIIA heavy border */
-      a.card-link:focus-visible {
-        outline: none;
-        border-color: rgb(var(--c-lav));
-        box-shadow: 0 0 0 1px rgb(var(--c-lav)) inset;
-      }
-
-      /* Bold underline accents under section headings */
-      .heading-rule {
-        height: 4px;
-        background: rgb(var(--c-lav));
-        width: 56px;
-      }
-
-      /* Marquee for ticker */
-      .ticker {
+      .card-kicker {
         display: flex;
-        gap: 48px;
-        white-space: nowrap;
-        animation: tick 60s linear infinite;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
       }
 
-      @keyframes tick {
-        from {
-          transform: translateX(0);
+      .category {
+        max-width: 58%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        border: 1px solid var(--line-strong);
+        background: var(--panel-soft);
+        color: var(--fg);
+        padding: 4px 8px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 10px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+
+      .date {
+        color: var(--muted);
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 11px;
+      }
+
+      .card-title {
+        margin: 0;
+        font-size: 21px;
+        line-height: 1.15;
+        letter-spacing: 0;
+      }
+
+      .description {
+        min-height: 42px;
+        margin: 0;
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      .chip {
+        max-width: 100%;
+        overflow-wrap: anywhere;
+        border: 1px solid var(--line);
+        background: color-mix(in srgb, var(--panel-soft) 76%, transparent);
+        color: var(--muted);
+        padding: 3px 7px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 10px;
+      }
+
+      mark {
+        background: var(--mark-bg);
+        color: var(--mark-fg);
+        padding: 0 2px;
+      }
+
+      .empty {
+        border: 1px solid var(--line);
+        background: var(--panel);
+        padding: 44px 20px;
+        text-align: center;
+      }
+
+      .empty strong {
+        display: block;
+        font-size: 22px;
+      }
+
+      .empty span {
+        display: block;
+        margin-top: 8px;
+        color: var(--muted);
+      }
+
+      footer {
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+      }
+
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
+
+      .footer-inner {
+        min-height: 74px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 11px;
+        text-transform: uppercase;
+      }
+
+      @media (max-width: 860px) {
+        .hero {
+          grid-template-columns: 1fr;
+          padding-top: 50px;
         }
 
-        to {
-          transform: translateX(-50%);
+        .controls {
+          position: static;
+        }
+
+        .controls-inner {
+          grid-template-columns: 1fr;
+        }
+
+        .tagbar {
+          display: grid;
+        }
+
+        .status-pill {
+          display: none;
+        }
+      }
+
+      @media (max-width: 560px) {
+        .shell {
+          padding-inline: 16px;
+        }
+
+        .topbar-inner,
+        .results-head,
+        .footer-inner {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+
+        .topbar-inner {
+          padding-block: 14px;
+        }
+
+        h1 {
+          font-size: 42px;
+        }
+
+        .metric-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .grid {
+          grid-template-columns: 1fr;
         }
       }
     </style>
   </head>
 
-  <body class="bg-ink text-fg antialiased">
-    <div id="root"></div>
+  <body>
+    <header class="topbar">
+      <div class="shell topbar-inner">
+        <a class="brand" href="./index.html" aria-label="OBS Effects Directory">
+          <span class="brand-mark">FX</span>
+          <span class="brand-title">
+            <strong>OBS Effects</strong>
+            <span>Browser Source Directory</span>
+          </span>
+        </a>
+        <div class="top-actions">
+          <span class="status-pill"><span class="status-dot"></span> Static catalog</span>
+          <button class="theme-toggle" id="themeToggle" type="button">Theme</button>
+        </div>
+      </div>
+    </header>
 
-    <script type="text/babel" data-presets="env,react">
-      const { useState, useMemo, useEffect, useRef } = React;
-      const { motion, AnimatePresence } =
-        window.Motion ??
-        window["framer-motion"] ??
-        window.framerMotion ??
-        window.FramerMotion ??
-        {};
-      // framer-motion UMD exposes as `Motion`
-      const M = window.Motion;
+    <section class="shell hero">
+      <div>
+        <div class="eyebrow">Procedural screens for streams</div>
+        <h1>Search, sort, and launch OBS effects.</h1>
+        <p class="intro">
+          A static-first directory of PixiJS, shader, overlay, webcam border,
+          and full-screen visual effects. Metadata is loaded from the generated
+          catalog when available.
+        </p>
+      </div>
+      <aside class="hero-panel" aria-label="Catalog summary">
+        <div class="metric-grid">
+          <div class="metric">
+            <strong id="totalCount">0</strong>
+            <span>Effects</span>
+          </div>
+          <div class="metric">
+            <strong id="categoryCount">0</strong>
+            <span>Categories</span>
+          </div>
+          <div class="metric">
+            <strong id="tagCount">0</strong>
+            <span>Tags</span>
+          </div>
+          <div class="metric">
+            <strong id="visibleCount">0</strong>
+            <span>Visible</span>
+          </div>
+        </div>
+        <div class="notice" id="sourceNotice" role="status"></div>
+      </aside>
+    </section>
 
-      /* ---------------- Data: full effect list with category + tags ---------------- */
-      const RAW = [
-        [
-          "main-web-cam-border.html",
-          "Main Web Cam Border",
-          "Webcam Borders",
-          ["Overlay", "Border"],
-        ],
-        [
-          "main-audio-activated-border.html",
-          "Main Audio Activated Border",
-          "Webcam Borders",
-          ["Audio-Reactive", "Border"],
-        ],
-        [
-          "simple-web-cam-border.html",
-          "Simple Web Cam Border",
-          "Webcam Borders",
-          ["Overlay", "Border"],
-        ],
-        [
-          "planet-circle-webcam-border.html",
-          "Planet Circle Webcam Border",
-          "Webcam Borders",
-          ["Overlay", "3D"],
-        ],
-        [
-          "three-ring-cam-border.html",
-          "Three.js Ring Cam Border",
-          "Webcam Borders",
-          ["3D", "Three.js", "Sparks", "Lightning"],
-        ],
-        [
-          "jelly-ring-cam-border.html",
-          "Jelly Ring Cam Border",
-          "Webcam Borders",
-          ["3D", "Three.js", "Jelly", "Physics"],
-        ],
-        [
-          "black-hole-cam.html",
-          "Black Hole Cam",
-          "Webcam Borders",
-          ["Shader", "WebGL"],
-        ],
-        [
-          "accretion-disk-cam.html",
-          "Accretion Disk Cam",
-          "Webcam Borders",
-          ["Shader", "WebGL"],
-        ],
-        [
-          "trapcam.html",
-          "Trap Cam",
-          "Webcam Borders",
-          ["Audio-Reactive", "Border"],
-        ],
-        ["wavecam.html", "Wave Cam", "Webcam Borders", ["Fluid", "Border"]],
-        ["hexcam.html", "Hex Cam", "Webcam Borders", ["Geometric", "Border"]],
-        [
-          "hexgridcam.html",
-          "Hex Grid Cam",
-          "Webcam Borders",
-          ["Geometric", "Border"],
-        ],
-        [
-          "hexlayercam.html",
-          "Hex Layer Cam",
-          "Webcam Borders",
-          ["Geometric", "Border"],
-        ],
-        [
-          "wireframe-sphere-cam.html",
-          "Wireframe Sphere Cam",
-          "Webcam Borders",
-          ["3D", "Border"],
-        ],
-        [
-          "cam-frame-overlay.html",
-          "Cam Frame Overlay",
-          "Webcam Borders",
-          ["Overlay", "Border"],
-        ],
-        [
-          "smoke-ring-cam.html",
-          "Smoke Ring Cam",
-          "Webcam Borders",
-          ["Fluid", "Border"],
-        ],
-        [
-          "crystalcam.html",
-          "Crystal Cam",
-          "Webcam Borders",
-          ["Geometric", "3D"],
-        ],
-        [
-          "fluid-circle-cam.html",
-          "Fluid Circle Cam",
-          "Webcam Borders",
-          ["Fluid", "Border"],
-        ],
-        [
-          "fluid-catppuccin-rings-cam.html",
-          "Fluid Catppuccin Rings Cam",
-          "Webcam Borders",
-          ["Fluid", "Border"],
-        ],
-        [
-          "fluid-dotted-ring-cam.html",
-          "Fluid Dotted Ring Cam",
-          "Webcam Borders",
-          ["Fluid", "Particles"],
-        ],
-        [
-          "fluid-mesh-ring-cam.html",
-          "Fluid Mesh Ring Cam",
-          "Webcam Borders",
-          ["Fluid", "Mesh"],
-        ],
-        ["gas-cam.html", "Gas Cam", "Webcam Borders", ["Fluid", "Overlay"]],
-        [
-          "screen-capture-border.html",
-          "Screen Capture Border",
-          "Webcam Borders",
-          ["Fluid", "Overlay"],
-        ],
-        ["wavy-cam.html", "Wavy Cam", "Webcam Borders", ["Fluid", "Border"]],
-        [
-          "wave-border-cam.html",
-          "Wave Border Cam",
-          "Webcam Borders",
-          ["Fluid", "Border"],
-        ],
-        [
-          "amorphous-square-border.html",
-          "Amorphous Square Border",
-          "Webcam Borders",
-          ["Fluid", "Border"],
-        ],
-        [
-          "dark-sun-cam.html",
-          "Dark Sun Cam",
-          "Webcam Borders",
-          ["Fluid", "Border"],
-        ],
-        [
-          "lavender-dashes-cam.html",
-          "Lavender Dashes Cam",
-          "Webcam Borders",
-          ["Geometric", "Border"],
-        ],
-        [
-          "amorphous-blob-cam.html",
-          "Amorphous Blob Cam",
-          "Webcam Borders",
-          ["Fluid", "Border"],
-        ],
-        [
-          "hype-meter-cam.html",
-          "Hype Meter Cam",
-          "Webcam Borders",
-          ["Audio-Reactive", "Border"],
-        ],
-        [
-          "cat-circle-cam.html",
-          "Cat Circle Cam",
-          "Webcam Borders",
-          ["Mascot", "Border"],
-        ],
-        ["smoke-bar.html", "Smoke Bar", "Webcam Borders", ["Fluid", "Overlay"]],
+    <section class="controls" aria-label="Directory controls">
+      <div class="shell">
+        <div class="controls-inner">
+          <label class="search-wrap">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none">
+              <path
+                d="m21 21-4.35-4.35m1.35-5.15a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0Z"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+            </svg>
+            <span class="sr-only">Search effects</span>
+            <input
+              class="search-input"
+              id="searchInput"
+              type="search"
+              placeholder="Search title, description, or tags"
+              autocomplete="off"
+            />
+          </label>
+          <label>
+            <span class="sr-only">Sort effects</span>
+            <select class="sort-select" id="sortSelect">
+              <option value="newest">Newest first</option>
+              <option value="oldest">Oldest first</option>
+              <option value="az">A to Z</option>
+              <option value="za">Z to A</option>
+            </select>
+          </label>
+        </div>
+        <div class="tagbar">
+          <div class="tagbar-label">Tags</div>
+          <div class="tag-list" id="tagFilters" aria-label="Tag filters"></div>
+        </div>
+      </div>
+    </section>
 
-        [
-          "soft-body-organisms.html",
-          "Soft-Body Organisms",
-          "Backgrounds",
-          ["Physics", "Soft-Body", "Verlet"],
-        ],
-        [
-          "audio-flow-turbulence.html",
-          "Audio Flow Turbulence",
-          "Backgrounds",
-          ["Audio", "Physics", "Fluid", "Particles"],
-        ],
-        [
-          "particle-swarm-excitement.html",
-          "Particle Swarm Excitement",
-          "Backgrounds",
-          ["Audio", "Swarm", "AI", "Physics"],
-        ],
-        [
-          "audio-neural-net.html",
-          "Audio Neural Net",
-          "Backgrounds",
-          ["Audio", "Network", "AI", "Reactive"],
-        ],
-        [
-          "sci-fi-hud.html",
-          "Sci-Fi HUD",
-          "Backgrounds",
-          ["HUD", "Hologram", "Radar", "Ambient"],
-        ],
-        [
-          "network-surge.html",
-          "Network Surge",
-          "Backgrounds",
-          ["Physics", "Network", "Ambient"],
-        ],
-        [
-          "particle-border-overlay.html",
-          "Particle Border Overlay",
-          "Overlays",
-          ["Particles", "Border", "Transparent", "Ambient"],
-        ],
-        [
-          "soft-vol-fog.html",
-          "Soft Volumetric Fog",
-          "Overlays",
-          ["Fog", "Ambient", "Transparent", "Interactive"],
-        ],
-        [
-          "data-corruption.html",
-          "Data Corruption",
-          "Overlays",
-          ["Glitch", "Codec", "RGB", "Transparent", "Cinematic"],
-        ],
-        [
-          "glitch-overlay.html",
-          "Glitch Overlay",
-          "Overlays",
-          ["VHS", "Glitch", "Cyberpunk", "Transparent"],
-        ],
-        [
-          "glitch-veil.html",
-          "Glitch Veil",
-          "Overlays",
-          ["Glitch", "RGB", "Transparent", "Subtle"],
-        ],
-        [
-          "retro-screen-filter.html",
-          "Retro Screen Filter",
-          "Overlays",
-          ["CRT", "Grid", "Transparent", "Subtle"],
-        ],
-        [
-          "rain-on-glass.html",
-          "Rain on Glass",
-          "Overlays",
-          ["Rain", "Shader", "Transparent", "Atmospheric"],
-        ],
-        [
-          "ai-inference.html",
-          "AI Inference",
-          "Backgrounds",
-          ["AI", "Neural", "Ambient", "Sci-Fi"],
-        ],
-        [
-          "distributed-systems.html",
-          "Distributed Systems",
-          "Backgrounds",
-          ["Cloud", "Network", "Infra", "Ambient"],
-        ],
-        [
-          "git-activity.html",
-          "Git Activity",
-          "Backgrounds",
-          ["Dev", "Network", "Ambient"],
-        ],
-        [
-          "ambient-energy.html",
-          "Ambient Energy",
-          "Backgrounds",
-          ["Fog", "Nebula", "Ambient"],
-        ],
-        [
-          "wave-simulation.html",
-          "Wave Simulation",
-          "Backgrounds",
-          ["Physics", "Waves", "Ambient"],
-        ],
-        [
-          "gpu-boids.html",
-          "GPU Boids",
-          "Backgrounds",
-          ["Physics", "Swarm", "AI"],
-        ],
-        [
-          "slime-mold.html",
-          "Slime Mold",
-          "Backgrounds",
-          ["Biology", "Swarm", "AI"],
-        ],
-        [
-          "audio-slime-mold.html",
-          "Audio Slime Mold Intelligence",
-          "Backgrounds",
-          ["Biology", "Swarm", "AI", "Audio"],
-        ],
-        [
-          "geometric-lines.html",
-          "Geometric Lines",
-          "Backgrounds",
-          ["Geometric", "Ambient", "Minimal"],
-        ],
-        [
-          "artificial-life.html",
-          "Artificial Life",
-          "Backgrounds",
-          ["Biology", "Swarm", "AI", "GPU"],
-        ],
-        [
-          "soft-body-cube.html",
-          "Soft Body Cube",
-          "3D",
-          ["Three.js", "Physics", "Soft Body", "3D"],
-        ],
-        [
-          "jelly-blob-face.html",
-          "Jelly Blob Face",
-          "3D",
-          ["Three.js", "Audio Reactive", "Character", "Soft Body", "3D"],
-        ],
-        [
-          "city-view.html",
-          "City View",
-          "3D",
-          ["Three.js", "FBX", "City", "Architecture", "3D"],
-        ],
-        [
-          "cyclops-avatar.html",
-          "Cyclops Avatar",
-          "3D",
-          [
-            "Three.js",
-            "GLB",
-            "VTuber",
-            "Character",
-            "Skeleton",
-            "Mic Reactive",
-          ],
-        ],
-        [
-          "discord-robot.html",
-          "Discord Robot",
-          "3D",
-          ["Three.js", "Robot", "Discord", "Cinematic", "Procedural", "Bloom"],
-        ],
-        [
-          "octocat-robot.html",
-          "Octocat Robot",
-          "3D",
-          [
-            "Three.js",
-            "GitHub",
-            "Octocat",
-            "Robot",
-            "Tentacles",
-            "Cinematic",
-            "Bloom",
-          ],
-        ],
-        [
-          "tux-penguin.html",
-          "Live Tux Penguin",
-          "3D",
-          ["Three.js", "GLB", "Linux", "Tux", "Transparent", "Character"],
-        ],
-        [
-          "gunan-skeleton.html",
-          "Gunan Bust",
-          "3D",
-          ["Three.js", "FBX", "Transparent", "Bust", "Skeleton"],
-        ],
-        [
-          "zombie-fbx.html",
-          "Zombie FBX",
-          "3D",
-          ["Three.js", "FBX", "Zombie", "Transparent", "Animation"],
-        ],
-        [
-          "meshy-avatar.html",
-          "Meshy AI Character Avatar",
-          "3D",
-          ["Three.js", "GLB", "Rigged", "Skeleton", "Transparent", "Avatar"],
-        ],
-        [
-          "ai-character-natural.html",
-          "AI Character — Natural Conversation",
-          "3D",
-          [
-            "Three.js",
-            "GLB",
-            "Avatar",
-            "Gesture",
-            "Conversation",
-            "Transparent",
-          ],
-        ],
-        [
-          "ai-character-final.html",
-          "AI Character — Final Dialogue",
-          "3D",
-          ["Three.js", "GLB", "Avatar", "Gesture", "Expressive", "Transparent"],
-        ],
-        [
-          "drone-visualization.html",
-          "Drone Visualization",
-          "3D",
-          ["Three.js", "GLB", "Drone", "Transparent", "Overlay"],
-        ],
-        [
-          "ergodox-showroom.html",
-          "ErgoDox Showroom",
-          "3D",
-          ["Three.js", "GLB", "Keyboard", "Transparent", "Showroom"],
-        ],
-        [
-          "dji-fpv.html",
-          "DJI FPV",
-          "3D",
-          ["Three.js", "GLB", "Drone", "DJI", "Transparent"],
-        ],
-        [
-          "energy-orb.html",
-          "Energy Orb",
-          "3D",
-          ["Three.js", "GLB", "Energy", "Orb", "Transparent"],
-        ],
-        [
-          "hex-water-island.html",
-          "Hex Water Island",
-          "3D",
-          [
-            "Three.js",
-            "Water",
-            "Hexagonal",
-            "Island",
-            "Transparent",
-            "Simulation",
-          ],
-        ],
-        [
-          "monolithic-black-geometry.html",
-          "Monolithic Black Geometry",
-          "Backgrounds",
-          ["Geometry", "Dark", "Emissive", "Procedural", "High-End"],
-        ],
-        [
-          "slime-mold-network.html",
-          "Slime Mold Network",
-          "Backgrounds",
-          ["Biology", "Network", "Particles", "Organic", "Bioluminescent"],
-        ],
-        [
-          "reactive-energy-membrane.html",
-          "Reactive Energy Membrane",
-          "Backgrounds",
-          ["Mesh", "Organic", "Procedural", "Purple", "Breathing"],
-        ],
-        [
-          "physarum-gol.html",
-          "Physarum GOL",
-          "Backgrounds",
-          ["Biology", "Swarm", "GPU", "Shader"],
-        ],
-        [
-          "code-ocean.html",
-          "Code Ocean",
-          "Backgrounds",
-          ["Code", "Shader", "Hex", "Ambient"],
-        ],
-        [
-          "cyber-terrain.html",
-          "Cyber Terrain",
-          "Backgrounds",
-          ["Wireframe", "3D", "Cyberpunk", "Ambient"],
-        ],
-        [
-          "cellular-slime.html",
-          "Cellular Slime",
-          "Backgrounds",
-          ["Biology", "Swarm", "GPU", "Shader"],
-        ],
-        [
-          "wave-interference.html",
-          "Wave Interference Engine",
-          "Backgrounds",
-          ["Physics", "Waves", "Scientific"],
-        ],
-        ["aquarium.html", "Aquarium", "Backgrounds", ["Scene", "WebGL"]],
-        ["background.html", "Background", "Backgrounds", ["Loop"]],
-        ["generative.html", "Generative", "Backgrounds", ["Generative"]],
-        ["graph-bg.html", "Graph Bg", "Backgrounds", ["Generative"]],
-        [
-          "galaxy-bg.html",
-          "Galaxy Background",
-          "Backgrounds",
-          ["Scene", "Space"],
-        ],
-        ["pcb-bg.html", "PCB Background", "Backgrounds", ["Scene", "Tech"]],
-        [
-          "fpv-blueprint-bg.html",
-          "FPV Blueprint Background",
-          "Backgrounds",
-          ["Scene", "Tech", "FPV"],
-        ],
-        ["nebula.html", "Nebula", "Backgrounds", ["Shader", "Space"]],
-        [
-          "aurora-borealis.html",
-          "Aurora Borealis",
-          "Backgrounds",
-          ["Shader", "Atmospheric"],
-        ],
-        [
-          "night-city-horizon.html",
-          "Night City Horizon",
-          "Backgrounds",
-          ["Scene", "Parallax"],
-        ],
-        [
-          "topo-landscape.html",
-          "Topo Landscape",
-          "Backgrounds",
-          ["Generative", "Terrain"],
-        ],
-        [
-          "topography.html",
-          "Topography",
-          "Backgrounds",
-          ["Generative", "Terrain"],
-        ],
-        ["star-field.html", "Star Field", "Backgrounds", ["Space", "Loop"]],
-        ["grass.html", "Grass", "Backgrounds", ["Scene", "Nature"]],
-        ["plasma-wave.html", "Plasma Wave", "Backgrounds", ["Shader", "Loop"]],
-        [
-          "animated-lines.html",
-          "Animated Lines",
-          "Backgrounds",
-          ["GSAP", "Loop"],
-        ],
-        [
-          "neon-ribbon-pattern.html",
-          "Neon Ribbon Pattern",
-          "Backgrounds",
-          ["Pattern", "Neon", "Loop"],
-        ],
-        [
-          "mountain-night-railway.html",
-          "Mountain Night Railway",
-          "Backgrounds",
-          ["Scene", "Parallax"],
-        ],
-        [
-          "forest-ambient-bg.html",
-          "Forest Ambient Background",
-          "Backgrounds",
-          ["Scene", "Parallax"],
-        ],
-        [
-          "japanese-temple-lofi.html",
-          "Japanese Temple Lofi",
-          "Backgrounds",
-          ["Scene", "Ambient", "Lofi"],
-        ],
-        [
-          "vector-field-bg.html",
-          "Vector Field",
-          "Backgrounds",
-          ["Generative", "Particles"],
-        ],
-        [
-          "gaussian-distribution-bg.html",
-          "Gaussian Distribution Bg",
-          "Backgrounds",
-          ["Generative", "Mesh"],
-        ],
-        [
-          "matrix-dots.html",
-          "Matrix Dots",
-          "Backgrounds",
-          ["Generative", "Loop"],
-        ],
-        [
-          "dotted-mesh.html",
-          "Dotted Mesh",
-          "Backgrounds",
-          ["Mesh", "Particles"],
-        ],
-        [
-          "wormhole-dive.html",
-          "Wormhole Dive",
-          "Backgrounds",
-          ["Shader", "Loop"],
-        ],
-        [
-          "cosmic-portal.html",
-          "Cosmic Portal",
-          "Backgrounds",
-          ["Shader", "Space"],
-        ],
-        [
-          "tunnel-vortex.html",
-          "Tunnel Vortex",
-          "Backgrounds",
-          ["Shader", "Loop"],
-        ],
-        ["spiral-pull.html", "Spiral Pull", "Backgrounds", ["Shader", "Loop"]],
-        ["rain.html", "Rain", "Backgrounds", ["Atmospheric", "Loop"]],
-        [
-          "digital-fluid-ink.html",
-          "Digital Fluid Ink",
-          "Backgrounds",
-          ["Fluid", "Shader", "Artistic"],
-        ],
-        [
-          "lava-cell-membrane.html",
-          "Lava Cell Membrane",
-          "Backgrounds",
-          ["Shader", "Organic", "Neon"],
-        ],
-        [
-          "prism-biofoam.html",
-          "Prism Biofoam",
-          "Backgrounds",
-          ["Shader", "Organic", "Color"],
-        ],
-        [
-          "dark-glass-lattice.html",
-          "Dark Glass Lattice",
-          "Backgrounds",
-          ["Shader", "Neon", "Depth"],
-        ],
-        [
-          "neon-vein-network.html",
-          "Neon Vein Network",
-          "Backgrounds",
-          ["Shader", "Organic", "Loop"],
-        ],
-        [
-          "flight-simulation.html",
-          "Flight Simulation",
-          "Backgrounds",
-          ["Scene", "3D"],
-        ],
+    <main class="shell" id="catalog">
+      <div class="results-head">
+        <div>
+          <h2 class="results-title" id="resultsTitle">All effects</h2>
+          <div class="results-meta" id="resultsMeta">Loading metadata</div>
+        </div>
+        <button class="clear-filters" id="clearFilters" type="button">Clear filters</button>
+      </div>
+      <div class="grid" id="effectsGrid" aria-live="polite"></div>
+    </main>
 
-        [
-          "trapnation.html",
-          "Trap Nation",
-          "Audio Visualizers",
-          ["Audio-Reactive", "Visualizer"],
-        ],
-        [
-          "particle-constellation.html",
-          "Particle Constellation",
-          "Audio Visualizers",
-          ["Audio-Reactive", "Particles"],
-        ],
-        [
-          "liquid-aurora-field.html",
-          "Liquid Aurora Field",
-          "Audio Visualizers",
-          ["Audio-Reactive", "Fluid"],
-        ],
-        [
-          "radial-energy-core.html",
-          "Radial Energy Core",
-          "Audio Visualizers",
-          ["Audio-Reactive", "Shader"],
-        ],
-        [
-          "ink-in-water.html",
-          "Abstract Ink in Water",
-          "Audio Visualizers",
-          ["Audio-Reactive", "Fluid"],
-        ],
-        [
-          "minimalist-gradient-breathing.html",
-          "Minimalist Gradient Breathing",
-          "Audio Visualizers",
-          ["Audio-Reactive", "Shader"],
-        ],
+    <footer>
+      <div class="shell footer-inner">
+        <span>OBS/EFX · Static metadata directory</span>
+        <span id="sourceLabel">Loading generated metadata</span>
+      </div>
+    </footer>
 
-        [
-          "particle-splash.html",
-          "Particle Splash",
-          "Particle Systems",
-          ["Particles", "Physics"],
-        ],
-        [
-          "plexus-constellation.html",
-          "Plexus Constellation",
-          "Particle Systems",
-          ["Particles", "Mesh"],
-        ],
-        [
-          "flow-field.html",
-          "Flow Field",
-          "Particle Systems",
-          ["Particles", "Generative"],
-        ],
-        [
-          "gravity-sphere.html",
-          "Gravity Sphere",
-          "Particle Systems",
-          ["Particles", "Physics"],
-        ],
-        [
-          "lissajous.html",
-          "Lissajous Interference",
-          "Particle Systems",
-          ["Generative", "Math"],
-        ],
-        [
-          "nbody.html",
-          "N-Body Gravity",
-          "Particle Systems",
-          ["Physics", "Space"],
-        ],
-        [
-          "orbital-mechanics.html",
-          "Orbital Mechanics",
-          "Particle Systems",
-          ["Physics", "Space"],
-        ],
-        [
-          "solar-system.html",
-          "Solar System",
-          "Backgrounds",
-          ["3D", "Space", "Three.js"],
-        ],
-        [
-          "space-earth.html",
-          "Space Earth",
-          "Backgrounds",
-          ["3D", "Space", "PixiJS", "Three.js"],
-        ],
-        [
-          "solar-wind.html",
-          "Solar Wind",
-          "Particle Systems",
-          ["Physics", "Space"],
-        ],
-        [
-          "shock-wave.html",
-          "Shock Wave",
-          "Particle Systems",
-          ["Physics", "Space"],
-        ],
-        [
-          "boids.html",
-          "Boids — Comet Swarm",
-          "Particle Systems",
-          ["Boids", "Particles"],
-        ],
-        [
-          "linux-boids.html",
-          "Linux Boids",
-          "Particle Systems",
-          ["Boids", "Mascot"],
-        ],
-        [
-          "linux-icon-mesh.html",
-          "Linux Icon Mesh",
-          "Particle Systems",
-          ["Mesh", "Mascot"],
-        ],
-        [
-          "catppuccin-linux-overlay.html",
-          "Catppuccin Linux Overlay",
-          "Particle Systems",
-          ["Mesh", "Mascot"],
-        ],
-        [
-          "ember-pentagram-overlay.html",
-          "Ember Pentagram Overlay",
-          "Particle Systems",
-          ["Particles", "Overlay"],
-        ],
-        [
-          "verlet-cloth.html",
-          "Verlet Cloth",
-          "Particle Systems",
-          ["Physics", "Cloth"],
-        ],
-        ["sph.html", "SPH", "Particle Systems", ["Physics", "Fluid"]],
-        [
-          "life.html",
-          "Particle Life",
-          "Particle Systems",
-          ["WebGPU", "Particles"],
-        ],
-        [
-          "particle-globe.html",
-          "Particle Globe",
-          "Particle Systems",
-          ["Particles", "3D"],
-        ],
-        [
-          "fourier-epicycles.html",
-          "Fourier Epicycles",
-          "Particle Systems",
-          ["Math", "Generative"],
-        ],
-        [
-          "hex-ripple.html",
-          "Hex Ripple",
-          "Particle Systems",
-          ["Geometric", "Wave"],
-        ],
-        [
-          "stippled-geodesic.html",
-          "Stippled Geodesic",
-          "Particle Systems",
-          ["Particles", "3D"],
-        ],
-        [
-          "geodesic-sphere.html",
-          "Geodesic Sphere",
-          "Particle Systems",
-          ["3D", "Geometric"],
-        ],
-        [
-          "wireframe-icosphere.html",
-          "Wireframe Icosphere",
-          "Particle Systems",
-          ["3D", "Geometric"],
-        ],
-        [
-          "wavy-planet-mesh.html",
-          "Wavy Planet Mesh",
-          "Particle Systems",
-          ["Mesh", "3D"],
-        ],
-        [
-          "void-implode.html",
-          "Void Implode",
-          "Particle Systems",
-          ["Catppuccin", "Implosion"],
-        ],
-        ["fireball.html", "Fireball", "Particle Systems", ["Fire", "Audio"]],
-        [
-          "fire-orb.html",
-          "Fire Orb",
-          "Backgrounds",
-          ["Fire", "3D", "Three.js", "Shader"],
-        ],
-        [
-          "jelly-blobs.html",
-          "Jelly Blobs",
-          "Backgrounds",
-          ["Jelly", "3D", "Three.js", "Physics", "Soft Body"],
-        ],
-        [
-          "aether-drift.html",
-          "Aether Drift",
-          "Backgrounds",
-          ["Shader", "Silk", "Cinematic", "Fluid"],
-        ],
-        [
-          "sunken-light.html",
-          "Sunken Light",
-          "Backgrounds",
-          ["Shader", "Underwater", "Caustics", "Cinematic"],
-        ],
-        [
-          "diagonal-streaks.html",
-          "Diagonal Streaks",
-          "Backgrounds",
-          ["Lines", "Neon", "Looping", "Parallax"],
-        ],
-        [
-          "fluid-blob-frame.html",
-          "Fluid Blob Frame",
-          "Backgrounds",
-          ["Blobs", "Fluid", "Memphis", "Frame"],
-        ],
-        [
-          "color-wave-ribbons.html",
-          "Color Wave Ribbons",
-          "Backgrounds",
-          ["Waves", "Fluid", "Memphis", "Gradient"],
-        ],
-        [
-          "halftone-gradient.html",
-          "Halftone Gradient",
-          "Backgrounds",
-          ["Shader", "Halftone", "Gradient", "Retro"],
-        ],
-        [
-          "liquid-paper-frame.html",
-          "Liquid Paper Frame",
-          "Backgrounds",
-          ["Blobs", "Paper Cut", "Halftone", "Frame"],
-        ],
-        [
-          "psychedelic-marble.html",
-          "Psychedelic Marble",
-          "Backgrounds",
-          ["Shader", "Groovy", "Marble", "Psychedelic"],
-        ],
-        [
-          "water-goldfish.html",
-          "Water Goldfish",
-          "Backgrounds",
-          ["Shader", "Water", "Caustics", "Boids", "Goldfish"],
-        ],
-        [
-          "paint-vortex.html",
-          "Paint Vortex",
-          "Backgrounds",
-          ["Shader", "Spiral", "Paint", "Vortex"],
-        ],
-        [
-          "warp-tunnel-rush.html",
-          "Warp Tunnel Rush",
-          "Backgrounds",
-          ["Three.js", "3D", "Tunnel", "Cel Shader", "Anime"],
-        ],
-        [
-          "rainbow-lightning-ring-cam.html",
-          "Rainbow Lightning Ring Cam",
-          "Webcam Borders",
-          ["Shader", "Rainbow", "Lightning", "Ring", "Transparent"],
-        ],
-        [
-          "glitch-circle-ring-cam.html",
-          "Glitch Circle Ring Cam",
-          "Webcam Borders",
-          ["Shader", "Glitch", "Neon", "Chromatic", "Transparent"],
-        ],
-        [
-          "neon-starburst.html",
-          "Neon Starburst",
-          "Backgrounds",
-          ["Neon", "Starburst", "Psychedelic", "Lime", "Magenta"],
-        ],
-        [
-          "dark-fluid-swirl.html",
-          "Dark Fluid Swirl",
-          "Backgrounds",
-          ["Fluid", "Marble", "Pink", "Coral", "Dark", "Abstract"],
-        ],
-        [
-          "cyber-marble.html",
-          "Cyber Marble",
-          "Backgrounds",
-          ["Fluid", "Marble", "Magenta", "Teal", "Cyber", "Abstract"],
-        ],
-        [
-          "glitch-terminal.html",
-          "Glitch Terminal",
-          "Backgrounds",
-          ["Glitch", "Terminal", "Lime", "ASCII", "Matrix", "Abstract"],
-        ],
-        [
-          "halftone-fade.html",
-          "Halftone Fade",
-          "Backgrounds",
-          ["Halftone", "Dots", "Monochrome", "Fade", "Minimal", "Abstract"],
-        ],
-        [
-          "gold-marble-dots.html",
-          "Gold Marble Dots",
-          "Backgrounds",
-          ["Halftone", "Dots", "Gold", "Marble", "Luxury", "Abstract"],
-        ],
-        [
-          "blue-mosaic-flow.html",
-          "Blue Mosaic Flow",
-          "Backgrounds",
-          ["Halftone", "Dots", "Blue", "Mosaic", "Fluid", "Abstract"],
-        ],
-        [
-          "magenta-dot-flow.html",
-          "Magenta Dot Flow",
-          "Backgrounds",
-          ["Halftone", "Dots", "Magenta", "Pink", "Fluid", "Abstract"],
-        ],
-        [
-          "neon-topo.html",
-          "Neon Topo",
-          "Backgrounds",
-          ["Topo", "Contour", "Red", "Pink", "Neon", "Abstract"],
-        ],
-        [
-          "water-splash-ring-cam.html",
-          "Water Splash Ring Cam",
-          "Webcam Borders",
-          ["Shader", "Water", "Splash", "Ring", "Transparent"],
-        ],
-        [
-          "green-fireball.html",
-          "Green Fireball",
-          "Particle Systems",
-          ["Fire", "Audio"],
-        ],
-        [
-          "microbial-colony.html",
-          "Microbial Colony",
-          "Particle Systems",
-          ["Boids", "Sim"],
-        ],
-        [
-          "cubic-blob-overlay.html",
-          "Cubic Blob Overlay",
-          "Particle Systems",
-          ["Mascot", "Fluid"],
-        ],
-        [
-          "cubic-blob-face-overlay.html",
-          "Cubic Blob Face Overlay",
-          "Particle Systems",
-          ["Mascot", "Fluid"],
-        ],
-        [
-          "triangulation.html",
-          "Triangulation",
-          "Particle Systems",
-          ["Mesh", "Generative"],
-        ],
-        [
-          "voronoi-stippling.html",
-          "Digital Organism — Voronoi",
-          "Particle Systems",
-          ["Generative", "Stippling"],
-        ],
-        [
-          "physics-particles.html",
-          "Physics Particles",
-          "Particle Systems",
-          ["Physics", "Particles"],
-        ],
-        [
-          "space-war-boids.html",
-          "Space War Boids",
-          "Particle Systems",
-          ["Boids", "Combat"],
-        ],
-        [
-          "mycelium-network.html",
-          "Mycelium Network",
-          "Particle Systems",
-          ["Generative", "Sim"],
-        ],
-        ["tux-blob.html", "Tux Blob", "Particle Systems", ["Mascot", "Fluid"]],
-        [
-          "bioluminescent-cell.html",
-          "Bioluminescent Cell",
-          "Particle Systems",
-          ["Mascot", "Fluid"],
-        ],
-        ["meta-blobs.html", "Meta Blobs", "Particle Systems", ["SDF", "Fluid"]],
-        [
-          "iridescent-blobs.html",
-          "Iridescent Blobs",
-          "Particle Systems",
-          ["Fluid", "Overlay"],
-        ],
-        [
-          "fluid-paint.html",
-          "Fluid Paint",
-          "Particle Systems",
-          ["WebGPU", "Fluid"],
-        ],
-        ["cat-mesh.html", "Cat Mesh", "Particle Systems", ["Mesh", "Mascot"]],
-        [
-          "ukrainian-wave-mesh.html",
-          "Ukrainian Wave Mesh",
-          "Particle Systems",
-          ["Mesh", "Flag"],
-        ],
-        [
-          "ua-red-black-mesh.html",
-          "UA Red & Black Mesh",
-          "Particle Systems",
-          ["Mesh", "Flag"],
-        ],
-        [
-          "blob-face-cam.html",
-          "Blob Face Cam",
-          "Particle Systems",
-          ["Mascot", "Overlay"],
-        ],
-        [
-          "maurer-rose.html",
-          "Maurer Rose",
-          "Particle Systems",
-          ["Math", "Generative"],
-        ],
-        [
-          "collatz.html",
-          "Collatz Conjecture",
-          "Particle Systems",
-          ["Math", "Generative"],
-        ],
-        [
-          "perlin-blobs.html",
-          "Fluid Blobs (Stam)",
-          "Particle Systems",
-          ["Fluid", "Sim"],
-        ],
-        [
-          "magnetic-field.html",
-          "Magnetic Field Lines",
-          "Particle Systems",
-          ["Physics", "Generative"],
-        ],
-        ["atom.html", "Atom", "Particle Systems", ["Physics", "Loop"]],
-        ["planet.html", "Planet", "Particle Systems", ["3D", "Space"]],
-        [
-          "planet-hologram.html",
-          "Planet Hologram",
-          "Particle Systems",
-          ["Shader", "3D"],
-        ],
-        [
-          "avatar.html",
-          "Avatar — Robotic Bust",
-          "Particle Systems",
-          ["3D", "Mascot"],
-        ],
-        [
-          "elastic-rings.html",
-          "Elastic Rings",
-          "Particle Systems",
-          ["Physics", "Loop"],
-        ],
-        [
-          "figure-eight-torus.html",
-          "Figure Eight Torus",
-          "Particle Systems",
-          ["3D", "Geometric"],
-        ],
-        [
-          "infinity.html",
-          "Infinity",
-          "Particle Systems",
-          ["Loop", "Geometric"],
-        ],
-        [
-          "worxbend-text.html",
-          "Worxbend Particle Text",
-          "Particle Systems",
-          ["Particles", "Text"],
-        ],
-        [
-          "worxbend-fluid.html",
-          "Worxbend Fluid",
-          "Particle Systems",
-          ["Fluid", "Brand"],
-        ],
-        [
-          "worxbend-molecular.html",
-          "Worxbend Molecular",
-          "Particle Systems",
-          ["Particles", "Brand"],
-        ],
-        [
-          "worxbend-3d-text.html",
-          "Worxbend 3D Text",
-          "3D",
-          ["Three.js", "Brand", "Text"],
-        ],
-        [
-          "procedural-logo.html",
-          "Procedural Logo — Worxbend",
-          "Particle Systems",
-          ["Brand", "Generative"],
-        ],
-        ["break.html", "Break", "Particle Systems", ["Scene", "Loop"]],
-        [
-          "confidential.html",
-          "Confidential",
-          "Particle Systems",
-          ["Overlay", "Text"],
-        ],
-        [
-          "music-break.html",
-          "Music Break",
-          "Particle Systems",
-          ["Audio-Reactive", "Scene"],
-        ],
-        [
-          "title-powerline.html",
-          "Title Powerline",
-          "Particle Systems",
-          ["Overlay", "Text"],
-        ],
-        ["logo.html", "Logo", "Particle Systems", ["Brand", "Loop"]],
-        [
-          "starting-soon.html",
-          "Starting Soon",
-          "Particle Systems",
-          ["Scene", "Text"],
-        ],
-        [
-          "starting-soon-fluid.html",
-          "Starting Soon Fluid",
-          "Particle Systems",
-          ["Fluid", "Text"],
-        ],
-        [
-          "starting-soon-jelly.html",
-          "Starting Soon Jelly",
-          "Particle Systems",
-          ["Fluid", "Text"],
-        ],
-        [
-          "starting-soon-particle-mesh.html",
-          "Starting Soon Particle Mesh",
-          "Particle Systems",
-          ["Mesh", "Text"],
-        ],
-        [
-          "handwritten-notebook.html",
-          "Starting Soon Handwritten Notebook",
-          "Particle Systems",
-          ["Scene", "Text"],
-        ],
-        [
-          "stream-ended-particle-mesh.html",
-          "Stream Ended Particle Mesh",
-          "Particle Systems",
-          ["Mesh", "Text"],
-        ],
-        [
-          "break-water-text.html",
-          "Break Water Text",
-          "Particle Systems",
-          ["Fluid", "Text"],
-        ],
-        [
-          "digital-rain.html",
-          "Digital Rain",
-          "Backgrounds",
-          ["Shader", "Matrix", "Loop"],
-        ],
-        [
-          "eclipse-glow.html",
-          "Eclipse Glow",
-          "Backgrounds",
-          ["Shader", "Atmospheric", "Space"],
-        ],
-        [
-          "hologram-glitch.html",
-          "Hologram Glitch",
-          "Backgrounds",
-          ["Shader", "Glitch", "Sci-Fi"],
-        ],
-        [
-          "ink-dissolve.html",
-          "Ink Dissolve",
-          "Backgrounds",
-          ["Fluid", "Artistic", "Atmospheric"],
-        ],
-        [
-          "magma-core.html",
-          "Magma Core",
-          "Backgrounds",
-          ["Shader", "Fire", "Atmospheric"],
-        ],
-        [
-          "metamorphosis.html",
-          "Metamorphosis",
-          "Backgrounds",
-          ["Shader", "Organic", "Generative"],
-        ],
-        [
-          "neon-drip.html",
-          "Neon Drip",
-          "Backgrounds",
-          ["Shader", "Neon", "Artistic"],
-        ],
-        [
-          "rain-umbrella.html",
-          "Rain on Umbrella",
-          "Backgrounds",
-          ["Atmospheric", "Rain", "Scene"],
-        ],
-        [
-          "sequin-wave.html",
-          "Sequin Wave",
-          "Backgrounds",
-          ["Shader", "Geometric", "Loop"],
-        ],
-        [
-          "shifting-veils.html",
-          "Shifting Veils",
-          "Backgrounds",
-          ["Shader", "Fluid", "Atmospheric"],
-        ],
-        [
-          "smolder.html",
-          "Slow Burn",
-          "Backgrounds",
-          ["Shader", "Fire", "Atmospheric"],
-        ],
-        [
-          "synth-ribbon.html",
-          "Synth Ribbon",
-          "Backgrounds",
-          ["Shader", "Neon", "Loop"],
-        ],
-        [
-          "velvet-spotlight.html",
-          "Velvet Spotlight",
-          "Backgrounds",
-          ["Shader", "Atmospheric", "Subtle"],
-        ],
+    <script>
+      const FALLBACK_EFFECTS = [
+        // Degraded compatibility fallback only. The authoritative catalog is
+        // public/effects-meta.json generated by scripts/gen-metadata.js.
+        {
+          slug: "wavy-planet-mesh",
+          title: "Wavy Planet Mesh",
+          href: "wavy-planet-mesh.html",
+          category: "Particle Systems",
+          tags: ["3D", "Globe", "Mesh", "Fluid", "Blue"],
+          description:
+            "Rotating dotted mesh sphere with calm wave displacement and depth-aware topography.",
+          createdAt: "2026-04-24T19:48:12+03:00",
+        },
+        {
+          slug: "particle-globe",
+          title: "Particle Globe",
+          href: "particle-globe.html",
+          category: "Particle Systems",
+          tags: ["3D", "Globe", "Particle", "Blue"],
+          description:
+            "Depth-sorted particle sphere designed as a clean OBS background or accent scene.",
+          createdAt: "2026-04-23T17:08:46+03:00",
+        },
+        {
+          slug: "accretion-disk-cam",
+          title: "Accretion Disk Cam",
+          href: "accretion-disk-cam.html",
+          category: "Webcam Borders",
+          tags: ["Shader", "Webcam", "Border", "Space", "Glow"],
+          description:
+            "Transparent webcam frame built from a luminous orbital accretion disk.",
+          createdAt: "2026-05-02T12:02:12+03:00",
+        },
+        {
+          slug: "wormhole-dive",
+          title: "Wormhole Dive",
+          href: "wormhole-dive.html",
+          category: "Backgrounds",
+          tags: ["Shader", "Space", "Tunnel", "Vortex", "Sci-Fi"],
+          description:
+            "Forward-motion tunnel effect with streaked depth cues and high-energy motion.",
+          createdAt: "2026-05-03T14:17:11+03:00",
+        },
+        {
+          slug: "gpu-boids",
+          title: "GPU Boids",
+          href: "gpu-boids.html",
+          category: "Backgrounds",
+          tags: ["Physics", "Swarm", "AI", "Particle"],
+          description:
+            "Flocking particle field with swarm dynamics for animated background layers.",
+          createdAt: "2026-05-08T19:17:38+03:00",
+        },
       ];
 
-      const ITEMS = RAW.map(([href, label, cat, tags]) => ({
-        href,
-        label,
-        cat,
-        tags,
-      }));
+      const state = {
+        effects: [],
+        query: "",
+        sort: "newest",
+        activeTags: new Set(),
+        source: "loading",
+      };
 
-      const CATS = [
-        "All",
-        "Webcam Borders",
-        "Backgrounds",
-        "Audio Visualizers",
-        "Particle Systems",
-      ];
+      const els = {
+        themeToggle: document.getElementById("themeToggle"),
+        searchInput: document.getElementById("searchInput"),
+        sortSelect: document.getElementById("sortSelect"),
+        tagFilters: document.getElementById("tagFilters"),
+        clearFilters: document.getElementById("clearFilters"),
+        effectsGrid: document.getElementById("effectsGrid"),
+        totalCount: document.getElementById("totalCount"),
+        categoryCount: document.getElementById("categoryCount"),
+        tagCount: document.getElementById("tagCount"),
+        visibleCount: document.getElementById("visibleCount"),
+        resultsTitle: document.getElementById("resultsTitle"),
+        resultsMeta: document.getElementById("resultsMeta"),
+        sourceNotice: document.getElementById("sourceNotice"),
+        sourceLabel: document.getElementById("sourceLabel"),
+      };
 
-      /* Tag → preview motif mapping */
-      function previewMotif(tags) {
-        const t = tags.join(" ").toLowerCase();
-        if (t.includes("audio")) return "preview-bars";
-        if (t.includes("fluid") || t.includes("shader")) return "preview-rings";
-        if (t.includes("mesh") || t.includes("particles"))
-          return "preview-particles";
-        if (t.includes("flow") || t.includes("generative"))
-          return "preview-flow";
-        return "preview-dots";
+      function debounce(fn, wait) {
+        let timeout = 0;
+        return function (...args) {
+          window.clearTimeout(timeout);
+          timeout = window.setTimeout(() => fn.apply(this, args), wait);
+        };
       }
 
-      /* ---------------- Components ---------------- */
-      function Logo() {
-        return (
-          <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 border border-line2 grid grid-cols-2 grid-rows-2 overflow-hidden">
-              <div className="bg-lav"></div>
-              <div className="bg-ink"></div>
-              <div className="bg-ink"></div>
-              <div className="bg-vb"></div>
-            </div>
-            <div className="font-display font-bold text-[15px] tracking-tight">
-              OBS/EFX
-            </div>
-          </div>
-        );
+      function normalizeEffect(effect) {
+        return {
+          slug: String(effect.slug || ""),
+          title: String(effect.title || effect.slug || "Untitled effect"),
+          href: String(effect.href || "#"),
+          category: String(effect.category || "Uncategorized"),
+          tags: Array.isArray(effect.tags)
+            ? effect.tags.filter(Boolean).map((tag) => String(tag))
+            : [],
+          description: String(effect.description || ""),
+          createdAt: String(effect.createdAt || ""),
+        };
       }
 
-      function Pill({ active, children, onClick, count }) {
-        return (
-          <button
-            onClick={onClick}
-            className={
-              "group relative px-3.5 h-9 inline-flex items-center gap-2 border text-[12px] font-mono uppercase tracking-wider transition-colors " +
-              (active
-                ? "bg-fg text-ink border-fg"
-                : "bg-ink text-dim border-line hover:text-fg hover:border-line2")
+      async function fetchJson(path) {
+        const response = await fetch(path, { cache: "no-cache" });
+        if (!response.ok) {
+          throw new Error(`${path} returned ${response.status}`);
+        }
+        const payload = await response.json();
+        if (!Array.isArray(payload)) {
+          throw new Error(`${path} did not return an array`);
+        }
+        return payload.map(normalizeEffect);
+      }
+
+      async function loadEffects() {
+        const attempts = ["/effects-meta.json", "effects-meta.json"];
+        const errors = [];
+
+        for (const path of attempts) {
+          try {
+            const effects = await fetchJson(path);
+            return { effects, source: path, fallback: false };
+          } catch (error) {
+            errors.push(error.message);
+          }
+        }
+
+        console.warn("Using degraded inline metadata fallback.", errors);
+        return {
+          effects: FALLBACK_EFFECTS.map(normalizeEffect),
+          source: "inline fallback",
+          fallback: true,
+        };
+      }
+
+      function uniqueSortedTags(effects) {
+        const tags = new Map();
+        effects.forEach((effect) => {
+          effect.tags.forEach((tag) => {
+            const key = tag.trim().toLowerCase();
+            if (key && !tags.has(key)) {
+              tags.set(key, tag.trim());
             }
-          >
-            <span>{children}</span>
-            {typeof count === "number" && (
-              <span
-                className={
-                  "text-[10px] font-mono " +
-                  (active ? "text-ink/60" : "text-dimmer")
-                }
-              >
-                {String(count).padStart(3, "0")}
-              </span>
-            )}
-          </button>
+          });
+        });
+        return Array.from(tags.values()).sort((a, b) =>
+          a.localeCompare(b, undefined, { sensitivity: "base" }),
         );
       }
 
-      function Card({ item, idx, livePreview }) {
-        const motif = previewMotif(item.tags);
-        return (
-          <M.motion.a
-            href={item.href}
-            target="_blank"
-            rel="noopener"
-            className={
-              "card-link shimmer relative block border border-line bg-panel hover:border-line2 transition-colors " +
-              (livePreview ? "preview-on" : "")
-            }
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{
-              duration: 0.4,
-              delay: Math.min(idx, 30) * 0.015,
-              ease: [0.22, 1, 0.36, 1],
-            }}
-            whileHover={{ y: -2 }}
-          >
-            {/* Preview tile */}
-            <div className="relative h-[88px] border-b border-line overflow-hidden bg-ink">
-              <div className={"preview-base " + motif}></div>
-              {/* corner index */}
-              <div className="absolute top-2 left-2 num-tab text-[10px] text-dimmer">
-                {String(idx + 1).padStart(3, "0")}
-              </div>
-              {/* category mark */}
-              <div className="absolute top-2 right-2 num-tab text-[10px] text-dim uppercase tracking-wider">
-                {item.cat.split(" ")[0]}
-              </div>
-              {/* DIIA-style heavy corner cuts */}
-              <div className="absolute bottom-0 left-0 w-3 h-px bg-line2"></div>
-              <div className="absolute bottom-0 left-0 w-px h-3 bg-line2"></div>
-              <div className="absolute bottom-0 right-0 w-3 h-px bg-line2"></div>
-              <div className="absolute bottom-0 right-0 w-px h-3 bg-line2"></div>
-            </div>
+      function escapeHtml(value) {
+        return String(value).replace(/[&<>"']/g, (char) => {
+          return {
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#39;",
+          }[char];
+        });
+      }
 
-            {/* Body */}
-            <div className="relative p-3.5 z-10">
-              <div className="flex items-start justify-between gap-3">
-                <div className="font-display font-bold text-[14.5px] leading-snug text-fg pr-4">
-                  {item.label}
-                </div>
-                {/* arrow on hover */}
-                <div
-                  className="shrink-0 w-7 h-7 -mt-0.5 -mr-1 grid place-items-center border border-line text-dim opacity-0 -translate-x-1 group-hover:opacity-100 transition-all duration-200"
-                  style={{ transition: "all .2s" }}
-                >
-                  <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
-                    <path
-                      d="M3 9L9 3M9 3H4M9 3V8"
-                      stroke="currentColor"
-                      strokeWidth="1.4"
-                      strokeLinecap="square"
-                    />
-                  </svg>
-                </div>
-              </div>
+      function escapeRegExp(value) {
+        return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      }
 
-              <div className="mt-3 flex flex-wrap gap-1.5">
-                {item.tags.map((t) => (
-                  <span
-                    key={t}
-                    className="font-mono text-[10px] uppercase tracking-wider text-dim border border-line px-1.5 py-0.5"
-                  >
-                    {t}
-                  </span>
-                ))}
-              </div>
-            </div>
+      function highlight(value) {
+        const escaped = escapeHtml(value);
+        const query = state.query.trim();
+        if (!query) {
+          return escaped;
+        }
+        const pattern = new RegExp(`(${escapeRegExp(query)})`, "ig");
+        return escaped.replace(pattern, "<mark>$1</mark>");
+      }
 
-            {/* hover arrow override (always-visible variant on hover via CSS sibling) */}
-            <style>{`
-        .card-link:hover svg { color: #cba6f7; }
-        .card-link:hover .arrow-box { opacity: 1; transform: translateX(0); border-color: #cba6f7; color: #cba6f7; }
-      `}</style>
-          </M.motion.a>
+      function excerpt(effect) {
+        if (effect.description.trim()) {
+          return effect.description.trim();
+        }
+        const tagText = effect.tags.slice(0, 4).join(", ");
+        return tagText
+          ? `${effect.title} visual effect tagged ${tagText}.`
+          : `${effect.title} visual effect.`;
+      }
+
+      function dateValue(effect) {
+        const time = Date.parse(effect.createdAt);
+        return Number.isFinite(time) ? time : 0;
+      }
+
+      function formatMonth(value) {
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) {
+          return "Unknown";
+        }
+        return new Intl.DateTimeFormat("en", {
+          month: "short",
+          year: "numeric",
+        }).format(date);
+      }
+
+      function sortEffects(list, mode) {
+        const sorted = [...list];
+        if (mode === "oldest") {
+          return sorted.sort((a, b) => dateValue(a) - dateValue(b));
+        }
+        if (mode === "az") {
+          return sorted.sort((a, b) => a.title.localeCompare(b.title));
+        }
+        if (mode === "za") {
+          return sorted.sort((a, b) => b.title.localeCompare(a.title));
+        }
+        return sorted.sort((a, b) => dateValue(b) - dateValue(a));
+      }
+
+      function matchesQuery(effect) {
+        const query = state.query.trim().toLowerCase();
+        if (!query) {
+          return true;
+        }
+        return [effect.title, effect.description, effect.tags.join(" ")]
+          .join(" ")
+          .toLowerCase()
+          .includes(query);
+      }
+
+      function matchesTags(effect) {
+        if (state.activeTags.size === 0) {
+          return true;
+        }
+        const tags = new Set(effect.tags.map((tag) => tag.toLowerCase()));
+        return Array.from(state.activeTags).every((tag) => tags.has(tag));
+      }
+
+      function filteredEffects() {
+        return sortEffects(
+          state.effects.filter((effect) => matchesQuery(effect) && matchesTags(effect)),
+          state.sort,
         );
       }
 
-      function SectionHeader({ num, title, count }) {
-        return (
-          <div className="flex items-end justify-between border-b border-line pb-4 mb-6">
-            <div className="flex items-end gap-5">
-              <div className="num-tab text-dim text-[12px]">{num}</div>
-              <div>
-                <h2 className="font-display font-bold text-[28px] md:text-[34px] leading-none tracking-tight">
-                  {title}
-                </h2>
-                <div className="heading-rule mt-3"></div>
-              </div>
-            </div>
-            <div className="num-tab text-[11px] text-dim uppercase tracking-wider">
-              {String(count).padStart(3, "0")} effects
-            </div>
-          </div>
-        );
+      function paletteFor(effect) {
+        const text = `${effect.category} ${effect.tags.join(" ")} ${effect.slug}`.toLowerCase();
+        if (text.includes("webcam") || text.includes("border")) {
+          return ["rgba(139,211,255,0.46)", "rgba(52,211,153,0.3)", "#071218"];
+        }
+        if (text.includes("globe") || text.includes("space") || text.includes("3d")) {
+          return ["rgba(93,135,255,0.48)", "rgba(203,166,247,0.34)", "#090a17"];
+        }
+        if (text.includes("fluid") || text.includes("water") || text.includes("wave")) {
+          return ["rgba(45,212,191,0.42)", "rgba(139,211,255,0.34)", "#061516"];
+        }
+        if (text.includes("fire") || text.includes("magma") || text.includes("gold")) {
+          return ["rgba(251,146,60,0.46)", "rgba(250,204,21,0.34)", "#190c05"];
+        }
+        if (text.includes("glitch") || text.includes("cyber") || text.includes("neon")) {
+          return ["rgba(244,114,182,0.46)", "rgba(34,211,238,0.34)", "#130817"];
+        }
+        return ["rgba(139,211,255,0.38)", "rgba(203,166,247,0.3)", "#0e0e12"];
       }
 
-      function Hero({ total, livePreview, setLivePreview }) {
-        return (
-          <section className="relative border-b border-line">
-            <div className="absolute inset-0 bg-grid pointer-events-none"></div>
-            <div className="relative max-w-[1400px] mx-auto px-6 md:px-10 pt-20 pb-16">
-              {/* Eyebrow */}
-              <div className="flex items-center gap-3 mb-10">
-                <div className="w-2 h-2 bg-lav"></div>
-                <div className="font-mono text-[11px] uppercase tracking-[0.2em] text-dim">
-                  v2.6.1 · Catalog · {total} effects · OBS Browser Source ready
-                </div>
-              </div>
-
-              {/* Headline */}
-              <h1 className="font-display font-bold tracking-tight leading-[0.92]">
-                <span className="block text-[68px] md:text-[112px] lg:text-[136px]">
-                  OBS Effects
-                </span>
-                <span className="block text-[68px] md:text-[112px] lg:text-[136px] text-lav">
-                  Directory.
-                </span>
-              </h1>
-
-              {/* Subhead row */}
-              <div className="mt-12 grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-10 items-end">
-                <div className="md:col-span-7">
-                  <div className="border-l-2 border-lav pl-5">
-                    <p className="font-display font-semibold text-[22px] md:text-[26px] leading-[1.25] text-fg max-w-[620px]">
-                      Optimized for OBS Browser Sources.
-                      <br />
-                      One click to deploy.
-                    </p>
-                    <p className="mt-4 text-[14px] text-dim max-w-[560px]">
-                      A curated set of GPU-accelerated overlays, generative
-                      backgrounds, audio visualizers and physics-driven particle
-                      systems — engineered to drop straight into your scene.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Stats block — DIIA-style structured panel */}
-                <div className="md:col-span-5 border border-line">
-                  <div className="grid grid-cols-3 divide-x divide-line border-b border-line">
-                    {[
-                      ["Effects", total],
-                      ["Categories", 4],
-                      ["WebGPU", "12"],
-                    ].map(([k, v]) => (
-                      <div key={k} className="p-4">
-                        <div className="font-display font-bold text-[34px] leading-none">
-                          {v}
-                        </div>
-                        <div className="mt-2 font-mono text-[10px] uppercase tracking-wider text-dim">
-                          {k}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="p-4 flex items-center justify-between">
-                    <div>
-                      <div className="font-mono text-[10px] uppercase tracking-wider text-dim">
-                        Live preview
-                      </div>
-                      <div className="font-display font-bold text-[14px] mt-1">
-                        {livePreview
-                          ? "Animations active"
-                          : "Static thumbnails"}
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => setLivePreview((v) => !v)}
-                      aria-pressed={livePreview}
-                      className={
-                        "relative w-14 h-7 border transition-colors " +
-                        (livePreview
-                          ? "bg-lav border-lav"
-                          : "bg-ink border-line2")
-                      }
-                    >
-                      <span
-                        className={
-                          "absolute top-0.5 w-6 h-6 bg-ink transition-transform " +
-                          (livePreview
-                            ? "translate-x-[28px]"
-                            : "translate-x-0.5")
-                        }
-                      ></span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Ticker bottom */}
-            <div className="border-t border-line overflow-hidden">
-              <div className="ticker py-3 font-mono text-[11px] uppercase tracking-[0.18em] text-dim">
-                {Array.from({ length: 2 }).map((_, i) => (
-                  <div key={i} className="flex gap-12 shrink-0">
-                    {[
-                      "WebGL · WebGPU · Canvas2D",
-                      "Transparent OBS Overlays",
-                      "Audio-Reactive · FFT 2048",
-                      "Catppuccin Lavender Theme",
-                      "Drop-in Browser Source",
-                      "60FPS · GPU-Accelerated",
-                      "Physics: Verlet · SPH · Boids",
-                      "Procedural · Generative · Math",
-                    ].map((s, j) => (
-                      <span key={j} className="flex items-center gap-12">
-                        <span>{s}</span>
-                        <span className="text-lav">◆</span>
-                      </span>
-                    ))}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </section>
-        );
+      function renderStats(visible) {
+        const categories = new Set(state.effects.map((effect) => effect.category));
+        els.totalCount.textContent = state.effects.length;
+        els.categoryCount.textContent = categories.size;
+        els.tagCount.textContent = uniqueSortedTags(state.effects).length;
+        els.visibleCount.textContent = visible.length;
       }
 
-      function FilterBar({
-        query,
-        setQuery,
-        cat,
-        setCat,
-        counts,
-        livePreview,
-        setLivePreview,
-        view,
-        setView,
-      }) {
-        return (
-          <div className="sticky top-0 z-30 sticky-blur border-b border-line">
-            <div className="max-w-[1400px] mx-auto px-6 md:px-10 py-4">
-              <div className="flex flex-col lg:flex-row lg:items-center gap-4">
-                {/* Search */}
-                <div className="relative flex-1 lg:max-w-[440px]">
-                  <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-dim">
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                      <circle
-                        cx="6"
-                        cy="6"
-                        r="4.5"
-                        stroke="currentColor"
-                        strokeWidth="1.4"
-                      />
-                      <path
-                        d="M9.5 9.5L13 13"
-                        stroke="currentColor"
-                        strokeWidth="1.4"
-                        strokeLinecap="square"
-                      />
-                    </svg>
-                  </div>
-                  <input
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    placeholder="Search 130+ effects… (e.g. nebula, audio, webgpu)"
-                    className="w-full h-10 pl-10 pr-24 bg-ink border border-line text-fg placeholder-dim/70 font-mono text-[12px] uppercase tracking-wider focus:outline-none focus:border-lav transition-colors"
-                  />
-                  <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                    <kbd className="font-mono text-[10px] text-dim border border-line px-1.5 py-0.5">
-                      ⌘
-                    </kbd>
-                    <kbd className="font-mono text-[10px] text-dim border border-line px-1.5 py-0.5">
-                      K
-                    </kbd>
-                  </div>
-                </div>
-
-                {/* Categories */}
-                <div className="flex flex-wrap gap-2 flex-1">
-                  {CATS.map((c) => (
-                    <Pill
-                      key={c}
-                      active={cat === c}
-                      onClick={() => setCat(c)}
-                      count={counts[c]}
-                    >
-                      {c}
-                    </Pill>
-                  ))}
-                </div>
-
-                {/* Right controls */}
-                <div className="flex items-center gap-2">
-                  <div className="flex border border-line">
-                    {["grid", "list"].map((v) => (
-                      <button
-                        key={v}
-                        onClick={() => setView(v)}
-                        className={
-                          "w-9 h-9 grid place-items-center transition-colors " +
-                          (view === v
-                            ? "bg-fg text-ink"
-                            : "text-dim hover:text-fg")
-                        }
-                      >
-                        {v === "grid" ? (
-                          <svg
-                            width="13"
-                            height="13"
-                            viewBox="0 0 13 13"
-                            fill="none"
-                          >
-                            <rect
-                              x="1"
-                              y="1"
-                              width="4.5"
-                              height="4.5"
-                              stroke="currentColor"
-                              strokeWidth="1.2"
-                            />
-                            <rect
-                              x="7.5"
-                              y="1"
-                              width="4.5"
-                              height="4.5"
-                              stroke="currentColor"
-                              strokeWidth="1.2"
-                            />
-                            <rect
-                              x="1"
-                              y="7.5"
-                              width="4.5"
-                              height="4.5"
-                              stroke="currentColor"
-                              strokeWidth="1.2"
-                            />
-                            <rect
-                              x="7.5"
-                              y="7.5"
-                              width="4.5"
-                              height="4.5"
-                              stroke="currentColor"
-                              strokeWidth="1.2"
-                            />
-                          </svg>
-                        ) : (
-                          <svg
-                            width="13"
-                            height="13"
-                            viewBox="0 0 13 13"
-                            fill="none"
-                          >
-                            <path
-                              d="M1 2.5h11M1 6.5h11M1 10.5h11"
-                              stroke="currentColor"
-                              strokeWidth="1.2"
-                            />
-                          </svg>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                  <button
-                    onClick={() => setLivePreview((v) => !v)}
-                    className={
-                      "h-9 px-3 inline-flex items-center gap-2 border font-mono text-[11px] uppercase tracking-wider transition-colors " +
-                      (livePreview
-                        ? "bg-lav text-ink border-lav"
-                        : "border-line text-dim hover:text-fg hover:border-line2")
-                    }
-                  >
-                    <span
-                      className={
-                        "w-1.5 h-1.5 " + (livePreview ? "bg-ink" : "bg-dim")
-                      }
-                    ></span>
-                    Live Preview
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        );
+      function renderTagFilters() {
+        const tags = uniqueSortedTags(state.effects);
+        const active = state.activeTags;
+        els.tagFilters.innerHTML = tags
+          .map((tag) => {
+            const key = tag.toLowerCase();
+            const pressed = active.has(key);
+            return `<button class="tag-filter${pressed ? " is-active" : ""}" type="button" data-tag="${escapeHtml(key)}" aria-pressed="${pressed}">${escapeHtml(tag)}</button>`;
+          })
+          .join("");
       }
 
-      function ListRow({ item, idx, livePreview }) {
-        const motif = previewMotif(item.tags);
-        return (
-          <M.motion.a
-            href={item.href}
-            target="_blank"
-            rel="noopener"
-            className={
-              "card-link group grid grid-cols-12 gap-4 items-center border-b border-line py-3.5 px-4 hover:bg-panel transition-colors " +
-              (livePreview ? "preview-on" : "")
-            }
-            initial={{ opacity: 0, x: -8 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.3, delay: Math.min(idx, 30) * 0.01 }}
-          >
-            <div className="col-span-1 num-tab text-[11px] text-dim">
-              {String(idx + 1).padStart(3, "0")}
+      function renderCards(effects) {
+        if (effects.length === 0) {
+          els.effectsGrid.innerHTML = `
+            <div class="empty">
+              <strong>No effects found</strong>
+              <span>Try a different search term or remove a tag filter.</span>
             </div>
-            <div className="col-span-1 relative h-9 border border-line overflow-hidden bg-ink">
-              <div className={"preview-base " + motif}></div>
-            </div>
-            <div className="col-span-5 font-display font-bold text-[15px]">
-              {item.label}
-            </div>
-            <div className="col-span-2 font-mono text-[10px] uppercase tracking-wider text-dim">
-              {item.cat}
-            </div>
-            <div className="col-span-2 flex flex-wrap gap-1">
-              {item.tags.slice(0, 2).map((t) => (
-                <span
-                  key={t}
-                  className="font-mono text-[10px] uppercase tracking-wider text-dim border border-line px-1.5 py-0.5"
-                >
-                  {t}
-                </span>
-              ))}
-            </div>
-            <div className="col-span-1 flex justify-end">
-              <div className="w-7 h-7 grid place-items-center border border-line text-dim group-hover:text-lav group-hover:border-lav transition-colors">
-                <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
-                  <path
-                    d="M3 9L9 3M9 3H4M9 3V8"
-                    stroke="currentColor"
-                    strokeWidth="1.4"
-                    strokeLinecap="square"
-                  />
-                </svg>
-              </div>
-            </div>
-          </M.motion.a>
-        );
+          `;
+          return;
+        }
+
+        els.effectsGrid.innerHTML = effects
+          .map((effect) => {
+            const [a, b, c] = paletteFor(effect);
+            const tags = effect.tags
+              .slice(0, 8)
+              .map((tag) => `<span class="chip">${highlight(tag)}</span>`)
+              .join("");
+            return `
+              <a class="card" href="${escapeHtml(effect.href)}" style="--swatch-a:${a};--swatch-b:${b};--swatch-c:${c};">
+                <div class="thumb" aria-hidden="true"></div>
+                <div class="card-body">
+                  <div class="card-kicker">
+                    <span class="category" title="${escapeHtml(effect.category)}">${escapeHtml(effect.category)}</span>
+                    <span class="date">${formatMonth(effect.createdAt)}</span>
+                  </div>
+                  <h3 class="card-title">${highlight(effect.title)}</h3>
+                  <p class="description">${highlight(excerpt(effect))}</p>
+                  <div class="chips">${tags}</div>
+                </div>
+              </a>
+            `;
+          })
+          .join("");
       }
 
-      function ThemeToggle({ theme, setTheme }) {
-        const isLight = theme === "light";
-        return (
-          <button
-            onClick={() => setTheme(isLight ? "dark" : "light")}
-            aria-label="Toggle theme"
-            title={isLight ? "Switch to dark" : "Switch to light"}
-            className="relative h-8 w-[68px] border border-line bg-ink hover:border-line2 transition-colors flex items-center"
-          >
-            <span
-              className={
-                "absolute top-1/2 -translate-y-1/2 h-6 w-[30px] bg-fg transition-transform duration-200 " +
-                (isLight ? "translate-x-[34px]" : "translate-x-1")
-              }
-            ></span>
-            <span
-              className="relative z-10 flex-1 grid place-items-center text-fg"
-              style={{
-                color: isLight ? "rgb(var(--c-fg))" : "rgb(var(--c-ink))",
-              }}
-            >
-              {/* moon */}
-              <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
-                <path
-                  d="M9.5 7.2A4 4 0 1 1 4.8 2.5 3.2 3.2 0 0 0 9.5 7.2Z"
-                  stroke="currentColor"
-                  strokeWidth="1.2"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </span>
-            <span
-              className="relative z-10 flex-1 grid place-items-center"
-              style={{
-                color: isLight ? "rgb(var(--c-ink))" : "rgb(var(--c-fg))",
-              }}
-            >
-              {/* sun */}
-              <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
-                <circle
-                  cx="6"
-                  cy="6"
-                  r="2.2"
-                  stroke="currentColor"
-                  strokeWidth="1.2"
-                />
-                <path
-                  d="M6 1v1.5M6 9.5V11M1 6h1.5M9.5 6H11M2.5 2.5l1 1M8.5 8.5l1 1M2.5 9.5l1-1M8.5 3.5l1-1"
-                  stroke="currentColor"
-                  strokeWidth="1.2"
-                  strokeLinecap="round"
-                />
-              </svg>
-            </span>
-          </button>
-        );
+      function renderResults() {
+        const visible = filteredEffects();
+        const activeTagLabels = Array.from(state.activeTags);
+        const hasFilters = state.query.trim() || activeTagLabels.length > 0;
+
+        renderStats(visible);
+        renderCards(visible);
+        els.resultsTitle.textContent = hasFilters ? "Filtered effects" : "All effects";
+        els.resultsMeta.textContent = `${visible.length} of ${state.effects.length} effects · ${state.sort}`;
+        els.clearFilters.classList.toggle("is-visible", Boolean(hasFilters));
       }
 
-      function App() {
-        const [query, setQuery] = useState("");
-        const [cat, setCat] = useState("All");
-        const [livePreview, setLivePreview] = useState(false);
-        const [view, setView] = useState("grid");
-        const [theme, setTheme] = useState(() => {
-          if (typeof window === "undefined") return "dark";
-          const saved = localStorage.getItem("obsefx-theme");
-          if (saved === "light" || saved === "dark") return saved;
-          return "dark";
+      function setSourceNotice(result) {
+        if (result.fallback) {
+          els.sourceNotice.textContent =
+            "Using degraded inline fallback metadata. Start a local server or generate public/effects-meta.json for the full directory.";
+          els.sourceNotice.classList.add("is-visible");
+          els.sourceLabel.textContent = "Degraded inline metadata";
+          return;
+        }
+        els.sourceNotice.textContent = "";
+        els.sourceNotice.classList.remove("is-visible");
+        els.sourceLabel.textContent = `Loaded ${result.source}`;
+      }
+
+      function bindEvents() {
+        els.searchInput.addEventListener(
+          "input",
+          debounce((event) => {
+            state.query = event.target.value;
+            renderResults();
+          }, 150),
+        );
+
+        els.sortSelect.addEventListener("change", (event) => {
+          state.sort = event.target.value;
+          renderResults();
         });
 
-        useEffect(() => {
-          document.documentElement.setAttribute("data-theme", theme);
+        els.tagFilters.addEventListener("click", (event) => {
+          const button = event.target.closest("[data-tag]");
+          if (!button) {
+            return;
+          }
+          const tag = button.dataset.tag;
+          if (state.activeTags.has(tag)) {
+            state.activeTags.delete(tag);
+          } else {
+            state.activeTags.add(tag);
+          }
+          renderTagFilters();
+          renderResults();
+        });
+
+        els.clearFilters.addEventListener("click", () => {
+          state.query = "";
+          state.activeTags.clear();
+          els.searchInput.value = "";
+          renderTagFilters();
+          renderResults();
+        });
+
+        els.themeToggle.addEventListener("click", () => {
+          const current = document.documentElement.getAttribute("data-theme") || "dark";
+          const next = current === "dark" ? "light" : "dark";
+          document.documentElement.setAttribute("data-theme", next);
           try {
-            localStorage.setItem("obsefx-theme", theme);
-          } catch {}
-        }, [theme]);
+            localStorage.setItem("obsefx-theme", next);
+          } catch (error) {}
+        });
 
-        const counts = useMemo(() => {
-          const c = { All: ITEMS.length };
-          for (const k of CATS.slice(1))
-            c[k] = ITEMS.filter((x) => x.cat === k).length;
-          return c;
-        }, []);
-
-        const filtered = useMemo(() => {
-          const q = query.trim().toLowerCase();
-          return ITEMS.filter((it) => {
-            if (cat !== "All" && it.cat !== cat) return false;
-            if (!q) return true;
-            const hay = (
-              it.label +
-              " " +
-              it.cat +
-              " " +
-              it.tags.join(" ")
-            ).toLowerCase();
-            return hay.includes(q);
-          });
-        }, [query, cat]);
-
-        /* group by category for the grid view (when All is selected) */
-        const grouped = useMemo(() => {
-          if (cat !== "All" || query.trim()) return null;
-          const g = {};
-          for (const k of CATS.slice(1))
-            g[k] = filtered.filter((x) => x.cat === k);
-          return g;
-        }, [filtered, cat, query]);
-
-        /* ⌘K focus */
-        const inputRef = useRef(null);
-        useEffect(() => {
-          const handler = (e) => {
-            if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
-              e.preventDefault();
-              const el = document.querySelector('input[placeholder^="Search"]');
-              el?.focus();
-            }
-          };
-          window.addEventListener("keydown", handler);
-          return () => window.removeEventListener("keydown", handler);
-        }, []);
-
-        return (
-          <div className="min-h-screen">
-            {/* Top nav */}
-            <nav className="border-b border-line">
-              <div className="max-w-[1400px] mx-auto px-6 md:px-10 h-14 flex items-center justify-between">
-                <Logo />
-                <div className="hidden md:flex items-center gap-7 font-mono text-[11px] uppercase tracking-wider text-dim">
-                  <a href="#" className="hover:text-fg transition-colors">
-                    Catalog
-                  </a>
-                  <a href="#" className="hover:text-fg transition-colors">
-                    Docs
-                  </a>
-                  <a href="#" className="hover:text-fg transition-colors">
-                    Changelog
-                  </a>
-                  <a href="#" className="hover:text-fg transition-colors">
-                    GitHub ↗
-                  </a>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="hidden sm:flex items-center gap-2 font-mono text-[10px] uppercase tracking-wider text-dim border border-line px-2.5 h-8">
-                    <span
-                      className="w-1.5 h-1.5 bg-emerald-400 rounded-full"
-                      style={{ boxShadow: "0 0 8px rgba(52,211,153,0.6)" }}
-                    ></span>
-                    All systems normal
-                  </div>
-                  <ThemeToggle theme={theme} setTheme={setTheme} />
-                  <a
-                    href="#catalog"
-                    className="h-8 px-3 inline-flex items-center gap-2 bg-fg text-ink font-mono text-[11px] uppercase tracking-wider hover:bg-lav transition-colors"
-                  >
-                    Deploy
-                    <span>→</span>
-                  </a>
-                </div>
-              </div>
-            </nav>
-
-            <Hero
-              total={ITEMS.length}
-              livePreview={livePreview}
-              setLivePreview={setLivePreview}
-            />
-
-            <FilterBar
-              query={query}
-              setQuery={setQuery}
-              cat={cat}
-              setCat={setCat}
-              counts={counts}
-              livePreview={livePreview}
-              setLivePreview={setLivePreview}
-              view={view}
-              setView={setView}
-            />
-
-            {/* Main */}
-            <main
-              id="catalog"
-              className="max-w-[1400px] mx-auto px-6 md:px-10 py-12"
-            >
-              {grouped ? (
-                <div className="space-y-16">
-                  {CATS.slice(1).map((c, i) => (
-                    <section
-                      key={c}
-                      data-screen-label={`${String(i + 1).padStart(2, "0")} ${c}`}
-                    >
-                      <SectionHeader
-                        num={`§ ${String(i + 1).padStart(2, "0")}`}
-                        title={c}
-                        count={grouped[c].length}
-                      />
-                      {view === "grid" ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-                          {grouped[c].map((it, idx) => (
-                            <Card
-                              key={it.href}
-                              item={it}
-                              idx={idx}
-                              livePreview={livePreview}
-                            />
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="border-t border-line">
-                          {grouped[c].map((it, idx) => (
-                            <ListRow
-                              key={it.href}
-                              item={it}
-                              idx={idx}
-                              livePreview={livePreview}
-                            />
-                          ))}
-                        </div>
-                      )}
-                    </section>
-                  ))}
-                </div>
-              ) : (
-                <section>
-                  <SectionHeader
-                    num="§ 00"
-                    title={query.trim() ? `Results for "${query}"` : cat}
-                    count={filtered.length}
-                  />
-                  {filtered.length === 0 ? (
-                    <div className="border border-line p-12 text-center">
-                      <div className="font-display font-bold text-[22px]">
-                        No effects found
-                      </div>
-                      <div className="mt-2 font-mono text-[12px] uppercase tracking-wider text-dim">
-                        try a different query or category
-                      </div>
-                    </div>
-                  ) : view === "grid" ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-                      {filtered.map((it, idx) => (
-                        <Card
-                          key={it.href}
-                          item={it}
-                          idx={idx}
-                          livePreview={livePreview}
-                        />
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="border-t border-line">
-                      {filtered.map((it, idx) => (
-                        <ListRow
-                          key={it.href}
-                          item={it}
-                          idx={idx}
-                          livePreview={livePreview}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </section>
-              )}
-            </main>
-
-            {/* Footer */}
-            <footer className="border-t border-line">
-              <div className="max-w-[1400px] mx-auto px-6 md:px-10 py-10 grid grid-cols-1 md:grid-cols-12 gap-8">
-                <div className="md:col-span-5">
-                  <Logo />
-                  <p className="mt-4 text-dim text-[13px] max-w-md">
-                    A directory of GPU-accelerated browser-source effects for
-                    streamers. Drop any URL into OBS as a Browser Source —
-                    transparency is preserved.
-                  </p>
-                </div>
-                <div className="md:col-span-7 grid grid-cols-3 gap-6">
-                  {[
-                    [
-                      "Catalog",
-                      [
-                        "All Effects",
-                        "Webcam Borders",
-                        "Backgrounds",
-                        "Audio Visualizers",
-                      ],
-                    ],
-                    [
-                      "Resources",
-                      ["Docs", "Setup Guide", "Performance", "Changelog"],
-                    ],
-                    ["About", ["GitHub", "License", "Contact", "Status"]],
-                  ].map(([h, items]) => (
-                    <div key={h}>
-                      <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-dim mb-3">
-                        {h}
-                      </div>
-                      <ul className="space-y-2">
-                        {items.map((i) => (
-                          <li key={i}>
-                            <a
-                              href="#"
-                              className="text-[13px] text-fg/80 hover:text-lav transition-colors"
-                            >
-                              {i}
-                            </a>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className="border-t border-line">
-                <div className="max-w-[1400px] mx-auto px-6 md:px-10 h-12 flex items-center justify-between font-mono text-[10px] uppercase tracking-wider text-dim">
-                  <div>© 2026 OBS/EFX · MIT</div>
-                  <div className="flex items-center gap-4">
-                    <span>Build 2026.05.06</span>
-                    <span className="text-lav">●</span>
-                    <span>Operational</span>
-                  </div>
-                </div>
-              </div>
-            </footer>
-          </div>
-        );
+        window.addEventListener("keydown", (event) => {
+          if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+            event.preventDefault();
+            els.searchInput.focus();
+          }
+        });
       }
 
-      ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+      async function init() {
+        bindEvents();
+        const result = await loadEffects();
+        state.effects = result.effects;
+        state.source = result.source;
+        setSourceNotice(result);
+        renderTagFilters();
+        renderResults();
+      }
+
+      init();
     </script>
   </body>
 </html>

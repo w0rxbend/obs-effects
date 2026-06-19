@@ -1,147 +1,88 @@
-# Plan: Advanced Index Page with Search, Sort, and Metadata
+# Plan: Metadata-Backed OBS Effects Directory
 
 ## Goal
 
-Replace the current flat `index.html` effect list with a fully searchable, sortable, filterable directory. Each effect gets a creation timestamp (from git history), a human description, and richer tags.
+Replace the flat `index.html` effect list with a searchable, sortable, filterable directory backed by generated metadata, while preserving the repo's lightweight static-preview workflow.
 
----
+## Current Status
 
-## Phase 1 — Metadata extraction script
+Completed this iteration:
 
-**File: `scripts/gen-metadata.ts` (or `.js`)**
+- [x] Added `scripts/gen-metadata.js`.
+- [x] Added `scripts/effects-meta-overrides.json` with seed descriptions and enriched tags for 24 key effects.
+- [x] Generated `public/effects-meta.json` with 251 effect records.
+- [x] Rewrote `index.html` as a vanilla JS metadata-backed directory with search, sort, tag filters, highlight, cards, theme toggle, and responsive styling.
+- [x] Verified `node scripts/gen-metadata.js`, `npm run lint`, and `npm run build` pass.
 
-Run once (and on CI) to produce `public/effects-meta.json`.
+Known gaps from review:
 
-```
+- `public/effects-meta.json` currently includes `neon-ribbon-pattern.html`, but that effect page and its TS files are untracked. Either commit the full effect page set or remove/regenerate the metadata record before publishing.
+- Static-file fallback is incomplete. `index.html` only falls back to five inline records, and browser `file://` fetch behavior means the committed JSON does not by itself make the full directory usable when opening `index.html` directly.
+- Metadata generation is not fully reproducible from source. After the inline catalog was removed, categories and base tags for most effects are preserved from the previous `public/effects-meta.json`; deleting that file and regenerating would degrade many records to `Uncategorized` with sparse tags.
+- `scripts/gen-metadata.js` parses JavaScript arrays from `index.html` using `Function(...)`, which is brittle now that `index.html` is no longer the durable catalog source.
+- Tag normalization deduplicates case-insensitively, but does not lowercase output as the original plan specified.
+- Only 24 of 251 records have descriptions; 227 descriptions are still empty.
+
+## Phase 1 - Fix Catalog Correctness
+
+Priority: high.
+
+- [ ] Decide ownership of `neon-ribbon-pattern`: either commit `neon-ribbon-pattern.html`, `src/neon-ribbon-pattern.ts`, and `src/app/screens/NeonRibbonPatternScreen.ts`, or remove the page from `public/effects-meta.json` by regenerating after excluding untracked files.
+- [ ] Add a metadata integrity check script that fails when `public/effects-meta.json` contains an `href` with no tracked root HTML file.
+- [ ] Add the integrity check to the verification flow before `npm run build`.
+- [ ] Update `loadEffects()` in `index.html` to try deployment-safe paths in order: `effects-meta.json`, `public/effects-meta.json`, then `/effects-meta.json`.
+- [ ] Replace the five-item inline fallback with a generated embedded full fallback, or document that direct `file://` opening is intentionally degraded and make the notice explicit.
+
+## Phase 2 - Make Metadata Generation Reproducible
+
+Priority: high.
+
+- [ ] Move category and base tag data into a durable source file, such as `scripts/effects-catalog.json`, instead of mining `index.html` or previous output.
+- [ ] Let `scripts/effects-meta-overrides.json` optionally provide `category` as well as `description` and tags.
+- [ ] Stop reading `public/effects-meta.json` as an input for category/tag preservation, or use it only behind an explicit `--preserve-existing` migration flag.
+- [ ] Remove `Function(...)` parsing from `scripts/gen-metadata.js`.
+- [ ] Emit stable ISO timestamps with `git log --format=%aI --diff-filter=A -- <file>` where possible.
+- [ ] Normalize tags consistently: trim, collapse whitespace, deduplicate case-insensitively, and choose either canonical lowercase output or documented display-case output.
+
+## Phase 3 - Improve Directory UX and Filtering
+
+Priority: medium.
+
+- [ ] Add a category sidebar or category chip row with counts and click-to-filter behavior.
+- [ ] Keep selected filters represented in URL query params so catalog links can be shared.
+- [ ] Add an "updated metadata source" timestamp or build identifier to the footer.
+- [ ] Improve no-description cards by generating a better deterministic fallback sentence from category and tags.
+- [ ] Harden highlight rendering so queries cannot split escaped HTML entities.
+
+## Phase 4 - Expand Metadata Coverage
+
+Priority: medium.
+
+- [ ] Fill descriptions for the top 50 most useful or newest effects first.
+- [ ] Add richer tags for all `Uncategorized` or low-tag records.
+- [ ] Review category taxonomy and merge near-duplicates such as `3D`, `3D Models`, and `Full Scenes` if they are not intentionally distinct.
+
+## Phase 5 - Future Thumbnail Pipeline
+
+Priority: low.
+
+- [ ] Add Playwright thumbnail capture for committed effect pages only.
+- [ ] Save thumbnails to `public/thumbs/<slug>.jpg`.
+- [ ] Display thumbnails in cards when available, with the current swatch preview as fallback.
+
+## Verification Checklist
+
+Run before considering the directory work complete:
+
+```bash
 node scripts/gen-metadata.js
+npm run lint
+npm run build
 ```
 
-What it does:
+Additional checks to add next:
 
-1. For every `*.html` at repo root (excluding `index.html`):
-   - Run `git log --diff-filter=A --format="%ai" -- <file>` → first-commit date.
-   - If not in git yet (untracked), use `fs.statSync(file).birthtime` as fallback.
-2. Merge with a hand-authored `scripts/effects-meta-overrides.json` that holds per-effect descriptions and extended tags.
-3. Output `public/effects-meta.json` — one record per effect:
-
-```json
-{
-  "slug": "wavy-planet-mesh",
-  "title": "Wavy Planet Mesh",
-  "href": "wavy-planet-mesh.html",
-  "category": "Backgrounds",
-  "tags": ["3D", "Globe", "Mesh", "Fluid", "Blue"],
-  "description": "Rotating latitude/longitude mesh sphere with layered wave displacement and depth-aware dot highlights.",
-  "createdAt": "2026-05-17T15:34:25+03:00"
-}
+```bash
+# no metadata href should point at an untracked or missing root HTML file
+comm -23 <(jq -r '.[].href' public/effects-meta.json | sort) <(git ls-files '*.html' | grep -v '^index.html$' | sort)
 ```
-
----
-
-## Phase 2 — Hand-authored overrides file
-
-**File: `scripts/effects-meta-overrides.json`**
-
-Provides descriptions and extended tags for effects that need more context than the title alone conveys. Git dates are always sourced from the script; this file only supplies prose and tag enrichment.
-
-Example entry:
-
-```json
-{
-  "wavy-planet-mesh": {
-    "description": "Rotating latitude/longitude mesh sphere with layered wave displacement. Nodes shift radially based on multi-octave surface waves; depth controls dot size and brightness.",
-    "tags": ["3D", "Globe", "Mesh", "Fluid", "Blue", "Particle"]
-  }
-}
-```
-
-For effects without an override, the script auto-generates tags from the existing array in `index.html` and leaves description as `""`.
-
----
-
-## Phase 3 — Rewrite `index.html` JavaScript section
-
-The current `index.html` has a large inline JS array and a basic search filter. Replace it with:
-
-### Data loading
-
-```js
-const meta = await fetch("/effects-meta.json").then((r) => r.json());
-```
-
-During development (no server) fall back to the inline array for backward compatibility.
-
-### UI additions (pure CSS + vanilla JS, no framework)
-
-**Sort bar:**
-
-```
-[Newest first ▾]  [Oldest first]  [A → Z]  [Z → A]
-```
-
-**Tag cloud / filter chips:**
-Auto-generated from all unique tags. Clicking a chip filters to effects with that tag. Multiple chips = AND filter. Active chips highlighted in accent color.
-
-**Search box** (already exists, extend):
-
-- Search across: title, description, tags
-- Debounce 150 ms
-- Highlight matched text in results
-
-**Effect cards** (upgrade from current link list):
-
-- Show: thumbnail placeholder or color swatch, title, category badge, tag chips, description excerpt, creation date (`Jan 2026`)
-- CSS grid, responsive columns
-
-### Sort implementation
-
-```js
-function sortEffects(list, mode) {
-  if (mode === "newest")
-    return [...list].sort(
-      (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
-    );
-  if (mode === "oldest")
-    return [...list].sort(
-      (a, b) => new Date(a.createdAt) - new Date(b.createdAt),
-    );
-  if (mode === "az")
-    return [...list].sort((a, b) => a.title.localeCompare(b.title));
-  if (mode === "za")
-    return [...list].sort((a, b) => b.title.localeCompare(a.title));
-}
-```
-
----
-
-## Phase 4 — Category sidebar (optional, after Phase 3)
-
-Left panel with category counts. Clicking a category filters the grid. Current categories already in the data: `Backgrounds`, `Webcam Borders`, `Particle Systems`, `Full Scenes`, `Overlays`, `Scenes`, `Text`, `3D Models`, `Boids`.
-
----
-
-## Phase 5 — Thumbnail generation (future / optional)
-
-Run headless Chromium via Playwright to capture a 400×225 screenshot of each effect after 2s. Save to `public/thumbs/<slug>.jpg`. Display in cards. This is a separate CI job, not blocking the search/sort work.
-
----
-
-## Execution order
-
-| Step | What                                                             | Files touched                         |
-| ---- | ---------------------------------------------------------------- | ------------------------------------- |
-| 1    | Write `gen-metadata.js` script                                   | `scripts/gen-metadata.js`             |
-| 2    | Write `effects-meta-overrides.json` (start with ~20 key effects) | `scripts/effects-meta-overrides.json` |
-| 3    | Run script → commit `public/effects-meta.json`                   | `public/effects-meta.json`            |
-| 4    | Rewrite index.html JS + add sort/filter UI                       | `index.html`                          |
-| 5    | Style card grid in `style.css` or inline                         | `index.html` / `style.css`            |
-| 6    | Fill in remaining overrides over time                            | `scripts/effects-meta-overrides.json` |
-
----
-
-## Notes
-
-- `effects-meta.json` should be committed so the index works when opened as a static file (no build step needed).
-- The existing inline array in `index.html` can be kept as a fallback and gradually replaced once the JSON approach is validated.
-- Tag normalisation: lowercase, trim, deduplicate before writing JSON.
-- Creation date for effects added in the same commit: use commit timestamp of that commit, not `Date.now()`.
