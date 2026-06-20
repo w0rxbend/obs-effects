@@ -1,25 +1,13 @@
-import { setEngine } from "./app/getEngine";
 import { BreakScreen } from "./app/screens/BreakScreen";
-import { CreationEngine } from "./engine/engine";
+import { createPage } from "./lib/createPage";
 
-const engine = new CreationEngine();
-setEngine(engine);
-
-(async () => {
-  await Promise.all([
-    document.fonts.load("1em 'Silkscreen'"),
-    document.fonts.load("1em 'Rock Salt'"),
-    document.fonts.load("1em 'Bangers'"),
-    document.fonts.load("1em 'SymbolsNF'"),
-  ]);
-
-  await document.fonts.ready;
-
-  await engine.init({
-    background: "transparent",
-    backgroundAlpha: 0,
-    resizeOptions: { minWidth: 1920, minHeight: 1080, letterbox: false },
-  });
-
-  await engine.navigation.showScreen(BreakScreen);
-})();
+createPage(BreakScreen, {
+  background: "transparent",
+  backgroundAlpha: 0,
+  fonts: [
+    "1em 'Silkscreen'",
+    "1em 'Rock Salt'",
+    "1em 'Bangers'",
+    "1em 'SymbolsNF'",
+  ],
+});

@@ -1,19 +1,9 @@
-import { setEngine } from "./app/getEngine";
 import { StartingSoonParticleMeshScreen } from "./app/screens/StartingSoonParticleMeshScreen";
-import { CreationEngine } from "./engine/engine";
+import { createPage } from "./lib/createPage";
 
-const engine = new CreationEngine();
-setEngine(engine);
-
-(async () => {
-  await document.fonts.load("400 1em 'Bangers'");
-  await document.fonts.ready;
-
-  await engine.init({
-    background: "transparent",
-    backgroundAlpha: 0,
-    resizeOptions: { minWidth: 800, minHeight: 450, letterbox: false },
-  });
-
-  await engine.navigation.showScreen(StartingSoonParticleMeshScreen);
-})();
+createPage(StartingSoonParticleMeshScreen, {
+  background: "transparent",
+  backgroundAlpha: 0,
+  fonts: ["400 1em 'Bangers'"],
+  resizeOptions: { minWidth: 800, minHeight: 450, letterbox: false },
+});
