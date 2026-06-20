@@ -549,9 +549,89 @@
       "tags": ["VHS", "Glitch", "Cyberpunk", "Transparent"]
     },
     {
+      "href": "amethyst-marble.html",
+      "category": "Backgrounds",
+      "tags": ["Marble", "Purple", "Amethyst", "GLSL", "Abstract"]
+    },
+    {
+      "href": "arctic-frost-marble.html",
+      "category": "Backgrounds",
+      "tags": ["Marble", "Ice", "Blue", "GLSL", "Abstract"]
+    },
+    {
+      "href": "bioluminescent-marble.html",
+      "category": "Backgrounds",
+      "tags": ["Marble", "Cyan", "Glow", "GLSL", "Abstract"]
+    },
+    {
+      "href": "blue-diamond-halftone.html",
+      "category": "Backgrounds",
+      "tags": ["Halftone", "Diamond", "Blue", "GLSL", "Abstract"]
+    },
+    {
+      "href": "blue-liquid-marble.html",
+      "category": "Backgrounds",
+      "tags": ["Marble", "Blue", "Liquid", "GLSL", "Abstract"]
+    },
+    {
+      "href": "dark-neon-marble.html",
+      "category": "Backgrounds",
+      "tags": ["Marble", "Neon", "Pink", "Purple", "GLSL", "Abstract"]
+    },
+    {
+      "href": "ember-forge-marble.html",
+      "category": "Backgrounds",
+      "tags": ["Marble", "Fire", "Orange", "GLSL", "Abstract"]
+    },
+    {
+      "href": "glitch-ape.html",
+      "category": "Backgrounds",
+      "tags": ["Glitch", "Character", "Neon", "GLSL", "Abstract"]
+    },
+    {
+      "href": "golden-dot-field.html",
+      "category": "Backgrounds",
+      "tags": ["Dots", "Gold", "Navy", "GLSL", "Abstract"]
+    },
+    {
+      "href": "pixel-skull.html",
+      "category": "Backgrounds",
+      "tags": ["Glitch", "Skull", "Pixel", "GLSL", "Abstract"]
+    },
+    {
+      "href": "razer-toxic-marble.html",
+      "category": "Backgrounds",
+      "tags": ["Marble", "Green", "Razer", "GLSL", "Abstract"]
+    },
+    {
+      "href": "teal-red-marble.html",
+      "category": "Backgrounds",
+      "tags": ["Marble", "Teal", "Red", "GLSL", "Abstract"]
+    },
+    {
+      "href": "triangle-sparkle.html",
+      "category": "Backgrounds",
+      "tags": ["Triangle", "Sparkle", "Monochrome", "GLSL", "Abstract"]
+    },
+    {
       "href": "glitch-terminal.html",
       "category": "Backgrounds",
       "tags": ["Glitch", "Terminal", "Lime", "ASCII", "Matrix", "Abstract"]
+    },
+    {
+      "href": "amber-terminal.html",
+      "category": "Backgrounds",
+      "tags": ["Glitch", "Terminal", "Amber", "CRT", "ASCII", "Retro", "Abstract"]
+    },
+    {
+      "href": "cyan-data-stream.html",
+      "category": "Backgrounds",
+      "tags": ["Glitch", "Terminal", "Cyan", "Data", "Hex", "Cyberpunk", "Abstract"]
+    },
+    {
+      "href": "red-corrupt.html",
+      "category": "Backgrounds",
+      "tags": ["Glitch", "Terminal", "Red", "Corrupt", "Block", "ASCII", "Abstract"]
     },
     {
       "href": "glitch-veil.html",
@@ -671,6 +751,41 @@
     },
     {
       "href": "ink-dissolve.html",
+      "category": "Backgrounds",
+      "tags": ["Fluid", "Artistic", "Atmospheric"]
+    },
+    {
+      "href": "ink-dissolve-toxic.html",
+      "category": "Backgrounds",
+      "tags": ["Fluid", "Artistic", "Atmospheric"]
+    },
+    {
+      "href": "ink-dissolve-razer.html",
+      "category": "Backgrounds",
+      "tags": ["Fluid", "Artistic", "Atmospheric"]
+    },
+    {
+      "href": "ink-dissolve-black-toxic.html",
+      "category": "Backgrounds",
+      "tags": ["Fluid", "Artistic", "Atmospheric"]
+    },
+    {
+      "href": "ink-dissolve-black-razer.html",
+      "category": "Backgrounds",
+      "tags": ["Fluid", "Artistic", "Atmospheric"]
+    },
+    {
+      "href": "ink-dissolve-red-black.html",
+      "category": "Backgrounds",
+      "tags": ["Fluid", "Artistic", "Atmospheric"]
+    },
+    {
+      "href": "ink-dissolve-blue-black.html",
+      "category": "Backgrounds",
+      "tags": ["Fluid", "Artistic", "Atmospheric"]
+    },
+    {
+      "href": "ink-dissolve-indigo.html",
       "category": "Backgrounds",
       "tags": ["Fluid", "Artistic", "Atmospheric"]
     },

@@ -67,6 +67,23 @@
     "createdAt": "2026-05-17T09:15:40+03:00"
   },
   {
+    "slug": "amber-terminal",
+    "title": "Amber Terminal",
+    "href": "amber-terminal.html",
+    "category": "Backgrounds",
+    "tags": [
+      "glitch",
+      "terminal",
+      "amber",
+      "crt",
+      "ascii",
+      "retro",
+      "abstract"
+    ],
+    "description": "",
+    "createdAt": "2026-06-20T15:14:23.844Z"
+  },
+  {
     "slug": "ambient-energy",
     "title": "Ambient Energy",
     "href": "ambient-energy.html",
@@ -74,6 +91,15 @@
     "tags": ["fog", "nebula", "ambient"],
     "description": "",
     "createdAt": "2026-05-17T01:42:36+03:00"
+  },
+  {
+    "slug": "amethyst-marble",
+    "title": "Amethyst Marble",
+    "href": "amethyst-marble.html",
+    "category": "Backgrounds",
+    "tags": ["marble", "purple", "amethyst", "glsl", "abstract"],
+    "description": "",
+    "createdAt": "2026-06-20T17:59:20+03:00"
   },
   {
     "slug": "amorphous-blob-cam",
@@ -110,6 +136,15 @@
     "tags": ["scene", "webgl"],
     "description": "",
     "createdAt": "2026-04-17T18:10:32+03:00"
+  },
+  {
+    "slug": "arctic-frost-marble",
+    "title": "Arctic Frost Marble",
+    "href": "arctic-frost-marble.html",
+    "category": "Backgrounds",
+    "tags": ["marble", "ice", "blue", "glsl", "abstract"],
+    "description": "",
+    "createdAt": "2026-06-20T17:59:20+03:00"
   },
   {
     "slug": "artificial-life",
@@ -201,6 +236,15 @@
     "createdAt": "2026-04-29T00:47:10+03:00"
   },
   {
+    "slug": "bioluminescent-marble",
+    "title": "Bioluminescent Marble",
+    "href": "bioluminescent-marble.html",
+    "category": "Backgrounds",
+    "tags": ["marble", "cyan", "glow", "glsl", "abstract"],
+    "description": "",
+    "createdAt": "2026-06-20T17:59:20+03:00"
+  },
+  {
     "slug": "black-hole-cam",
     "title": "Black Hole Cam",
     "href": "black-hole-cam.html",
@@ -226,6 +270,24 @@
     "tags": ["mascot", "overlay"],
     "description": "",
     "createdAt": "2026-05-02T17:09:27+03:00"
+  },
+  {
+    "slug": "blue-diamond-halftone",
+    "title": "Blue Diamond Halftone",
+    "href": "blue-diamond-halftone.html",
+    "category": "Backgrounds",
+    "tags": ["halftone", "diamond", "blue", "glsl", "abstract"],
+    "description": "",
+    "createdAt": "2026-06-20T17:59:20+03:00"
+  },
+  {
+    "slug": "blue-liquid-marble",
+    "title": "Blue Liquid Marble",
+    "href": "blue-liquid-marble.html",
+    "category": "Backgrounds",
+    "tags": ["marble", "blue", "liquid", "glsl", "abstract"],
+    "description": "",
+    "createdAt": "2026-06-20T17:59:20+03:00"
   },
   {
     "slug": "blue-mosaic-flow",
@@ -445,6 +507,23 @@
     "createdAt": "2026-04-24T19:48:12+03:00"
   },
   {
+    "slug": "cyan-data-stream",
+    "title": "Cyan Data Stream",
+    "href": "cyan-data-stream.html",
+    "category": "Backgrounds",
+    "tags": [
+      "glitch",
+      "terminal",
+      "cyan",
+      "data",
+      "hex",
+      "cyberpunk",
+      "abstract"
+    ],
+    "description": "",
+    "createdAt": "2026-06-20T15:14:28.151Z"
+  },
+  {
     "slug": "cyber-marble",
     "title": "Cyber Marble",
     "href": "cyber-marble.html",
@@ -522,6 +601,15 @@
     "tags": ["shader", "neon", "depth"],
     "description": "",
     "createdAt": "2026-06-14T15:17:17+03:00"
+  },
+  {
+    "slug": "dark-neon-marble",
+    "title": "Dark Neon Marble",
+    "href": "dark-neon-marble.html",
+    "category": "Backgrounds",
+    "tags": ["marble", "neon", "pink", "purple", "glsl", "abstract"],
+    "description": "",
+    "createdAt": "2026-06-20T17:59:20+03:00"
   },
   {
     "slug": "dark-sun-cam",
@@ -637,6 +725,15 @@
     "tags": ["physics", "loop"],
     "description": "",
     "createdAt": "2026-04-19T19:49:50+03:00"
+  },
+  {
+    "slug": "ember-forge-marble",
+    "title": "Ember Forge Marble",
+    "href": "ember-forge-marble.html",
+    "category": "Backgrounds",
+    "tags": ["marble", "fire", "orange", "glsl", "abstract"],
+    "description": "",
+    "createdAt": "2026-06-20T17:59:20+03:00"
   },
   {
     "slug": "ember-pentagram-overlay",
@@ -880,6 +977,15 @@
     "createdAt": "2026-05-17T01:42:36+03:00"
   },
   {
+    "slug": "glitch-ape",
+    "title": "Glitch Ape",
+    "href": "glitch-ape.html",
+    "category": "Backgrounds",
+    "tags": ["glitch", "character", "neon", "glsl", "abstract"],
+    "description": "",
+    "createdAt": "2026-06-20T17:59:20+03:00"
+  },
+  {
     "slug": "glitch-circle-ring-cam",
     "title": "Glitch Circle Ring Cam",
     "href": "glitch-circle-ring-cam.html",
@@ -932,6 +1038,15 @@
     "tags": ["halftone", "dots", "gold", "marble", "luxury", "abstract"],
     "description": "",
     "createdAt": "2026-06-19T18:57:59+03:00"
+  },
+  {
+    "slug": "golden-dot-field",
+    "title": "Golden Dot Field",
+    "href": "golden-dot-field.html",
+    "category": "Backgrounds",
+    "tags": ["dots", "gold", "navy", "glsl", "abstract"],
+    "description": "",
+    "createdAt": "2026-06-20T17:59:20+03:00"
   },
   {
     "slug": "gpu-boids",
@@ -1110,6 +1225,69 @@
     "tags": ["fluid", "artistic", "atmospheric"],
     "description": "",
     "createdAt": "2026-05-23T18:24:51+03:00"
+  },
+  {
+    "slug": "ink-dissolve-black-razer",
+    "title": "Ink Dissolve Black Razer",
+    "href": "ink-dissolve-black-razer.html",
+    "category": "Backgrounds",
+    "tags": ["fluid", "artistic", "atmospheric"],
+    "description": "",
+    "createdAt": "2026-06-20T21:21:08.308Z"
+  },
+  {
+    "slug": "ink-dissolve-black-toxic",
+    "title": "Ink Dissolve Black Toxic",
+    "href": "ink-dissolve-black-toxic.html",
+    "category": "Backgrounds",
+    "tags": ["fluid", "artistic", "atmospheric"],
+    "description": "",
+    "createdAt": "2026-06-20T21:20:09.531Z"
+  },
+  {
+    "slug": "ink-dissolve-blue-black",
+    "title": "Ink Dissolve Blue Black",
+    "href": "ink-dissolve-blue-black.html",
+    "category": "Backgrounds",
+    "tags": ["fluid", "artistic", "atmospheric"],
+    "description": "",
+    "createdAt": "2026-06-20T21:23:41.712Z"
+  },
+  {
+    "slug": "ink-dissolve-indigo",
+    "title": "Ink Dissolve Indigo",
+    "href": "ink-dissolve-indigo.html",
+    "category": "Backgrounds",
+    "tags": ["fluid", "artistic", "atmospheric"],
+    "description": "",
+    "createdAt": "2026-06-20T21:24:39.980Z"
+  },
+  {
+    "slug": "ink-dissolve-razer",
+    "title": "Ink Dissolve Razer",
+    "href": "ink-dissolve-razer.html",
+    "category": "Backgrounds",
+    "tags": ["fluid", "artistic", "atmospheric"],
+    "description": "",
+    "createdAt": "2026-06-20T21:19:18.345Z"
+  },
+  {
+    "slug": "ink-dissolve-red-black",
+    "title": "Ink Dissolve Red Black",
+    "href": "ink-dissolve-red-black.html",
+    "category": "Backgrounds",
+    "tags": ["fluid", "artistic", "atmospheric"],
+    "description": "",
+    "createdAt": "2026-06-20T21:22:05.962Z"
+  },
+  {
+    "slug": "ink-dissolve-toxic",
+    "title": "Ink Dissolve Toxic",
+    "href": "ink-dissolve-toxic.html",
+    "category": "Backgrounds",
+    "tags": ["fluid", "artistic", "atmospheric"],
+    "description": "",
+    "createdAt": "2026-06-20T21:19:18.296Z"
   },
   {
     "slug": "ink-in-water",
@@ -1659,7 +1837,16 @@
     "category": "Backgrounds",
     "tags": ["fluid", "marble", "pink", "magenta", "dark", "abstract"],
     "description": "",
-    "createdAt": "2026-06-19T22:56:06.132Z"
+    "createdAt": "2026-06-20T02:28:21+03:00"
+  },
+  {
+    "slug": "pixel-skull",
+    "title": "Pixel Skull",
+    "href": "pixel-skull.html",
+    "category": "Backgrounds",
+    "tags": ["glitch", "skull", "pixel", "glsl", "abstract"],
+    "description": "",
+    "createdAt": "2026-06-20T17:59:20+03:00"
   },
   {
     "slug": "planet",
@@ -1796,6 +1983,15 @@
     "createdAt": "2026-06-19T18:57:59+03:00"
   },
   {
+    "slug": "razer-toxic-marble",
+    "title": "Razer Toxic Marble",
+    "href": "razer-toxic-marble.html",
+    "category": "Backgrounds",
+    "tags": ["marble", "green", "razer", "glsl", "abstract"],
+    "description": "",
+    "createdAt": "2026-06-20T17:59:20+03:00"
+  },
+  {
     "slug": "reactive-energy-membrane",
     "title": "Reactive Energy Membrane",
     "href": "reactive-energy-membrane.html",
@@ -1803,6 +1999,23 @@
     "tags": ["mesh", "organic", "procedural", "purple", "breathing"],
     "description": "",
     "createdAt": "2026-05-17T15:34:25+03:00"
+  },
+  {
+    "slug": "red-corrupt",
+    "title": "Red Corrupt",
+    "href": "red-corrupt.html",
+    "category": "Backgrounds",
+    "tags": [
+      "glitch",
+      "terminal",
+      "red",
+      "corrupt",
+      "block",
+      "ascii",
+      "abstract"
+    ],
+    "description": "",
+    "createdAt": "2026-06-20T15:14:31.936Z"
   },
   {
     "slug": "retro-screen-filter",
@@ -2127,6 +2340,15 @@
     "createdAt": "2026-05-17T01:42:36+03:00"
   },
   {
+    "slug": "teal-red-marble",
+    "title": "Teal Red Marble",
+    "href": "teal-red-marble.html",
+    "category": "Backgrounds",
+    "tags": ["marble", "teal", "red", "glsl", "abstract"],
+    "description": "",
+    "createdAt": "2026-06-20T17:59:20+03:00"
+  },
+  {
     "slug": "three-ring-cam-border",
     "title": "Three Ring Cam Border",
     "href": "three-ring-cam-border.html",
@@ -2179,6 +2401,15 @@
     "tags": ["audio-reactive", "visualizer"],
     "description": "",
     "createdAt": "2026-04-24T01:54:08+03:00"
+  },
+  {
+    "slug": "triangle-sparkle",
+    "title": "Triangle Sparkle",
+    "href": "triangle-sparkle.html",
+    "category": "Backgrounds",
+    "tags": ["triangle", "sparkle", "monochrome", "glsl", "abstract"],
+    "description": "",
+    "createdAt": "2026-06-20T17:59:20+03:00"
   },
   {
     "slug": "triangulation",
@@ -2456,122 +2687,5 @@
     "tags": ["three.js", "fbx", "zombie", "transparent", "animation"],
     "description": "",
     "createdAt": "2026-05-19T02:18:45+03:00"
-  },
-  {
-    "slug": "dark-neon-marble",
-    "title": "Dark Neon Marble",
-    "href": "dark-neon-marble.html",
-    "category": "Backgrounds",
-    "tags": ["shader", "marble", "dark", "neon", "pink", "purple"],
-    "description": "",
-    "createdAt": "2026-06-20T00:00:00+03:00"
-  },
-  {
-    "slug": "razer-toxic-marble",
-    "title": "Razer Toxic Marble",
-    "href": "razer-toxic-marble.html",
-    "category": "Backgrounds",
-    "tags": ["shader", "marble", "razer", "green", "toxic", "neon"],
-    "description": "",
-    "createdAt": "2026-06-20T00:00:00+03:00"
-  },
-  {
-    "slug": "blue-liquid-marble",
-    "title": "Blue Liquid Marble",
-    "href": "blue-liquid-marble.html",
-    "category": "Backgrounds",
-    "tags": ["shader", "marble", "blue", "cyan", "liquid", "fluid"],
-    "description": "",
-    "createdAt": "2026-06-20T00:00:00+03:00"
-  },
-  {
-    "slug": "pixel-skull",
-    "title": "Pixel Skull",
-    "href": "pixel-skull.html",
-    "category": "Backgrounds",
-    "tags": ["shader", "skull", "pixel-art", "glitch", "chromatic", "neon", "cyberpunk"],
-    "description": "",
-    "createdAt": "2026-06-20T00:00:00+03:00"
-  },
-  {
-    "slug": "glitch-ape",
-    "title": "Glitch Ape",
-    "href": "glitch-ape.html",
-    "category": "Backgrounds",
-    "tags": ["shader", "glitch", "ape", "gorilla", "triangles", "lowpoly", "neon", "cyberpunk"],
-    "description": "",
-    "createdAt": "2026-06-20T00:00:00+03:00"
-  },
-  {
-    "slug": "blue-diamond-halftone",
-    "title": "Blue Diamond Halftone",
-    "href": "blue-diamond-halftone.html",
-    "category": "Backgrounds",
-    "tags": ["shader", "dots", "halftone", "blue", "diamond", "geometric"],
-    "description": "",
-    "createdAt": "2026-06-20T00:00:00+03:00"
-  },
-  {
-    "slug": "triangle-sparkle",
-    "title": "Triangle Sparkle",
-    "href": "triangle-sparkle.html",
-    "category": "Backgrounds",
-    "tags": ["shader", "triangles", "monochrome", "sparkle", "stars", "geometric"],
-    "description": "",
-    "createdAt": "2026-06-20T00:00:00+03:00"
-  },
-  {
-    "slug": "golden-dot-field",
-    "title": "Golden Dot Field",
-    "href": "golden-dot-field.html",
-    "category": "Backgrounds",
-    "tags": ["shader", "dots", "halftone", "gold", "amber", "navy", "grid"],
-    "description": "",
-    "createdAt": "2026-06-20T00:00:00+03:00"
-  },
-  {
-    "slug": "amethyst-marble",
-    "title": "Amethyst Marble",
-    "href": "amethyst-marble.html",
-    "category": "Backgrounds",
-    "tags": ["shader", "marble", "purple", "violet", "amethyst", "magenta"],
-    "description": "",
-    "createdAt": "2026-06-20T00:00:00+03:00"
-  },
-  {
-    "slug": "ember-forge-marble",
-    "title": "Ember Forge Marble",
-    "href": "ember-forge-marble.html",
-    "category": "Backgrounds",
-    "tags": ["shader", "marble", "fire", "ember", "orange", "molten", "lava"],
-    "description": "",
-    "createdAt": "2026-06-20T00:00:00+03:00"
-  },
-  {
-    "slug": "arctic-frost-marble",
-    "title": "Arctic Frost Marble",
-    "href": "arctic-frost-marble.html",
-    "category": "Backgrounds",
-    "tags": ["shader", "marble", "ice", "arctic", "blue", "white", "cold"],
-    "description": "",
-    "createdAt": "2026-06-20T00:00:00+03:00"
-  },
-  {
-    "slug": "bioluminescent-marble",
-    "title": "Bioluminescent Marble",
-    "href": "bioluminescent-marble.html",
-    "category": "Backgrounds",
-    "tags": ["shader", "marble", "bioluminescent", "cyan", "green", "deep-sea", "glow"],
-    "description": "",
-    "createdAt": "2026-06-20T00:00:00+03:00"
-  },
-  {
-    "slug": "teal-red-marble",
-    "title": "Teal Red Marble",
-    "href": "teal-red-marble.html",
-    "category": "Backgrounds",
-    "tags": ["shader", "marble", "teal", "red", "white", "fluid", "swirl"],
-    "description": "",
-    "createdAt": "2026-06-20T00:00:00+03:00"
   }
 ]

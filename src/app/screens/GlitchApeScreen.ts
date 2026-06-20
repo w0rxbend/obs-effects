@@ -159,12 +159,12 @@ void main(){
   bool triA   = (local.x + local.y < 1.0);  // upper-left triangle
 
   // Centroid of this triangle
-  vec2 centroid = triA
+  vec2 triCenter = triA
     ? (cell + vec2(1.0/3.0, 1.0/3.0)) * CELL
     : (cell + vec2(2.0/3.0, 2.0/3.0)) * CELL;
 
-  // Map centroid to face-space
-  vec2 centUV = centroid / uResolution;
+  // Map triCenter to face-space
+  vec2 centUV = triCenter / uResolution;
   vec2 fp = (centUV - vec2(0.5, 0.478)) / 0.44; // ±1 = half face height
 
   float mask = gorillaMask(fp);

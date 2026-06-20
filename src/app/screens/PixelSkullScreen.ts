@@ -112,8 +112,8 @@ float glitchBurst(float t) {
 float scanDisplace(vec2 px, float t, float burst) {
   float row   = floor(px.y / 4.0);
   float rHash = hash1(row * 7.31 + floor(t * 14.0) * 53.1);
-  float active= step(0.72, hash1(row * 3.71 + floor(t * 9.0)));
-  return (rHash - 0.5) * uResolution.x * 0.05 * burst * active;
+  float activeRow = step(0.72, hash1(row * 3.71 + floor(t * 9.0)));
+  return (rHash - 0.5) * uResolution.x * 0.05 * burst * activeRow;
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────
