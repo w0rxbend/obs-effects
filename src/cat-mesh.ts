@@ -1,17 +1,8 @@
-import { setEngine } from "./app/getEngine";
 import { CatMeshScreen } from "./app/screens/CatMeshScreen";
-import { CreationEngine } from "./engine/engine";
+import { createPage } from "./lib/createPage";
 
-const engine = new CreationEngine();
-setEngine(engine);
-
-(async () => {
-  await document.fonts.ready;
-
-  await engine.init({
-    backgroundAlpha: 0,
-    resizeOptions: { minWidth: 400, minHeight: 300, letterbox: false },
-  });
-
-  await engine.navigation.showScreen(CatMeshScreen);
-})();
+createPage(CatMeshScreen, {
+  backgroundAlpha: 0,
+  resizeOptions: { minWidth: 400, minHeight: 300, letterbox: false },
+  waitForFonts: true,
+});

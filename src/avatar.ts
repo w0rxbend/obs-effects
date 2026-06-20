@@ -1,18 +1,9 @@
-import { setEngine } from "./app/getEngine";
 import { AvatarScreen } from "./app/screens/AvatarScreen";
-import { CreationEngine } from "./engine/engine";
+import { createPage } from "./lib/createPage";
 
-const engine = new CreationEngine();
-setEngine(engine);
-
-(async () => {
-  await document.fonts.ready;
-
-  await engine.init({
-    background: "transparent",
-    backgroundAlpha: 0,
-    resizeOptions: { minWidth: 768, minHeight: 1024, letterbox: false },
-  });
-
-  await engine.navigation.showScreen(AvatarScreen);
-})();
+createPage(AvatarScreen, {
+  background: "transparent",
+  backgroundAlpha: 0,
+  resizeOptions: { minWidth: 768, minHeight: 1024, letterbox: false },
+  waitForFonts: true,
+});

@@ -1,16 +1,8 @@
-import { setEngine } from "./app/getEngine";
 import { LavenderDashesCamScreen } from "./app/screens/LavenderDashesCamScreen";
-import { CreationEngine } from "./engine/engine";
+import { createPage } from "./lib/createPage";
 
-const engine = new CreationEngine();
-setEngine(engine);
-
-(async () => {
-  await engine.init({
-    background: "transparent",
-    backgroundAlpha: 0,
-    resizeOptions: { minWidth: 600, minHeight: 600, letterbox: true },
-  });
-
-  await engine.navigation.showScreen(LavenderDashesCamScreen);
-})();
+createPage(LavenderDashesCamScreen, {
+  background: "transparent",
+  backgroundAlpha: 0,
+  resizeOptions: { minWidth: 600, minHeight: 600, letterbox: true },
+});

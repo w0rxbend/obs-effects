@@ -1,15 +1,7 @@
-import { setEngine } from "./app/getEngine";
 import { GreenFireballScreen } from "./app/screens/GreenFireballScreen";
-import { CreationEngine } from "./engine/engine";
+import { createPage } from "./lib/createPage";
 
-const engine = new CreationEngine();
-setEngine(engine);
-
-(async () => {
-  await engine.init({
-    backgroundAlpha: 0,
-    resizeOptions: { minWidth: 1920, minHeight: 1080, letterbox: false },
-  });
-
-  await engine.navigation.showScreen(GreenFireballScreen);
-})();
+createPage(GreenFireballScreen, {
+  backgroundAlpha: 0,
+  resizeOptions: { minWidth: 1920, minHeight: 1080, letterbox: false },
+});

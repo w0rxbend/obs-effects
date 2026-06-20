@@ -1,15 +1,7 @@
-import { setEngine } from "./app/getEngine";
 import { UkrainianWaveMeshScreen } from "./app/screens/UkrainianWaveMeshScreen";
-import { CreationEngine } from "./engine/engine";
+import { createPage } from "./lib/createPage";
 
-const engine = new CreationEngine();
-setEngine(engine);
-
-(async () => {
-  await engine.init({
-    backgroundAlpha: 0,
-    resizeOptions: { minWidth: 1920, minHeight: 1080, letterbox: false },
-  });
-
-  await engine.navigation.showScreen(UkrainianWaveMeshScreen);
-})();
+createPage(UkrainianWaveMeshScreen, {
+  backgroundAlpha: 0,
+  resizeOptions: { minWidth: 1920, minHeight: 1080, letterbox: false },
+});

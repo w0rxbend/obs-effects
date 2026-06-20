@@ -1,16 +1,8 @@
-import { setEngine } from "./app/getEngine";
 import { FluidMeshRingCamScreen } from "./app/screens/FluidMeshRingCamScreen";
-import { CreationEngine } from "./engine/engine";
+import { createPage } from "./lib/createPage";
 
-const engine = new CreationEngine();
-setEngine(engine);
-
-(async () => {
-  await engine.init({
-    background: "transparent",
-    backgroundAlpha: 0,
-    resizeOptions: { minWidth: 400, minHeight: 300, letterbox: false },
-  });
-
-  await engine.navigation.showScreen(FluidMeshRingCamScreen);
-})();
+createPage(FluidMeshRingCamScreen, {
+  background: "transparent",
+  backgroundAlpha: 0,
+  resizeOptions: { minWidth: 400, minHeight: 300, letterbox: false },
+});

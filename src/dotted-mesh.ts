@@ -1,17 +1,8 @@
-import { setEngine } from "./app/getEngine";
 import { DottedMeshScreen } from "./app/screens/DottedMeshScreen";
-import { CreationEngine } from "./engine/engine";
+import { createPage } from "./lib/createPage";
 
-const engine = new CreationEngine();
-setEngine(engine);
-
-(async () => {
-  await document.fonts.ready;
-
-  await engine.init({
-    background: "#181825", // Catppuccin Mantle
-    resizeOptions: { minWidth: 400, minHeight: 300, letterbox: false },
-  });
-
-  await engine.navigation.showScreen(DottedMeshScreen);
-})();
+createPage(DottedMeshScreen, {
+  background: "#181825",
+  resizeOptions: { minWidth: 400, minHeight: 300, letterbox: false },
+  waitForFonts: true,
+});

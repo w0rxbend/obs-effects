@@ -1,15 +1,8 @@
-import { setEngine } from "./app/getEngine";
 import { JapaneseTempleLofiScreen } from "./app/screens/JapaneseTempleLofiScreen";
-import { CreationEngine } from "./engine/engine";
+import { createPage } from "./lib/createPage";
 
-const engine = new CreationEngine();
-setEngine(engine);
-
-(async () => {
-  await document.fonts.ready;
-  await engine.init({
-    background: 0x020510,
-    resizeOptions: { minWidth: 400, minHeight: 300, letterbox: false },
-  });
-  await engine.navigation.showScreen(JapaneseTempleLofiScreen);
-})();
+createPage(JapaneseTempleLofiScreen, {
+  background: 0x020510,
+  resizeOptions: { minWidth: 400, minHeight: 300, letterbox: false },
+  waitForFonts: true,
+});

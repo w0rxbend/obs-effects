@@ -1,16 +1,8 @@
-import { setEngine } from "./app/getEngine";
 import { ScreenCaptureBorderScreen } from "./app/screens/ScreenCaptureBorderScreen";
-import { CreationEngine } from "./engine/engine";
+import { createPage } from "./lib/createPage";
 
-const engine = new CreationEngine();
-setEngine(engine);
-
-(async () => {
-  await engine.init({
-    background: "transparent",
-    backgroundAlpha: 0,
-    resizeOptions: { minWidth: 1280, minHeight: 720, letterbox: false },
-  });
-
-  await engine.navigation.showScreen(ScreenCaptureBorderScreen);
-})();
+createPage(ScreenCaptureBorderScreen, {
+  background: "transparent",
+  backgroundAlpha: 0,
+  resizeOptions: { minWidth: 1280, minHeight: 720, letterbox: false },
+});

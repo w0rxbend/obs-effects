@@ -1,18 +1,9 @@
-import { setEngine } from "./app/getEngine";
 import { BlobFaceCamScreen } from "./app/screens/BlobFaceCamScreen";
-import { CreationEngine } from "./engine/engine";
+import { createPage } from "./lib/createPage";
 
-const engine = new CreationEngine();
-setEngine(engine);
-
-(async () => {
-  await document.fonts.ready;
-
-  await engine.init({
-    background: "transparent",
-    backgroundAlpha: 0,
-    resizeOptions: { minWidth: 400, minHeight: 400, letterbox: false },
-  });
-
-  await engine.navigation.showScreen(BlobFaceCamScreen);
-})();
+createPage(BlobFaceCamScreen, {
+  background: "transparent",
+  backgroundAlpha: 0,
+  resizeOptions: { minWidth: 400, minHeight: 400, letterbox: false },
+  waitForFonts: true,
+});

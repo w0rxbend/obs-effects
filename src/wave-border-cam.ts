@@ -1,18 +1,9 @@
-import { setEngine } from "./app/getEngine";
 import { WaveBorderCamScreen } from "./app/screens/WaveBorderCamScreen";
-import { CreationEngine } from "./engine/engine";
+import { createPage } from "./lib/createPage";
 
-const engine = new CreationEngine();
-setEngine(engine);
-
-(async () => {
-  await document.fonts.ready;
-
-  await engine.init({
-    background: "transparent",
-    backgroundAlpha: 0,
-    resizeOptions: { minWidth: 1280, minHeight: 720, letterbox: false },
-  });
-
-  await engine.navigation.showScreen(WaveBorderCamScreen);
-})();
+createPage(WaveBorderCamScreen, {
+  background: "transparent",
+  backgroundAlpha: 0,
+  resizeOptions: { minWidth: 1280, minHeight: 720, letterbox: false },
+  waitForFonts: true,
+});

@@ -1,15 +1,7 @@
-import { setEngine } from "./app/getEngine";
 import { NeonRibbonPatternScreen } from "./app/screens/NeonRibbonPatternScreen";
-import { CreationEngine } from "./engine/engine";
+import { createPage } from "./lib/createPage";
 
-const engine = new CreationEngine();
-setEngine(engine);
-
-(async () => {
-  await engine.init({
-    background: 0x03050b,
-    resizeOptions: { minWidth: 1920, minHeight: 1080, letterbox: false },
-  });
-
-  await engine.navigation.showScreen(NeonRibbonPatternScreen);
-})();
+createPage(NeonRibbonPatternScreen, {
+  background: 0x03050b,
+  resizeOptions: { minWidth: 1920, minHeight: 1080, letterbox: false },
+});

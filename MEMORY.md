@@ -9,3 +9,7 @@
 [pattern] Shared metadata validators reduce schema drift, but the producer should validate generated records before writing so invalid output is blocked at the source.
 [pattern] Fast fixture regression suites should be wired into the standard check path once stable; otherwise schema guarantees remain optional in practice.
 [learning] Normalized JSON diagnostics do not cover subprocess boundaries; checker scripts should also catch git discovery failures explicitly.
+[pattern] A factory function for repeated bootstrap code eliminates boilerplate across many files while keeping each page independently loadable — the factory is a shared source, not a merged runtime.
+[anti-pattern] A factory with a narrow options interface will stall migration of entries that use any option outside the interface; identify all option variants before designing the interface.
+[learning] Entries using `document.fonts.load()` with specific families are not equivalent to `document.fonts.ready`; a `fonts?: string[]` option is needed to fully migrate font-preloading entries.
+[pattern] When doing mass file migrations, first categorize exclusions by root cause (custom logic, unsupported options, wrong tech stack) so the next iteration knows exactly what gap to close.

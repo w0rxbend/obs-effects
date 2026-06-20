@@ -1,18 +1,9 @@
-import { setEngine } from "./app/getEngine";
 import { SmokeBarScreen } from "./app/screens/SmokeBarScreen";
-import { CreationEngine } from "./engine/engine";
+import { createPage } from "./lib/createPage";
 
-const engine = new CreationEngine();
-setEngine(engine);
-
-(async () => {
-  await document.fonts.ready;
-
-  await engine.init({
-    background: "transparent",
-    backgroundAlpha: 0,
-    resizeOptions: { minWidth: 1920, minHeight: 70, letterbox: false },
-  });
-
-  await engine.navigation.showScreen(SmokeBarScreen);
-})();
+createPage(SmokeBarScreen, {
+  background: "transparent",
+  backgroundAlpha: 0,
+  resizeOptions: { minWidth: 1920, minHeight: 70, letterbox: false },
+  waitForFonts: true,
+});

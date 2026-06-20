@@ -780,3 +780,247 @@ UU vite.config.ts
   2026-06-19T17:00:54Z iteration final-5 checkpoint status before commit:
   M AGENT_LOG.md
   2026-06-19T17:00:54Z orchestrator finished iterations_run=5 iterations_attempted=5 iterations_completed_successfully=5 had_nonfatal_failures=false nonfatal_failure_count=0 last_nonfatal_exit_code=0 last_nonfatal_failure_reason=none loop_exit_code=0 process_exit_code=0 fatal=false terminal_reason=iterations_complete final_checkpoint_behavior=source_and_telemetry
+2026-06-20T21:32:53Z orchestrator started provider=claude budget=18000s iterations=5 max_workers=4
+2026-06-20T21:32:53Z iteration 1 started remaining=18000s
+2026-06-20T21:32:53Z iteration 1 preplanner effective budgets untracked_scan_max_bytes=536870912 untracked_scan_max_count=10000 snapshot_copy_max_bytes=536870912 snapshot_copy_max_count=10000 snapshot_copy_max_file_bytes=134217728
+2026-06-20T21:32:54Z iteration 1 disposable preplanner repo created path=/tmp/agent-loop-preplanner-repo-kp6aeepr/repo copied_entries=874
+2026-06-20T21:32:54Z iteration 1 ideator phase started count=3
+2026-06-20T21:32:54Z iteration 1 ideator phase concurrency workers=3
+2026-06-20T21:32:54Z iteration 1 ideator 1 role="the pragmatist" started
+2026-06-20T21:32:54Z iteration 1 ideator 2 role="the architect" started
+2026-06-20T21:32:54Z iteration 1 ideator 3 role="the contrarian" started
+2026-06-20T21:33:36Z iteration 1 ideator 3 role="the contrarian" completed status=0
+2026-06-20T21:33:53Z iteration 1 ideator 1 role="the pragmatist" completed status=0
+2026-06-20T21:34:08Z iteration 1 ideator 2 role="the architect" completed status=0
+2026-06-20T21:34:08Z iteration 1 ideator phase completed approaches=3
+2026-06-20T21:34:08Z iteration 1 selector started approaches=3
+2026-06-20T21:34:26Z iteration 1 selector completed status=0
+2026-06-20T21:34:26Z iteration 1 disposable preplanner repo cleanup path=/tmp/agent-loop-preplanner-repo-kp6aeepr/repo
+2026-06-20T21:34:26Z iteration 1 selector rejected alternative role="the contrarian" approach="Manifest-Driven Code Elimination: treat entry files and HTML as build artifacts, not source" reason="Manifest-driven generation is architecturally appealing but premature: MEMORY.md records hard lessons about generated-artifact staleness and two-source-of-truth problems. Treating entry files as build artifacts requires first auditing th..."
+2026-06-20T21:34:26Z iteration 1 selector rejected alternative role="the architect" approach="Seam-First Extraction with a Two-Renderer Shared Layer \u2014 identify the exact duplication seams across PixiJS and Three.js pages, extract each seam into a typed shared module, and..." reason="The seam-first framing is correct and is incorporated into the synthesis, but the architect's version risks diffusing focus by addressing CSS extraction, OBS helpers, ticker utilities, and the dual-stack factories simultaneously. The pra..."
+2026-06-20T21:34:26Z iteration 1 selector alternatives persisted count=2
+2026-06-20T21:34:26Z iteration 1 selector structured alternatives persisted count=2
+2026-06-20T21:34:26Z iteration 1 planner started
+2026-06-20T21:36:24Z iteration 1 plan: 3 task(s) in 2 phase(s). Phase 1 is a single non-parallelizable task: the factory must exist before any entry file can reference it. Phase 2 tasks are fully parallel because t2 and t3 touch disjoint file sets (a–l vs m–z) and only read the factory created in t1. Files with custom logic beyond the boilerplate (cubic-blob-overlay.ts, trapnation.ts, main*.ts) are explicitly excluded from migration to avoid breaking their special behavior. Three.js entry files are also left untouched — they are a separate extraction target (createThreeScene) deferred to the next iteration per the selected strategy.
+2026-06-20T21:36:24Z iteration 1 phase 1 started parallel=False tasks=1
+2026-06-20T21:37:44Z iteration 1 task t1 ('Create createPage() factory for PixiJS entries') status=0
+2026-06-20T21:37:44Z iteration 1 phase 2 started parallel=True tasks=2
+2026-06-20T21:41:56Z iteration 1 task t2 ('Migrate PixiJS entries a–l to createPage()') status=0
+2026-06-20T21:42:59Z iteration 1 task t3 ('Migrate PixiJS entries m–z to createPage()') status=0
+2026-06-20T21:42:59Z iteration 1 reviewer started
+
+## Reviewer Summary - Iteration 6
+
+### What Was Done
+
+- Created `src/lib/createPage.ts` — typed factory that wraps the 5-step PixiJS entry boilerplate (`new CreationEngine()`, `setEngine()`, IIFE, `engine.init()`, `navigation.showScreen()`). Accepts `background`, `backgroundAlpha`, `resizeOptions`, and `waitForFonts` options.
+- Migrated 179 of ~202 PixiJS `src/*.ts` entry files from the raw boilerplate to `createPage()`. Files covering a–l (t2) and m–z (t3) were done in parallel.
+- `npm run lint` and `npm run build` pass on the working tree.
+
+### What Was Found
+
+- **Uncommitted state**: `src/lib/createPage.ts` is **untracked** and all 179 modified entry files are **unstaged**. Nothing from this iteration has been committed. This is a high-priority blocker for the next iteration.
+- **Incomplete migration — factory gap**: 17 entry files use `document.fonts.load()` with specific font families before `engine.init()` and could not be migrated. `CreatePageOptions` only supports `waitForFonts: true` → `document.fonts.ready`; there is no `fonts?: string[]` option.
+- **Incomplete migration — engine option gap**: `retro-screen-filter.ts` uses `antialias: false` which is a raw `ApplicationOptions` field not exposed by `CreatePageOptions`. One entry, `trapnation.ts`, uses `resizeTo: window` (unsupported) and also creates a custom DOM container — it remains excluded.
+- **Correct exclusions**: `cubic-blob-overlay.ts` (WebSocket bridge), `main*.ts` (multi-screen), `animated-lines.ts` / `life-webgpu.ts` / `plasma-wave.ts` (non-PixiJS), and all Three.js entries were correctly left unmigrated.
+- **Faithful migration**: Spot checks confirm background values, resizeOptions, and `waitForFonts` were preserved accurately across migrated files. No semantic regressions found in the 179 migrated entries.
+- **Three.js entries deferred**: As planned, the 10+ Three.js entry files were intentionally excluded and deferred to a future `createThreeScene()` factory.
+
+### Top Improvement Proposals
+
+- **Commit the work**: Stage `src/lib/createPage.ts` and all 179 modified entries, then commit with a conventional message before the next iteration starts.
+- **Extend `CreatePageOptions`**: Add `fonts?: string[]` (for `Promise.all(fonts.map(f => document.fonts.load(f)))`) and `antialias?: boolean`. Consider an `extra?: Partial<ApplicationOptions>` escape hatch for future unknown options. This unlocks migration of 18 remaining entries.
+- **Migrate the remaining 18 font-preloading entries** after the factory extension.
+- **Create `createThreeScene()` factory** for the Three.js stack — analogous pattern, next logical duplication target.
+- **Add `src/lib/index.ts` barrel** once more utilities land in `src/lib/`.
+2026-06-20T21:47:56Z iteration 1 reviewer completed status=0
+2026-06-20T21:47:56Z iteration 1 memory updated
+2026-06-20T21:47:56Z iteration 1 completed validation_status=0
+2026-06-20T21:47:56Z iteration 1 checkpoint started
+2026-06-20T21:47:56Z iteration 1 checkpoint status before commit:
+M  .claude/settings.local.json
+M  AGENT_LOG.md
+M  ALTERNATIVES.jsonl
+M  MEMORY.md
+M  PLAN.md
+M  SCORES.jsonl
+M  src/accretion-disk-cam.ts
+M  src/aether-drift.ts
+M  src/ai-inference.ts
+M  src/amber-terminal.ts
+M  src/ambient-energy.ts
+M  src/ambient-flow-cam.ts
+M  src/amethyst-marble.ts
+M  src/amorphous-blob-cam.ts
+M  src/amorphous-square-border.ts
+M  src/aquarium.ts
+M  src/arctic-frost-marble.ts
+M  src/atom.ts
+M  src/audio-flow-turbulence.ts
+M  src/audio-neural-net.ts
+M  src/aurora-borealis.ts
+M  src/avatar.ts
+M  src/bioluminescent-cell.ts
+M  src/bioluminescent-marble.ts
+M  src/black-hole-cam.ts
+M  src/blob-face-cam.ts
+M  src/blue-diamond-halftone.ts
+M  src/blue-liquid-marble.ts
+M  src/blue-mosaic-flow.ts
+M  src/blueprint-globe.ts
+M  src/boids.ts
+M  src/cam-frame-overlay.ts
+M  src/cat-circle-cam.ts
+M  src/cat-mesh.ts
+M  src/catppuccin-linux-overlay.ts
+M  src/chaos-attractor.ts
+M  src/chaotic-particles.ts
+M  src/collatz.ts
+M  src/color-wave-ribbons.ts
+M  src/cosmic-portal.ts
+M  src/crystalcam.ts
+M  src/cubic-blob-face-overlay.ts
+M  src/cyan-data-stream.ts
+M  src/cyber-marble.ts
+M  src/dark-fluid-swirl.ts
+M  src/dark-glass-lattice.ts
+M  src/dark-neon-marble.ts
+M  src/dark-sun-cam.ts
+M  src/data-corruption.ts
+M  src/diagonal-streaks.ts
+M  src/digital-fluid-ink.ts
+M  src/distributed-systems.ts
+M  src/dotted-mesh.ts
+M  src/elastic-rings.ts
+M  src/ember-forge-marble.ts
+M  src/ember-pentagram-overlay.ts
+M  src/figure-eight-torus.ts
+M  src/fireball.ts
+M  src/flight-simulation.ts
+M  src/flow-field.ts
+M  src/fluid-blob-frame.ts
+M  src/fluid-catppuccin-rings-cam.ts
+M  src/fluid-circle-cam.ts
+M  src/fluid-dotted-ring-cam.ts
+M  src/fluid-mesh-ring-cam.ts
+M  src/fluid-paint.ts
+M  src/fourier-epicycles.ts
+M  src/fpv-blueprint-bg.ts
+M  src/galaxy-bg.ts
+M  src/gas-cam.ts
+M  src/gaussian-distribution-bg.ts
+M  src/generative.ts
+M  src/geodesic-sphere.ts
+M  src/geometric-lines.ts
+M  src/glitch-ape.ts
+M  src/glitch-circle-ring-cam.ts
+M  src/glitch-terminal.ts
+M  src/glitch-veil.ts
+M  src/gold-marble-dots.ts
+M  src/golden-dot-field.ts
+M  src/gpu-boids.ts
+M  src/graph-bg.ts
+M  src/grass.ts
+M  src/gravity-sphere.ts
+M  src/green-fireball.ts
+M  src/halftone-fade.ts
+M  src/halftone-gradient.ts
+M  src/hex-ripple.ts
+M  src/hexcam.ts
+M  src/hexgridcam.ts
+M  src/hexlayercam.ts
+M  src/hype-meter-cam.ts
+M  src/infinity.ts
+M  src/ink-in-water.ts
+M  src/iridescent-blobs.ts
+M  src/japanese-temple-lofi.ts
+M  src/lava-cell-membrane.ts
+M  src/lavender-dashes-cam.ts
+A  src/lib/createPage.ts
+M  src/linux-blueprint.ts
+M  src/linux-boids.ts
+M  src/linux-icon-mesh.ts
+M  src/liquid-aurora-field.ts
+M  src/liquid-paper-frame.ts
+M  src/lissajous.ts
+M  src/magenta-dot-flow.ts
+M  src/magnetic-field.ts
+M  src/matrix-dots.ts
+M  src/maurer-rose.ts
+M  src/meta-blobs.ts
+M  src/microbial-colony.ts
+M  src/minimalist-gradient-breathing.ts
+M  src/monolithic-black-geometry.ts
+M  src/mountain-night-railway.ts
+M  src/mycelium-network.ts
+M  src/nbody.ts
+M  src/nebula.ts
+M  src/neon-ribbon-pattern.ts
+M  src/neon-starburst.ts
+M  src/neon-topo.ts
+M  src/neon-vein-network.ts
+M  src/network-surge.ts
+M  src/night-city-horizon.ts
+M  src/orbital-mechanics.ts
+M  src/paint-vortex.ts
+M  src/particle-border-overlay.ts
+M  src/particle-constellation.ts
+M  src/particle-globe.ts
+M  src/particle-splash.ts
+M  src/particle-swarm-excitement.ts
+M  src/pcb-bg.ts
+M  src/perlin-blobs.ts
+M  src/physics-particles.ts
+M  src/pink-fluid-marble.ts
+M  src/pixel-skull.ts
+M  src/planet-hologram.ts
+M  src/planet.ts
+M  src/plexus-constellation.ts
+M  src/prism-biofoam.ts
+M  src/psychedelic-marble.ts
+M  src/radial-energy-core.ts
+M  src/rain.ts
+M  src/rainbow-lightning-ring-cam.ts
+M  src/razer-toxic-marble.ts
+M  src/reactive-energy-membrane.ts
+M  src/red-corrupt.ts
+M  src/sci-fi-hud.ts
+M  src/screen-capture-border.ts
+M  src/shock-wave.ts
+M  src/slime-mold-network.ts
+M  src/smoke-bar.ts
+M  src/smoke-ring-cam.ts
+M  src/soft-body-organisms.ts
+M  src/soft-vol-fog.ts
+M  src/solar-wind.ts
+M  src/space-earth.ts
+M  src/space-war-boids.ts
+M  src/sph.ts
+M  src/spiral-pull.ts
+M  src/star-field.ts
+M  src/stippled-geodesic.ts
+M  src/sunken-light.ts
+M  src/teal-red-marble.ts
+M  src/topo-landscape.ts
+M  src/trapcam.ts
+M  src/triangle-sparkle.ts
+M  src/triangulation.ts
+M  src/tunnel-vortex.ts
+M  src/tux-blob.ts
+M  src/ua-red-black-mesh.ts
+M  src/ukrainian-wave-mesh.ts
+M  src/vector-field-bg.ts
+M  src/verlet-cloth.ts
+M  src/void-implode.ts
+M  src/voronoi-stippling.ts
+M  src/water-goldfish.ts
+M  src/water-splash-ring-cam.ts
+M  src/wave-border-cam.ts
+M  src/wave-interference.ts
+M  src/wave-simulation.ts
+M  src/wavecam.ts
+M  src/wavy-cam.ts
+M  src/wavy-planet-mesh.ts
+M  src/wireframe-icosphere.ts
+M  src/wireframe-sphere-cam.ts
+M  src/wormhole-dive.ts

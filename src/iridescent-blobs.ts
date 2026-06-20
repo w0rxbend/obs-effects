@@ -1,16 +1,8 @@
-import { setEngine } from "./app/getEngine";
 import { IridescentBlobsScreen } from "./app/screens/IridescentBlobsScreen";
-import { CreationEngine } from "./engine/engine";
+import { createPage } from "./lib/createPage";
 
-const engine = new CreationEngine();
-setEngine(engine);
-
-(async () => {
-  await engine.init({
-    background: "transparent",
-    backgroundAlpha: 0,
-    resizeOptions: { minWidth: 1280, minHeight: 720, letterbox: false },
-  });
-
-  await engine.navigation.showScreen(IridescentBlobsScreen);
-})();
+createPage(IridescentBlobsScreen, {
+  background: "transparent",
+  backgroundAlpha: 0,
+  resizeOptions: { minWidth: 1280, minHeight: 720, letterbox: false },
+});
