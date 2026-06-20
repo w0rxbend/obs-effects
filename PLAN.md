@@ -32,33 +32,35 @@ Shared code should own: - PixiJS app/bootstrap logic. - OBS/browser-source helpe
 - [x] Migrated 179 of ~202 PixiJS `src/*.ts` entry files to `createPage()`
 - [x] Build passes (`npm run lint`, `npm run build`) with all migrated files
 
+### Iteration 7 (2026-06-21): Extended factory + final PixiJS migration (H1+H2)
+- [x] Committed iteration 6 baseline (H2) — `src/lib/createPage.ts` and 179 entries committed
+- [x] Extended `CreatePageOptions` with `fonts?: string[]`, `antialias?: boolean`, `extra?: Partial<ApplicationOptions>` (H1 part A)
+- [x] Migrated remaining 18 entries (17 font-preloading + `retro-screen-filter.ts`) to `createPage()` (H1 part B)
+- [x] All PixiJS entry files are now on `createPage()` except intentional exclusions
+- [x] Build and lint pass
+
 ---
 
-## Known Exclusions (not migrated — intentional)
+## Known Exclusions (intentional — do not migrate without design work)
 
-The following entries still use `CreationEngine` directly:
-
-**Custom-logic entries (do NOT migrate without design work):**
+**Custom-logic entries:**
 - `cubic-blob-overlay.ts` — WebSocket socket bridge, `window.obsBlobOverlay` export
 - `trapnation.ts` — custom DOM container creation, `resizeTo: window` (unsupported in factory)
 - `main.ts`, `main-cb3.ts`, `main-audio-activated-border.ts` — multi-screen launchers
 
-**Font-preloading entries (blocked by factory gap — see next task):**
-- `break.ts`, `background.ts`, `confidential.ts`, `starting-soon.ts`, `logo.ts`,
-  `handwritten-notebook.ts`, `worxbend-fluid.ts`, `topography.ts`, `procedural-logo.ts`,
-  `music-break.ts`, `starting-soon-fluid.ts`, `stream-ended-particle-mesh.ts`,
-  `starting-soon-particle-mesh.ts`, `worxbend-molecular.ts`, `starting-soon-jelly.ts`,
-  `title-powerline.ts`, `worxbend-text.ts`
-  All use `document.fonts.load("1em 'FontName'")` before init — factory only supports `waitForFonts: true` → `document.fonts.ready`.
-
-**Other unsupported option entries:**
-- `retro-screen-filter.ts` — uses `antialias: false`, not in `CreatePageOptions`
-
-**Non-PixiJS entries (correct to never migrate):**
+**Non-PixiJS entries:**
 - `animated-lines.ts` — GSAP/SVG
 - `life-webgpu.ts` — raw WebGPU
 - `plasma-wave.ts` — raw Canvas2D
-- All Three.js entries (`dji-fpv.ts`, `energy-orb.ts`, etc.) — separate stack
+- All Three.js entries (`dji-fpv.ts`, `energy-orb.ts`, `ai-character-*.ts`, `hex-water-island.ts`, `discord-robot.ts`, `drone-visualization.ts`, `gunan-skeleton.ts`, `meshy-post1-avatar.ts`, `city-view.ts`) — separate stack
+
+---
+
+## Known Factory Design Notes
+
+- **`undefined` override risk**: In `createPage()`, `engine.init()` receives `background: opts.background` even when undefined. This silently overrides any `extra.background` value. In practice harmless since `extra` is for options not already covered, but callers should never duplicate named fields in `extra`.
+- **`fonts` vs `waitForFonts`**: These are independent branches in the factory. Entries that combined `document.fonts.load()` + `document.fonts.ready` defensively are correctly migrated with `fonts` alone (the `.load()` promise already resolves when the font is ready).
+- **`resizeOptions` default is always applied**: `opts.resizeOptions ?? { minWidth: 1920, minHeight: 1080, letterbox: false }` — there is no way to opt out of `resizeOptions` via `extra`; the 1920×1080 default is always applied.
 
 ---
 
@@ -66,23 +68,36 @@ The following entries still use `CreationEngine` directly:
 
 ### High priority
 
-**H1 — Extend `CreatePageOptions` to cover remaining entries**
+**H1 — `createThreeScene()` factory for Three.js entries** _(formerly M1)_
 
-`src/lib/createPage.ts` must accept:
-- `fonts?: string[]` — array of `document.fonts.load()` spec strings, loaded with `Promise.all()` before `engine.init()`
-- `antialias?: boolean` — forwarded to `engine.init()`
-- Consider: pass `extra?: Partial<ApplicationOptions>` as an escape hatch for all remaining PixiJS init options
+Analogous to `createPage()` but for Three.js pages. Target files:
+`dji-fpv.ts`, `energy-orb.ts`, `ai-character-*.ts`, `hex-water-island.ts`, `discord-robot.ts`, `drone-visualization.ts`, `gunan-skeleton.ts`, `meshy-post1-avatar.ts`, `city-view.ts`.
 
-After the extension, migrate the 17 font-loading entries and `retro-screen-filter.ts`.
+Before designing, audit all Three.js entries to enumerate their unique init patterns (renderer options, camera setup, resize behavior) so the factory interface covers all cases on the first pass.
 
-**H2 — Commit the iteration 6 changes**
+### Medium priority
 
-`src/lib/createPage.ts` is currently **untracked**. All 179 modified `src/*.ts` entries are **uncommitted**. These must be committed before the next iteration can build on them safely.
+**M1 — `src/lib/index.ts` barrel export** _(formerly M3)_
 
-Suggested commit message:
-```
-refactor(entries): extract createPage() factory and migrate 179 PixiJS entry files
-```
+Add `src/lib/index.ts` re-exporting `createPage` (and future utilities) so imports are `from "../lib"` not `from "../lib/createPage"`.
+
+**M2 — Shared HTML boilerplate** _(formerly M2)_
+
+All `*.html` Vite entrypoints share an identical 8-line shell. Consider a Vite plugin or HTML template to eliminate repetition. Defer until Two.js factory is done.
+
+**M3 — Handle `trapnation.ts` custom DOM pattern** _(formerly M4)_
+
+`trapnation.ts` creates `#pixi-container` dynamically. Either add the div to the HTML or handle the missing container in the engine. Investigate before migrating.
+
+### Low priority
+
+**L1 — CSS reset / theme variables deduplication**
+
+Many HTMLs embed identical `<style>` blocks. Extract to a shared CSS file.
+
+**L2 — Metadata coverage and taxonomy**
+
+227 of 251 generated records still have empty descriptions. Consider a batch-fill pass.
 
 ### Medium priority
 

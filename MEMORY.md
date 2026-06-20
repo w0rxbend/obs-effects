@@ -13,3 +13,5 @@
 [anti-pattern] A factory with a narrow options interface will stall migration of entries that use any option outside the interface; identify all option variants before designing the interface.
 [learning] Entries using `document.fonts.load()` with specific families are not equivalent to `document.fonts.ready`; a `fonts?: string[]` option is needed to fully migrate font-preloading entries.
 [pattern] When doing mass file migrations, first categorize exclusions by root cause (custom logic, unsupported options, wrong tech stack) so the next iteration knows exactly what gap to close.
+[anti-pattern] Spreading named undefined fields after `extra` silently defeats the escape hatch: `{ ...extra, background: undefined }` overrides `extra.background`; filter undefined named fields before spreading.
+[learning] `document.fonts.load()` for a specific font is sufficient — adding `document.fonts.ready` afterward is defensive but redundant; `fonts?: string[]` in the factory correctly drops the extra wait.
