@@ -2456,5 +2456,122 @@
     "tags": ["three.js", "fbx", "zombie", "transparent", "animation"],
     "description": "",
     "createdAt": "2026-05-19T02:18:45+03:00"
+  },
+  {
+    "slug": "dark-neon-marble",
+    "title": "Dark Neon Marble",
+    "href": "dark-neon-marble.html",
+    "category": "Backgrounds",
+    "tags": ["shader", "marble", "dark", "neon", "pink", "purple"],
+    "description": "",
+    "createdAt": "2026-06-20T00:00:00+03:00"
+  },
+  {
+    "slug": "razer-toxic-marble",
+    "title": "Razer Toxic Marble",
+    "href": "razer-toxic-marble.html",
+    "category": "Backgrounds",
+    "tags": ["shader", "marble", "razer", "green", "toxic", "neon"],
+    "description": "",
+    "createdAt": "2026-06-20T00:00:00+03:00"
+  },
+  {
+    "slug": "blue-liquid-marble",
+    "title": "Blue Liquid Marble",
+    "href": "blue-liquid-marble.html",
+    "category": "Backgrounds",
+    "tags": ["shader", "marble", "blue", "cyan", "liquid", "fluid"],
+    "description": "",
+    "createdAt": "2026-06-20T00:00:00+03:00"
+  },
+  {
+    "slug": "pixel-skull",
+    "title": "Pixel Skull",
+    "href": "pixel-skull.html",
+    "category": "Backgrounds",
+    "tags": ["shader", "skull", "pixel-art", "glitch", "chromatic", "neon", "cyberpunk"],
+    "description": "",
+    "createdAt": "2026-06-20T00:00:00+03:00"
+  },
+  {
+    "slug": "glitch-ape",
+    "title": "Glitch Ape",
+    "href": "glitch-ape.html",
+    "category": "Backgrounds",
+    "tags": ["shader", "glitch", "ape", "gorilla", "triangles", "lowpoly", "neon", "cyberpunk"],
+    "description": "",
+    "createdAt": "2026-06-20T00:00:00+03:00"
+  },
+  {
+    "slug": "blue-diamond-halftone",
+    "title": "Blue Diamond Halftone",
+    "href": "blue-diamond-halftone.html",
+    "category": "Backgrounds",
+    "tags": ["shader", "dots", "halftone", "blue", "diamond", "geometric"],
+    "description": "",
+    "createdAt": "2026-06-20T00:00:00+03:00"
+  },
+  {
+    "slug": "triangle-sparkle",
+    "title": "Triangle Sparkle",
+    "href": "triangle-sparkle.html",
+    "category": "Backgrounds",
+    "tags": ["shader", "triangles", "monochrome", "sparkle", "stars", "geometric"],
+    "description": "",
+    "createdAt": "2026-06-20T00:00:00+03:00"
+  },
+  {
+    "slug": "golden-dot-field",
+    "title": "Golden Dot Field",
+    "href": "golden-dot-field.html",
+    "category": "Backgrounds",
+    "tags": ["shader", "dots", "halftone", "gold", "amber", "navy", "grid"],
+    "description": "",
+    "createdAt": "2026-06-20T00:00:00+03:00"
+  },
+  {
+    "slug": "amethyst-marble",
+    "title": "Amethyst Marble",
+    "href": "amethyst-marble.html",
+    "category": "Backgrounds",
+    "tags": ["shader", "marble", "purple", "violet", "amethyst", "magenta"],
+    "description": "",
+    "createdAt": "2026-06-20T00:00:00+03:00"
+  },
+  {
+    "slug": "ember-forge-marble",
+    "title": "Ember Forge Marble",
+    "href": "ember-forge-marble.html",
+    "category": "Backgrounds",
+    "tags": ["shader", "marble", "fire", "ember", "orange", "molten", "lava"],
+    "description": "",
+    "createdAt": "2026-06-20T00:00:00+03:00"
+  },
+  {
+    "slug": "arctic-frost-marble",
+    "title": "Arctic Frost Marble",
+    "href": "arctic-frost-marble.html",
+    "category": "Backgrounds",
+    "tags": ["shader", "marble", "ice", "arctic", "blue", "white", "cold"],
+    "description": "",
+    "createdAt": "2026-06-20T00:00:00+03:00"
+  },
+  {
+    "slug": "bioluminescent-marble",
+    "title": "Bioluminescent Marble",
+    "href": "bioluminescent-marble.html",
+    "category": "Backgrounds",
+    "tags": ["shader", "marble", "bioluminescent", "cyan", "green", "deep-sea", "glow"],
+    "description": "",
+    "createdAt": "2026-06-20T00:00:00+03:00"
+  },
+  {
+    "slug": "teal-red-marble",
+    "title": "Teal Red Marble",
+    "href": "teal-red-marble.html",
+    "category": "Backgrounds",
+    "tags": ["shader", "marble", "teal", "red", "white", "fluid", "swirl"],
+    "description": "",
+    "createdAt": "2026-06-20T00:00:00+03:00"
   }
 ]
