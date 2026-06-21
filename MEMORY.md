@@ -19,3 +19,5 @@
 [anti-pattern] Audit-only tasks can silently expand into full migrations when agents see obviously-related work nearby; planner constraints ("no implementation this iteration") are not enforced without explicit scope gates in the task description.
 [learning] A shared audio bridge singleton (obsAudio.ts) with an idle simulation fallback is a cleaner pattern than per-screen private AudioAnalyser classes — it eliminates duplicate simulation code and enforces a single OBS protocol integration point.
 [pattern] When committing a new shared library (obsAudio.ts) and all its consumers together, a single conventional commit with a broad scope keeps the git history coherent: `refactor(audio): migrate all screens to shared obsAudio bridge`.
+[anti-pattern] Barrel migrations can miss newer shared helpers if the search only targets older module names; search for every exported barrel symbol before declaring deep imports gone.
+[learning] Empty conventional commits can make a baseline look preserved while the actual code lives in earlier checkpoint commits; verify commit stats after baseline tasks.
