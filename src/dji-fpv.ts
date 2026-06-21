@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
-import { createThreeScene } from "./lib/createThreeScene";
+import { createThreeScene } from "./lib";
 import { obsAudio } from "./lib";
 
 const MODEL_URL =

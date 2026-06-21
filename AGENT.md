@@ -33,7 +33,9 @@ npx tsc --noEmit
 All audio reactivity in this project uses the OBS WebSocket bridge (`src/lib/obsAudio.ts`).
 
 - Do **not** use `navigator.mediaDevices.getUserMedia` or `AudioContext` / `AnalyserNode`.
-- In PixiJS screens: import `{ obsAudio }` from `"../../lib/obsAudio"`, call `void obsAudio.connect()` in `show()`, call `obsAudio.update(ticker.deltaMS * 0.001)` in `update()`.
+- In PixiJS screens: import `{ obsAudio }` from `"../../lib"`, call `void obsAudio.connect()` in `show()`, call `obsAudio.update(ticker.deltaMS * 0.001)` in `update()`.
+- In nested PixiJS screens: import `{ obsAudio }` from `"../../../lib"`.
+- In root `src/*.ts` entry files: import shared helpers from `"./lib"` instead of deep `./lib/*` paths.
 - In HTML-only files: implement the OBS WebSocket v5 protocol inline (see `cyberpunk-spectrum.html` or `ink-dissolve-razer.html` as reference).
 
 ## Commit Style
@@ -90,20 +92,19 @@ Recorded 2026-06-21. Each row covers the init pattern for one Three.js entry fil
 7. **Post-processing**: Only `discord-robot` uses EffectComposer (RenderPass + OutputPass). Resize handler must also resize the composer RT.
 8. **Asset loaders**: GLTFLoader (7 files), FBXLoader (3 files — gunan, zombie, city), procedural only (3 files — jelly-blob, hex-water, discord-robot). 4 files additionally use PMREMGenerator + RoomEnvironment for IBL.
 9. **Extra DOM**: 10 of 13 inject a loading overlay. 7 inject a progress bar inside the overlay. Only 4 (dji-fpv, gunan, zombie, meshy-post1) add cursor grab/grabbing handlers.
-10. **Audio**: 4 files integrate `obsAudio` (dji-fpv, gunan-skeleton, zombie-fbx, jelly-blob-face, cyclops-avatar). `city-view`, `discord-robot`, `drone-visualization`, `hex-water-island`, `meshy-post1-avatar`, `ai-character-final`, `ai-character-natural` have no audio.
+10. **Audio**: 5 files integrate `obsAudio` (dji-fpv, gunan-skeleton, zombie-fbx, jelly-blob-face, cyclops-avatar). `city-view`, `discord-robot`, `drone-visualization`, `hex-water-island`, `meshy-post1-avatar`, `ai-character-final`, `ai-character-natural` have no audio.
 
-### Factory Interface Implications
+### `createThreeScene()` Contract
 
-A `createThreeScene()` factory would need to expose at minimum:
+`src/lib/createThreeScene.ts` is the shared Three.js bootstrap for future migrations. It preserves isolated per-page entrypoints: root `src/*.ts` files call `createThreeScene()` from `"./lib"`, while page-specific model loading, scene composition, overlays, and animation logic stay in the entry file.
 
-- `shadowMap?: false | "PCF" | "PCFSoft"` (default PCFSoft)
-- `toneMapping?: THREE.ToneMapping` + `toneMappingExposure?: number`
-- `outputColorSpace?: THREE.ColorSpace`
-- `premultipliedAlpha?: boolean`
-- `camera: { fov, near, far }` — near/far often overridden post-load, so factory should expose the camera object
-- `controls?: "orbit" | "none"` + orbit sub-options (damping, autoRotate, polarClamp, minDist, maxDist)
-- `onResize?: (renderer, camera) => void` — needed for composer resize in discord-robot
-- `loop?: "performance" | "clock"` (or expose both clock and dt)
-- `postProcessing?: boolean` — to opt into EffectComposer path
-- `ibl?: boolean` — to enable PMREMGenerator + RoomEnvironment
-- `audio?: boolean` — to call obsAudio.connect() and update()
+- The factory creates one transparent antialiased `WebGLRenderer`, appends its canvas to `document.body`, sets pixel ratio and viewport size, and applies only `document.body.style.margin = "0"` and `document.body.style.overflow = "hidden"`. It must not replace `document.body.style.cssText` or wipe page-owned body styles.
+- `camera: { fov, near, far }` is required. The factory exposes the live `camera` through `ThreeSceneContext` because many model pages adjust position, near, or far after asset bounds are known.
+- Renderer variants remain explicit options: `shadowMap?: false | "PCF" | "PCFSoft"`, `toneMapping`, `toneMappingExposure`, `outputColorSpace`, and `premultipliedAlpha`.
+- `controls: "orbit"` creates `OrbitControls` with damping enabled and applies only provided `orbitOptions`. `controls: "none"` or omission leaves camera movement entirely page-owned.
+- `loop?: "performance" | "clock"` selects the delta source. Both paths clamp `dt` to `0.05`, update optional audio, update orbit controls, call `onFrame(ctx, dt)`, then render through the composer if present or directly through the renderer.
+- `postProcessing: true` dynamically imports `EffectComposer`, `RenderPass`, and `OutputPass`, creates the default `RenderPass -> OutputPass` chain, stores it as `ctx.composer`, and uses `composer.render()` in the loop. Pages needing custom passes can mutate `ctx.composer` in `onInit`; do not statically import post-processing helpers for pages that do not opt in.
+- `ibl: true` dynamically imports `RoomEnvironment`, builds a temporary `PMREMGenerator`, assigns `scene.environment`, and disposes the PMREM generator. Keep this optional so non-IBL pages do not pay the extra module cost.
+- `audio: true` is a convenience only: it calls `obsAudio.connect()` and updates the shared singleton each frame. `obsAudio` is not included in `ThreeSceneContext`; pages that read `level`, `bass`, `mid`, or `treble` import `{ obsAudio }` from `"./lib"`.
+- Default resize handling always updates the renderer size, camera aspect/projection, and default composer size. `onResize(renderer, camera, composer)` runs only after successful initialization and should resize page-owned render targets, overlays, or custom passes only.
+- Async initialization failures are explicit. If `postProcessing`, `ibl`, or `onInit` rejects, the factory logs a `[createThreeScene] initialization failed` error, adds a visible diagnostic overlay, rethrows the error, and does not start the render loop. The default resize listener is registered before initialization so factory-owned renderer/camera sizing remains deterministic; page-owned `onResize` is gated until initialization succeeds.

@@ -1,9 +1,6 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
-import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
-import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
-import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
+import type { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { obsAudio } from "./obsAudio";
 
 export interface ThreeSceneOptions {
@@ -23,6 +20,10 @@ export interface ThreeSceneOptions {
     minDistance?: number;
     maxDistance?: number;
   };
+  /**
+   * Called after the factory has resized the renderer, camera projection, and
+   * default composer. Page callbacks should resize only page-owned targets.
+   */
   onResize?: (
     renderer: THREE.WebGLRenderer,
     camera: THREE.PerspectiveCamera,
@@ -31,6 +32,10 @@ export interface ThreeSceneOptions {
   loop?: "performance" | "clock";
   postProcessing?: boolean;
   ibl?: boolean;
+  /**
+   * Connects and updates the shared obsAudio singleton during the render loop.
+   * Consumers that need band values should import obsAudio from the lib barrel.
+   */
   audio?: boolean;
   onInit?: (ctx: ThreeSceneContext) => Promise<void> | void;
   onFrame?: (ctx: ThreeSceneContext, dt: number) => void;
@@ -44,6 +49,102 @@ export interface ThreeSceneContext {
   controls?: OrbitControls;
 }
 
+function applyDefaultBodyStyles(): void {
+  document.body.style.margin = "0";
+  document.body.style.overflow = "hidden";
+}
+
+async function createDefaultComposer(
+  renderer: THREE.WebGLRenderer,
+  scene: THREE.Scene,
+  camera: THREE.PerspectiveCamera,
+): Promise<EffectComposer> {
+  const [{ EffectComposer }, { RenderPass }, { OutputPass }] =
+    await Promise.all([
+      import("three/addons/postprocessing/EffectComposer.js"),
+      import("three/addons/postprocessing/RenderPass.js"),
+      import("three/addons/postprocessing/OutputPass.js"),
+    ]);
+
+  const composer = new EffectComposer(renderer);
+  composer.addPass(new RenderPass(scene, camera));
+  composer.addPass(new OutputPass());
+  return composer;
+}
+
+async function applyRoomEnvironment(
+  scene: THREE.Scene,
+  renderer: THREE.WebGLRenderer,
+): Promise<void> {
+  const { RoomEnvironment } =
+    await import("three/addons/environments/RoomEnvironment.js");
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  pmrem.compileEquirectangularShader();
+  scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+  pmrem.dispose();
+}
+
+function reportInitFailure(error: unknown): void {
+  console.error(
+    "[createThreeScene] initialization failed; render loop was not started.",
+    error,
+  );
+
+  const message = document.createElement("pre");
+  message.textContent =
+    "Three.js scene failed to initialize. See browser console for details.";
+  message.style.position = "fixed";
+  message.style.inset = "16px";
+  message.style.zIndex = "2147483647";
+  message.style.margin = "0";
+  message.style.color = "rgba(255, 230, 230, 0.94)";
+  message.style.background = "rgba(24, 0, 0, 0.82)";
+  message.style.border = "1px solid rgba(255, 120, 120, 0.45)";
+  message.style.padding = "12px";
+  message.style.font = "13px/1.45 monospace";
+  message.style.pointerEvents = "none";
+  message.style.whiteSpace = "pre-wrap";
+  document.body.appendChild(message);
+}
+
+function startRenderLoop(
+  opts: ThreeSceneOptions,
+  ctx: ThreeSceneContext,
+  orbitControls: OrbitControls | undefined,
+): void {
+  const render = (): void => {
+    if (ctx.composer) ctx.composer.render();
+    else ctx.renderer.render(ctx.scene, ctx.camera);
+  };
+
+  if (opts.loop === "performance") {
+    let last = performance.now();
+    const animPerf = (): void => {
+      requestAnimationFrame(animPerf);
+      const now = performance.now();
+      const dt = Math.min((now - last) * 0.001, 0.05);
+      last = now;
+      if (opts.audio) obsAudio.update(dt);
+      if (orbitControls) orbitControls.update();
+      if (opts.onFrame) opts.onFrame(ctx, dt);
+      render();
+    };
+    animPerf();
+    return;
+  }
+
+  const clock = new THREE.Clock();
+  const animClock = (): void => {
+    requestAnimationFrame(animClock);
+    const dt = Math.min(clock.getDelta(), 0.05);
+    if (opts.audio) obsAudio.update(dt);
+    if (orbitControls) orbitControls.update();
+    if (opts.onFrame) opts.onFrame(ctx, dt);
+    render();
+  };
+  animClock();
+}
+
 export async function createThreeScene(opts: ThreeSceneOptions): Promise<void> {
   const renderer = new THREE.WebGLRenderer({
     antialias: true,
@@ -55,7 +156,7 @@ export async function createThreeScene(opts: ThreeSceneOptions): Promise<void> {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.setClearColor(0x000000, 0);
-  document.body.style.cssText = "margin:0;overflow:hidden;";
+  applyDefaultBodyStyles();
   document.body.appendChild(renderer.domElement);
 
   if (opts.shadowMap !== undefined) {
@@ -96,67 +197,47 @@ export async function createThreeScene(opts: ThreeSceneOptions): Promise<void> {
     if (o.maxDistance !== undefined) orbitControls.maxDistance = o.maxDistance;
   }
 
-  let composer: EffectComposer | undefined;
-  if (opts.postProcessing) {
-    composer = new EffectComposer(renderer);
-    composer.addPass(new RenderPass(scene, camera));
-    composer.addPass(new OutputPass());
-  }
-
-  if (opts.ibl) {
-    const pmrem = new THREE.PMREMGenerator(renderer);
-    pmrem.compileEquirectangularShader();
-    scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-    pmrem.dispose();
-  }
-
   const ctx: ThreeSceneContext = {
     scene,
     camera,
     renderer,
-    composer,
     controls: orbitControls,
   };
 
-  if (opts.audio) void obsAudio.connect();
+  let initialized = false;
 
-  if (opts.onInit) await opts.onInit(ctx);
-
-  window.addEventListener("resize", () => {
+  const resize = (): void => {
     const w = window.innerWidth;
     const h = window.innerHeight;
     renderer.setSize(w, h);
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
-    if (composer) composer.setSize(w, h);
-    if (opts.onResize) opts.onResize(renderer, camera, composer);
-  });
+    if (ctx.composer) ctx.composer.setSize(w, h);
+    if (initialized && opts.onResize) {
+      opts.onResize(renderer, camera, ctx.composer);
+    }
+  };
 
-  if (opts.loop === "performance") {
-    let last = performance.now();
-    const animPerf = (): void => {
-      requestAnimationFrame(animPerf);
-      const now = performance.now();
-      const dt = Math.min((now - last) * 0.001, 0.05);
-      last = now;
-      if (opts.audio) obsAudio.update(dt);
-      if (orbitControls) orbitControls.update();
-      if (opts.onFrame) opts.onFrame(ctx, dt);
-      if (composer) composer.render();
-      else renderer.render(scene, camera);
-    };
-    animPerf();
-  } else {
-    const clock = new THREE.Clock();
-    const animClock = (): void => {
-      requestAnimationFrame(animClock);
-      const dt = Math.min(clock.getDelta(), 0.05);
-      if (opts.audio) obsAudio.update(dt);
-      if (orbitControls) orbitControls.update();
-      if (opts.onFrame) opts.onFrame(ctx, dt);
-      if (composer) composer.render();
-      else renderer.render(scene, camera);
-    };
-    animClock();
+  window.addEventListener("resize", resize);
+  resize();
+
+  try {
+    if (opts.postProcessing) {
+      ctx.composer = await createDefaultComposer(renderer, scene, camera);
+      resize();
+    }
+
+    if (opts.ibl) await applyRoomEnvironment(scene, renderer);
+
+    if (opts.audio) void obsAudio.connect();
+
+    if (opts.onInit) await opts.onInit(ctx);
+
+    initialized = true;
+    resize();
+    startRenderLoop(opts, ctx, orbitControls);
+  } catch (error) {
+    reportInitFailure(error);
+    throw error;
   }
 }

@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { createThreeScene } from "./lib/createThreeScene";
+import { createThreeScene } from "./lib";
 
 // ── Colors ────────────────────────────────────────────────────────────────────
 const DISCORD_VIOLET = 0x5865f2;
