@@ -1,7 +1,6 @@
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
-import { createThreeScene } from "./lib";
-import { obsAudio } from "./lib";
+import { createThreeScene, obsAudio } from "./lib";
 
 const MODEL_URL =
   "/assets/main/dji-fpv/source/e4e0a592c53ea71bfc3cd948397e31a1.glb";
@@ -78,7 +77,7 @@ void createThreeScene({
   },
   loop: "performance",
   audio: true,
-  onInit: (ctx) => {
+  onInit: async (ctx) => {
     document.body.style.background = "transparent";
     document.body.style.cursor = "grab";
 
@@ -110,93 +109,91 @@ void createThreeScene({
     const loadStatus = document.getElementById("load-status")!;
     const loadFill = document.getElementById("load-fill") as HTMLDivElement;
 
-    const loader = new GLTFLoader();
-    loader.load(
-      MODEL_URL,
-      (gltf) => {
-        const model = gltf.scene;
-        droneRoot = model;
-
-        model.traverse((obj) => {
-          if (!(obj instanceof THREE.Mesh)) return;
-          obj.castShadow = true;
-          obj.receiveShadow = true;
-          const mats = Array.isArray(obj.material)
-            ? obj.material
-            : [obj.material];
-          mats.forEach(tuneMaterial);
-        });
-
-        // jiangye (桨叶) = propeller blades group; its direct children are the per-rotor pivot nodes
-        const propGroup = model.getObjectByName("jiangye");
-        if (propGroup) {
-          propGroup.children.forEach((pivot) => rotors.push(pivot));
-        }
-
-        // glass (node with children) = camera pivot — tilt and pan it independently
-        model.traverse((obj) => {
-          if (cameraPivot) return;
-          if (obj.name === "glass" && obj.children.length > 0) {
-            cameraPivot = obj;
-            cameraBindQ = obj.quaternion.clone();
-          }
-        });
-
-        ctx.scene.add(model);
-
-        if (gltf.animations.length > 0) {
-          mixer = new THREE.AnimationMixer(model);
-          gltf.animations.forEach((clip) => mixer!.clipAction(clip).play());
-        }
-
-        const box = new THREE.Box3().setFromObject(model);
-        box.getCenter(modelCenter);
-        box.getSize(modelSize);
-
-        const maxDim = Math.max(modelSize.x, modelSize.y, modelSize.z);
-        const fovRad = THREE.MathUtils.degToRad(ctx.camera.fov);
-        const dist = ((maxDim / 2) * 1.55) / Math.tan(fovRad / 2);
-
-        ctx.camera.position.set(
-          modelCenter.x + dist * 0.35,
-          modelCenter.y + modelSize.y * 1.4,
-          modelCenter.z + dist * 0.85,
-        );
-        ctx.camera.lookAt(modelCenter.x, modelCenter.y, modelCenter.z);
-        ctx.camera.near = dist * 0.005;
-        ctx.camera.far = dist * 15;
-        ctx.camera.updateProjectionMatrix();
-
-        if (ctx.controls) {
-          ctx.controls.target.copy(modelCenter);
-          ctx.controls.minDistance = dist * 0.35;
-          ctx.controls.maxDistance = dist * 3.5;
-          ctx.controls.update();
-        }
-
-        loadStatus.textContent = `DJI FPV loaded`;
-        loadFill.style.width = "100%";
-        overlay.style.opacity = "0";
-        setTimeout(() => overlay.remove(), 900);
-      },
-      (xhr) => {
-        if (!xhr.total) return;
-        const pct = Math.round((xhr.loaded / xhr.total) * 100);
-        loadStatus.textContent = `Loading DJI FPV... ${pct}%`;
-        loadFill.style.width = `${pct}%`;
-      },
-      (err) => {
-        console.error("[dji-fpv] load error:", err);
-        loadStatus.textContent = "Failed to load model";
-      },
-    );
-
     ctx.renderer.domElement.addEventListener("pointerdown", () => {
       document.body.style.cursor = "grabbing";
     });
     window.addEventListener("pointerup", () => {
       document.body.style.cursor = "grab";
     });
+
+    const loader = new GLTFLoader();
+    try {
+      const gltf = await loader.loadAsync(MODEL_URL, (xhr) => {
+        if (!xhr.total) return;
+        const pct = Math.round((xhr.loaded / xhr.total) * 100);
+        loadStatus.textContent = `Loading DJI FPV... ${pct}%`;
+        loadFill.style.width = `${pct}%`;
+      });
+
+      const model = gltf.scene;
+      droneRoot = model;
+
+      model.traverse((obj) => {
+        if (!(obj instanceof THREE.Mesh)) return;
+        obj.castShadow = true;
+        obj.receiveShadow = true;
+        const mats = Array.isArray(obj.material)
+          ? obj.material
+          : [obj.material];
+        mats.forEach(tuneMaterial);
+      });
+
+      // jiangye (桨叶) = propeller blades group; its direct children are the per-rotor pivot nodes
+      const propGroup = model.getObjectByName("jiangye");
+      if (propGroup) {
+        propGroup.children.forEach((pivot) => rotors.push(pivot));
+      }
+
+      // glass (node with children) = camera pivot — tilt and pan it independently
+      model.traverse((obj) => {
+        if (cameraPivot) return;
+        if (obj.name === "glass" && obj.children.length > 0) {
+          cameraPivot = obj;
+          cameraBindQ = obj.quaternion.clone();
+        }
+      });
+
+      ctx.scene.add(model);
+
+      if (gltf.animations.length > 0) {
+        mixer = new THREE.AnimationMixer(model);
+        gltf.animations.forEach((clip) => mixer!.clipAction(clip).play());
+      }
+
+      const box = new THREE.Box3().setFromObject(model);
+      box.getCenter(modelCenter);
+      box.getSize(modelSize);
+
+      const maxDim = Math.max(modelSize.x, modelSize.y, modelSize.z);
+      const fovRad = THREE.MathUtils.degToRad(ctx.camera.fov);
+      const dist = ((maxDim / 2) * 1.55) / Math.tan(fovRad / 2);
+
+      ctx.camera.position.set(
+        modelCenter.x + dist * 0.35,
+        modelCenter.y + modelSize.y * 1.4,
+        modelCenter.z + dist * 0.85,
+      );
+      ctx.camera.lookAt(modelCenter.x, modelCenter.y, modelCenter.z);
+      ctx.camera.near = dist * 0.005;
+      ctx.camera.far = dist * 15;
+      ctx.camera.updateProjectionMatrix();
+
+      if (ctx.controls) {
+        ctx.controls.target.copy(modelCenter);
+        ctx.controls.minDistance = dist * 0.35;
+        ctx.controls.maxDistance = dist * 3.5;
+        ctx.controls.update();
+      }
+
+      loadStatus.textContent = `DJI FPV loaded`;
+      loadFill.style.width = "100%";
+      overlay.style.opacity = "0";
+      setTimeout(() => overlay.remove(), 900);
+    } catch (err) {
+      console.error("[dji-fpv] load error:", err);
+      loadStatus.textContent = "Failed to load model";
+      throw err;
+    }
   },
   onFrame: (_ctx, dt) => {
     elapsed += dt;

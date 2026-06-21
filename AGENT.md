@@ -108,3 +108,11 @@ Recorded 2026-06-21. Each row covers the init pattern for one Three.js entry fil
 - `audio: true` is a convenience only: it calls `obsAudio.connect()` and updates the shared singleton each frame. `obsAudio` is not included in `ThreeSceneContext`; pages that read `level`, `bass`, `mid`, or `treble` import `{ obsAudio }` from `"./lib"`.
 - Default resize handling always updates the renderer size, camera aspect/projection, and default composer size. `onResize(renderer, camera, composer)` runs only after successful initialization and should resize page-owned render targets, overlays, or custom passes only.
 - Async initialization failures are explicit. If `postProcessing`, `ibl`, or `onInit` rejects, the factory logs a `[createThreeScene] initialization failed` error, adds a visible diagnostic overlay, rethrows the error, and does not start the render loop. The default resize listener is registered before initialization so factory-owned renderer/camera sizing remains deterministic; page-owned `onResize` is gated until initialization succeeds.
+- Three.js migrations that use `GLTFLoader`, `FBXLoader`, `TextureLoader`, or similar asset loaders must return or await the loader Promise from `onInit` by using `loadAsync()` or an explicit Promise wrapper around callback-only loaders. Do not leave callback-only loader work inside `onInit`; it bypasses factory diagnostics and starts the render loop before assets have either loaded or failed.
+
+### Three.js Factory Smoke Results
+
+Recorded 2026-06-21 against a local Vite server at `http://127.0.0.1:5173/` using a one-off Playwright 1.61 Chromium smoke runner via `npm exec --yes --package=playwright`.
+
+- `discord-robot.html`: rendered a nonblank canvas at `1280x720` (`mean=0.0187902`, `stddev=0.116916`) and after resize to `960x540` (`mean=0.018656`, `stddev=0.116398`). The browser loaded the dynamic `EffectComposer` post-processing resource, and the canvas render size, CSS size, and viewport aspect stayed coherent at both viewports.
+- `dji-fpv.html`: loaded the local DJI GLB successfully and rendered a nonblank canvas at `1280x720` (`mean=0.008072`, `stddev=0.0547095`) and after resize to `960x540` (`mean=0.00765624`, `stddev=0.0500758`). No factory diagnostic overlay appeared; the page-specific loader overlay reached the loaded state and was removed.

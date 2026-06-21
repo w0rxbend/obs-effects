@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import type { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import type { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { obsAudio } from "./obsAudio";
 
@@ -84,15 +84,9 @@ async function applyRoomEnvironment(
   pmrem.dispose();
 }
 
-function reportInitFailure(error: unknown): void {
-  console.error(
-    "[createThreeScene] initialization failed; render loop was not started.",
-    error,
-  );
-
+function showDiagnosticOverlay(text: string): void {
   const message = document.createElement("pre");
-  message.textContent =
-    "Three.js scene failed to initialize. See browser console for details.";
+  message.textContent = text;
   message.style.position = "fixed";
   message.style.inset = "16px";
   message.style.zIndex = "2147483647";
@@ -107,6 +101,45 @@ function reportInitFailure(error: unknown): void {
   document.body.appendChild(message);
 }
 
+function reportInitFailure(error: unknown): void {
+  console.error(
+    "[createThreeScene] initialization failed; render loop was not started.",
+    error,
+  );
+
+  showDiagnosticOverlay(
+    "Three.js scene failed to initialize. See browser console for details.",
+  );
+}
+
+function reportFrameFailure(error: unknown): void {
+  console.error("[createThreeScene] frame failed", error);
+
+  showDiagnosticOverlay(
+    "Three.js scene failed during rendering. See browser console for details.",
+  );
+}
+
+async function createOrbitControls(
+  camera: THREE.PerspectiveCamera,
+  domElement: HTMLElement,
+  orbitOptions: ThreeSceneOptions["orbitOptions"],
+): Promise<OrbitControls> {
+  const { OrbitControls } =
+    await import("three/addons/controls/OrbitControls.js");
+  const orbitControls = new OrbitControls(camera, domElement);
+  orbitControls.enableDamping = true;
+  const o = orbitOptions ?? {};
+  if (o.damping !== undefined) orbitControls.dampingFactor = o.damping;
+  if (o.autoRotate !== undefined) orbitControls.autoRotate = o.autoRotate;
+  if (o.enablePan !== undefined) orbitControls.enablePan = o.enablePan;
+  if (o.polarMin !== undefined) orbitControls.minPolarAngle = o.polarMin;
+  if (o.polarMax !== undefined) orbitControls.maxPolarAngle = o.polarMax;
+  if (o.minDistance !== undefined) orbitControls.minDistance = o.minDistance;
+  if (o.maxDistance !== undefined) orbitControls.maxDistance = o.maxDistance;
+  return orbitControls;
+}
+
 function startRenderLoop(
   opts: ThreeSceneOptions,
   ctx: ThreeSceneContext,
@@ -117,17 +150,30 @@ function startRenderLoop(
     else ctx.renderer.render(ctx.scene, ctx.camera);
   };
 
-  if (opts.loop === "performance") {
-    let last = performance.now();
-    const animPerf = (): void => {
-      requestAnimationFrame(animPerf);
-      const now = performance.now();
-      const dt = Math.min((now - last) * 0.001, 0.05);
-      last = now;
+  let stopped = false;
+  const runFrame = (dt: number): boolean => {
+    if (stopped) return false;
+
+    try {
       if (opts.audio) obsAudio.update(dt);
       if (orbitControls) orbitControls.update();
       if (opts.onFrame) opts.onFrame(ctx, dt);
       render();
+      return true;
+    } catch (error) {
+      stopped = true;
+      reportFrameFailure(error);
+      return false;
+    }
+  };
+
+  if (opts.loop === "performance") {
+    let last = performance.now();
+    const animPerf = (): void => {
+      const now = performance.now();
+      const dt = Math.min((now - last) * 0.001, 0.05);
+      last = now;
+      if (runFrame(dt)) requestAnimationFrame(animPerf);
     };
     animPerf();
     return;
@@ -135,12 +181,8 @@ function startRenderLoop(
 
   const clock = new THREE.Clock();
   const animClock = (): void => {
-    requestAnimationFrame(animClock);
     const dt = Math.min(clock.getDelta(), 0.05);
-    if (opts.audio) obsAudio.update(dt);
-    if (orbitControls) orbitControls.update();
-    if (opts.onFrame) opts.onFrame(ctx, dt);
-    render();
+    if (runFrame(dt)) requestAnimationFrame(animClock);
   };
   animClock();
 }
@@ -183,27 +225,13 @@ export async function createThreeScene(opts: ThreeSceneOptions): Promise<void> {
     opts.camera.far,
   );
 
-  let orbitControls: OrbitControls | undefined;
-  if (opts.controls === "orbit") {
-    orbitControls = new OrbitControls(camera, renderer.domElement);
-    orbitControls.enableDamping = true;
-    const o = opts.orbitOptions ?? {};
-    if (o.damping !== undefined) orbitControls.dampingFactor = o.damping;
-    if (o.autoRotate !== undefined) orbitControls.autoRotate = o.autoRotate;
-    if (o.enablePan !== undefined) orbitControls.enablePan = o.enablePan;
-    if (o.polarMin !== undefined) orbitControls.minPolarAngle = o.polarMin;
-    if (o.polarMax !== undefined) orbitControls.maxPolarAngle = o.polarMax;
-    if (o.minDistance !== undefined) orbitControls.minDistance = o.minDistance;
-    if (o.maxDistance !== undefined) orbitControls.maxDistance = o.maxDistance;
-  }
-
   const ctx: ThreeSceneContext = {
     scene,
     camera,
     renderer,
-    controls: orbitControls,
   };
 
+  let orbitControls: OrbitControls | undefined;
   let initialized = false;
 
   const resize = (): void => {
@@ -222,6 +250,15 @@ export async function createThreeScene(opts: ThreeSceneOptions): Promise<void> {
   resize();
 
   try {
+    if (opts.controls === "orbit") {
+      orbitControls = await createOrbitControls(
+        camera,
+        renderer.domElement,
+        opts.orbitOptions,
+      );
+      ctx.controls = orbitControls;
+    }
+
     if (opts.postProcessing) {
       ctx.composer = await createDefaultComposer(renderer, scene, camera);
       resize();
@@ -229,9 +266,9 @@ export async function createThreeScene(opts: ThreeSceneOptions): Promise<void> {
 
     if (opts.ibl) await applyRoomEnvironment(scene, renderer);
 
-    if (opts.audio) void obsAudio.connect();
-
     if (opts.onInit) await opts.onInit(ctx);
+
+    if (opts.audio) void obsAudio.connect();
 
     initialized = true;
     resize();
