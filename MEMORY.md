@@ -24,3 +24,6 @@
 [anti-pattern] Callback-style asset loaders inside a factory `onInit` bypass async initialization failure handling; return a Promise or use `loadAsync()` so diagnostics and loop gating work.
 [pattern] Option-gated Three.js features should be dynamically imported at the exact option boundary; static imports in shared factories leak bundle cost into pages that do not use the feature.
 [anti-pattern] Typing optional context fields with value imports can keep optional implementations in shared bundles; use type-only imports plus dynamic construction at the option boundary.
+[pattern] Shared factories should defer external side effects, such as audio socket connections, until awaited initialization succeeds so failed pages do not leave background activity running.
+[pattern] Visual browser smoke for rendering factories should be scriptable and repeatable; one-off screenshot metrics prove a moment, but a checked-in runner protects future migration batches.
+[learning] Three.js release changes can deprecate core timing helpers; hide timing behind the factory contract so pages are not coupled to `THREE.Clock` or any specific upstream timer primitive.

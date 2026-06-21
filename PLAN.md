@@ -77,17 +77,32 @@ Shared code should own:
 - [~] No new Three.js factory behavior was implemented beyond checkpointing the prior contract hardening.
 - [~] Fresh review confirmed the canary gate is still incomplete: static `OrbitControls`, callback-style DJI GLTF loading, and missing browser smoke coverage remain unresolved.
 
+### Iteration 12 (2026-06-21): Three.js canary gate checkpoint
+- [x] Removed static `OrbitControls` value import from `src/lib/createThreeScene.ts`; orbit support now loads dynamically only when `controls: "orbit"` and the context type uses a type-only import.
+- [x] Moved orbit-control construction into the factory initialization `try` path.
+- [x] Moved `obsAudio.connect()` until after awaited initialization succeeds, so rejecting `onInit` does not start the OBS audio side effect.
+- [x] Added `onFrame` error handling: frame exceptions log `[createThreeScene] frame failed`, show a diagnostic overlay, and stop scheduling additional frames.
+- [x] Converted `src/dji-fpv.ts` to `GLTFLoader.loadAsync()` inside an async `onInit`, preserving progress updates and rethrowing load failures through the factory contract.
+- [x] Documented the required loader migration pattern in `AGENT.md`.
+- [x] Browser-smoked the two factory canaries and recorded results in `AGENT.md`:
+  - `discord-robot.html` rendered nonblank at `1280x720` and `960x540`, with the dynamic `EffectComposer` path loaded.
+  - `dji-fpv.html` loaded the local GLB, rendered nonblank at `1280x720` and `960x540`, and removed its page-specific loading overlay.
+- [x] Committed the checkpoint in `e962b04 refactor(three): harden canary scene contract`.
+- [x] Reviewer validation passed: `npm run lint`, `npm run build`, and an independent CLI screenshot smoke of both canaries at `1280x720` and `960x540`.
+
 ---
 
 ## Current Findings
 
 - The shared-library guidance drift and `createThreeScene` pilot barrel imports are fixed.
-- The Iteration 10 changes are now committed in `a04e682`; the old "uncommitted contract work" blocker is resolved.
-- `createThreeScene()` now avoids static post-processing and IBL imports, but it still statically imports `OrbitControls` as both a value and context type. Future no-controls migrations would still pay that module cost unless controls creation moves to a dynamic option boundary and context typing becomes type-only.
-- The factory only catches async setup that is actually returned from `onInit`. The current `dji-fpv.ts` pilot still uses callback-style `GLTFLoader.load()`, so model-load failures update the DJI overlay but do not reject `createThreeScene()` and do not exercise the new factory diagnostic path. Because `onInit` returns immediately, the render loop starts before the DJI model has loaded.
-- `createThreeScene()` starts `obsAudio.connect()` before `onInit` resolves. If a future `onInit` rejects, the render loop is skipped but the OBS audio connection attempt may already have started.
-- `createThreeScene()` catches rejecting initialization, but renderer creation, orbit-control construction, and frame-loop exceptions remain outside the diagnostic overlay path. This is acceptable for the pilot but should be decided before broad migration.
-- `createThreeScene()` has not been visually smoke-tested in browser after the dynamic-import/error-path refactor. `npm run build` proves bundling, not canvas correctness.
+- The Iteration 10 and 12 Three.js contract changes are committed in `a04e682` and `e962b04`; the old "uncommitted contract work" blocker is resolved.
+- The original canary gate is substantially complete: optional post-processing, IBL, and orbit controls are dynamically imported; DJI model loading now participates in async factory initialization; `obsAudio.connect()` waits until successful init; frame exceptions are caught; and the two pilot pages have browser-smoke evidence.
+- The browser smoke is still a one-off process documented in `AGENT.md`, not a reusable checked-in script. This makes future migration batches vulnerable to unrepeatable or forgotten visual checks.
+- The factory still creates the renderer and registers the resize listener before the initialization `try` block. WebGL renderer creation failures would not get the factory diagnostic overlay, and failed initialization leaves the canvas and resize listener in place.
+- The factory has no lifecycle/dispose contract. This is acceptable for one page load, but it makes failure cleanup, future hot-reload behavior, and automated smoke tests messier than they need to be.
+- Diagnostic overlays are simple and useful, but repeated init/frame failures can append multiple overlays. A single replaceable factory diagnostic element would be cleaner.
+- Browser smoke surfaced a runtime warning from the installed Three.js version: `THREE.Clock` is deprecated in favor of `THREE.Timer`. `loop: "clock"` still works, but broad migration should avoid copying a deprecated timing path.
+- The DJI failure path now rethrows from `loadAsync()`, but it has not been browser-smoked with an intentionally missing/rejecting model URL. The contract is code-reviewed, not yet failure-path smoke-tested.
 - `createPage()` now handles the original undefined-named-field bug, but `resizeOptions` is still always passed after `extra`, so `extra.resizeOptions` cannot opt out of the 1920x1080 default.
 
 ---
@@ -123,48 +138,57 @@ Shared code should own:
 
 ### Critical
 
-**C1 — Keep the Three.js migration freeze until the canary gate passes**
+**C1 — Keep broad Three.js migration controlled, not frozen**
 
-Do not migrate additional Three.js pages until H1-H3 are complete or their remaining risks are explicitly documented. The current factory has only two pilots, neither has been browser-smoked after the dynamic-import refactor, and the loader failure path is not yet participating in the factory contract.
+The initial canary gate has passed for the two pilots. Do not mass-migrate all remaining Three.js pages in one sweep. Migrate in small variance-grouped batches, and require standard validation plus a browser smoke result after each batch.
 
 ### High Priority
 
-**H1 — Remove static `OrbitControls` cost from `createThreeScene()`**
+**H1 — Add a reusable Three.js canary smoke runner**
 
-Convert `OrbitControls` to a dynamic import when `controls: "orbit"` or split orbit support into a separate helper. Keep `ThreeSceneContext.controls` typed via a type-only import so no-controls pages can use the factory without pulling the controls implementation. Re-run the build and inspect output chunks if practical.
+Turn the one-off Playwright smoke into a checked-in script, for example `scripts/smoke-three-canaries.js`, that:
+- Starts or targets a local Vite server.
+- Opens `discord-robot.html` and `dji-fpv.html`.
+- Verifies a canvas exists and is nonblank.
+- Verifies resize coherence at `1280x720` and `960x540`.
+- Verifies `discord-robot` requests the dynamic composer resource.
+- Verifies `dji-fpv` reaches the loaded state and removes the loading overlay.
 
-**H2 — Make model-loader failures participate in the factory contract**
+Keep it optional/manual at first or wire it to a dedicated `npm run smoke:three` script; do not put it in `npm run build` until runtime cost and browser availability are acceptable.
 
-Update the `dji-fpv.ts` pilot to return a Promise from `onInit` by using `GLTFLoader.loadAsync(MODEL_URL, onProgress)` or an explicit `new Promise` wrapper around `loader.load()`. Preserve progress updates and the page-specific failure label, but reject on load failure so `createThreeScene()` can show the standardized diagnostic and skip the render loop. Document this as the required migration pattern for GLTF/FBX pages.
+**H2 — Smoke-test factory failure paths**
 
-**H3 — Browser-smoke the two `createThreeScene()` pilots**
+Add targeted browser checks for negative paths before broad loader migration:
+- A rejecting `onInit` page or test fixture shows the initialization diagnostic and does not start the render loop.
+- A missing DJI/model-loader URL preserves the page-specific failure label and also trips the factory diagnostic.
+- A throwing `onFrame` shows the frame diagnostic and stops future frame scheduling.
 
-Run the local Vite server and inspect `dji-fpv.html` and `discord-robot.html` with a browser/Playwright smoke check:
-- canvas is nonblank after initialization
-- `discord-robot` renders through the dynamic composer path
-- `dji-fpv` loads or shows a clear failure overlay
-- resize keeps camera/composer sizing coherent
+Prefer a small fixture entry over mutating production URLs at runtime if that keeps the tests deterministic.
 
-Do not migrate more Three.js pages until this passes or the remaining issues are captured.
-
-**H4 — Tighten `createThreeScene()` side-effect and error boundaries**
+**H3 — Tighten `createThreeScene()` lifecycle and cleanup**
 
 Decide and implement the desired contract for:
-- `obsAudio.connect()` timing when `onInit` later rejects.
-- early setup failures before the current `try` block, especially orbit-control construction.
-- `onFrame` exceptions, which currently occur after the next animation frame has already been scheduled.
+- Renderer creation failures before the current `try` block.
+- Resize listener cleanup when initialization rejects.
+- Optional renderer/control/composer disposal after initialization or frame failure.
+- A single replaceable diagnostic overlay instead of appending duplicates.
+- Whether `createThreeScene()` should return a small handle such as `{ destroy(): void }` for tests and future hot reload scenarios.
 
-Keep the behavior simple, but make it explicit before migrating more pages.
+Keep the behavior simple; this project mostly uses one standalone page per browser source, so cleanup should be pragmatic rather than framework-like.
+
+**H4 — Replace deprecated Three.js clock timing**
+
+The installed Three.js version warns that `THREE.Clock` is deprecated. Replace `loop: "clock"` internals with `THREE.Timer` if it fits the current version, or collapse the factory to the existing `performance.now()` delta path while preserving the `"clock"` option as a compatibility alias. Browser-smoke `discord-robot.html` after this change because it currently uses `loop: "clock"`.
 
 **H5 — Migrate remaining Three.js entries in small batches**
 
-After H1-H4 and browser smoke confidence, migrate remaining Three.js files by variance group:
+After H1-H4, migrate remaining Three.js files by variance group:
 - Procedural/no-loader pages: `hex-water-island.ts`
 - GLTF + PMREM pages: `energy-orb.ts`, `ai-character-final.ts`, `ai-character-natural.ts`, `meshy-post1-avatar.ts`, `cyclops-avatar.ts`
 - FBX/texture pages: `gunan-skeleton.ts`, `zombie-fbx.ts`, `city-view.ts`
 - Other model/overlay pages: `drone-visualization.ts`, `jelly-blob-face.ts`
 
-For loader pages, return/reject an async initialization Promise; do not leave callback-only loaders inside `onInit`. Run the quality gate and a visual smoke check after each batch.
+For loader pages, return/reject an async initialization Promise; do not leave callback-only loaders inside `onInit`. Run the quality gate and a visual smoke check after each batch. Watch for pages that style `<html>`, use PMREM, or implement custom camera paths.
 
 **H6 — Clarify `createPage()` resize override semantics**
 

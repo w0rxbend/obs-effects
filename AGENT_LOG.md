@@ -1666,3 +1666,72 @@ M  ALTERNATIVES.jsonl
 M  MEMORY.md
 M  PLAN.md
 M  SCORES.jsonl
+2026-06-21T07:50:15Z iteration 4 started remaining=16302s
+2026-06-21T07:50:15Z iteration 4 preplanner effective budgets untracked_scan_max_bytes=536870912 untracked_scan_max_count=10000 snapshot_copy_max_bytes=536870912 snapshot_copy_max_count=10000 snapshot_copy_max_file_bytes=134217728
+2026-06-21T07:50:15Z iteration 4 disposable preplanner repo created path=/tmp/agent-loop-preplanner-repo-q1yi3itg/repo copied_entries=879
+2026-06-21T07:50:15Z iteration 4 ideator phase started count=3
+2026-06-21T07:50:15Z iteration 4 ideator phase concurrency workers=3
+2026-06-21T07:50:15Z iteration 4 ideator 1 role="the pragmatist" started
+2026-06-21T07:50:15Z iteration 4 ideator 2 role="the architect" started
+2026-06-21T07:50:15Z iteration 4 ideator 3 role="the contrarian" started
+2026-06-21T07:50:24Z iteration 4 ideator 1 role="the pragmatist" completed status=0
+2026-06-21T07:50:26Z iteration 4 ideator 3 role="the contrarian" completed status=0
+2026-06-21T07:50:26Z iteration 4 ideator 2 role="the architect" completed status=0
+2026-06-21T07:50:26Z iteration 4 ideator phase completed approaches=3
+2026-06-21T07:50:26Z iteration 4 selector started approaches=3
+2026-06-21T07:50:35Z iteration 4 selector completed status=0
+2026-06-21T07:50:35Z iteration 4 disposable preplanner repo cleanup path=/tmp/agent-loop-preplanner-repo-q1yi3itg/repo
+2026-06-21T07:50:35Z iteration 4 selector rejected alternative role="the pragmatist" approach="Canary Contract First: freeze broad migration and spend the next planning cycle proving the Three.js factory contract under real pilot conditions before expanding adoption." reason="Strong direction, but selected as part of a hybrid because it underemphasizes keeping the broader audit visible to avoid overfitting the factory to only two pilots."
+2026-06-21T07:50:35Z iteration 4 selector rejected alternative role="the contrarian" approach="Stabilize-by-Contract Instead of Migrate-by-Count: pause broad Three.js migration and treat the two existing pilots as executable specifications for the factory contract before..." reason="Strong strategic framing, but selected only in part because the planner still needs an explicit gate for browser/runtime proof, not just a general pause on migration-by-count."
+2026-06-21T07:50:35Z iteration 4 selector rejected alternative role="the architect" approach="Canary Contract First: treat the two migrated Three.js pages as executable specifications for the shared factory before any broader migration, using their differences to harden..." reason="Closest to the selected strategy, but synthesized with the other proposals to make the migration freeze and canary-gate posture more explicit."
+2026-06-21T07:50:35Z iteration 4 selector alternatives persisted count=3
+2026-06-21T07:50:35Z iteration 4 selector structured alternatives persisted count=3
+2026-06-21T07:50:35Z iteration 4 planner started
+2026-06-21T07:51:08Z iteration 4 plan: 4 task(s) in 3 phase(s). This slice keeps the broad Three.js migration frozen and focuses on proving the existing canaries. The first phase can run in parallel because the factory contract changes and DJI loader conversion touch different implementation files. Browser smoke depends on both, and checkpointing depends on a clean verified result.
+2026-06-21T07:51:08Z iteration 4 phase 1 started parallel=True tasks=2
+2026-06-21T07:52:54Z iteration 4 task t1 ('Harden Three.js factory canary contract') status=0
+2026-06-21T07:53:11Z iteration 4 task t2 ('Make DJI model loading reject through factory initialization') status=0
+2026-06-21T07:53:11Z iteration 4 phase 2 started parallel=False tasks=1
+2026-06-21T07:58:14Z iteration 4 task t3 ('Browser-smoke the two Three.js canaries') status=0
+2026-06-21T07:58:14Z iteration 4 phase 3 started parallel=False tasks=1
+2026-06-21T07:59:40Z iteration 4 task t4 ('Commit canary gate checkpoint') status=0
+2026-06-21T07:59:40Z iteration 4 reviewer started
+
+## Reviewer Summary — Iteration 12 / Loop Iteration 4 (2026-06-21)
+
+### What Was Done
+
+- Inspected the committed implementation diff for `e962b04 refactor(three): harden canary scene contract` and read the final contents of `AGENT.md`, `src/lib/createThreeScene.ts`, and `src/dji-fpv.ts`.
+- Confirmed `createThreeScene()` now uses type-only `OrbitControls` imports and dynamically imports the implementation only for `controls: "orbit"`.
+- Confirmed orbit-control construction is inside the initialization `try` path, `obsAudio.connect()` starts only after awaited initialization succeeds, and `onFrame` exceptions now show a factory diagnostic and stop the render loop.
+- Confirmed `src/dji-fpv.ts` now awaits `GLTFLoader.loadAsync()` inside async `onInit`, preserves progress UI, logs the page-specific load error, and rethrows to the factory diagnostic path.
+- Confirmed `AGENT.md` documents the loader Promise requirement and records browser smoke results for `discord-robot.html` and `dji-fpv.html`.
+- Reviewer validation rerun: `npm run lint`, `npm run build`, and independent Playwright CLI screenshots of both canaries at `1280x720` and `960x540`. The screenshots were nonblank and had the expected viewport dimensions.
+
+### What Was Found
+
+- No high-priority regression was found in the committed implementation. The canary gate items from the previous review are substantially addressed.
+- The one-off browser smoke is useful but not reusable; there is no checked-in smoke script, so future Three.js migration batches can easily skip runtime proof.
+- The factory still creates the renderer and registers the resize listener before the initialization `try` block. If renderer creation fails, the standardized diagnostic overlay is still bypassed; if async initialization fails, the canvas and resize listener remain.
+- The new frame-failure path stops future frame scheduling, but there is no lifecycle/dispose handle and diagnostics can append multiple overlays in repeated failure scenarios.
+- The DJI loader failure contract is correct by code inspection, but the negative path was not browser-smoked with an intentionally missing/rejecting model URL.
+- Runtime smoke surfaced `THREE.Clock` deprecation warnings from the installed Three.js version. `loop: "clock"` still works, but broad migration should avoid copying a deprecated timing primitive.
+- `createPage()` resize override semantics remain unresolved and unrelated to this iteration.
+
+### Top Improvement Proposals
+
+1. Add a checked-in Three.js smoke runner that verifies nonblank canvas output, resize coherence, dynamic composer loading, and DJI load-overlay removal for the two current canaries.
+2. Add deterministic negative smoke coverage for rejecting `onInit`, failing model loaders, and throwing `onFrame`.
+3. Tighten `createThreeScene()` lifecycle behavior around renderer-creation diagnostics, failed-init cleanup, resize listener removal, and duplicate diagnostic overlays.
+4. Replace or alias away from deprecated `THREE.Clock` timing before migrating more `loop: "clock"` pages.
+5. Resume Three.js migration only in small variance-grouped batches, with loader pages returning awaited loader Promises and every batch getting a quality gate plus visual smoke check.
+2026-06-21T08:04:33Z iteration 4 reviewer completed status=0
+2026-06-21T08:04:33Z iteration 4 memory updated
+2026-06-21T08:04:33Z iteration 4 completed validation_status=0
+2026-06-21T08:04:33Z iteration 4 checkpoint started
+2026-06-21T08:04:33Z iteration 4 checkpoint status before commit:
+M  AGENT_LOG.md
+M  ALTERNATIVES.jsonl
+M  MEMORY.md
+M  PLAN.md
+M  SCORES.jsonl
