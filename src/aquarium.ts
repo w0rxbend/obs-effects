@@ -1,5 +1,5 @@
 import { AquariumScreen } from "./app/screens/AquariumScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(AquariumScreen, {
   background: "transparent",

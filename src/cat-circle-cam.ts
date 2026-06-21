@@ -1,5 +1,5 @@
 import { CatCircleCamScreen } from "./app/screens/CatCircleCamScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(CatCircleCamScreen, {
   background: "transparent",

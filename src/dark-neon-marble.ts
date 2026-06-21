@@ -1,5 +1,5 @@
 import { DarkNeonMarbleScreen } from "./app/screens/DarkNeonMarbleScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(DarkNeonMarbleScreen, {
   background: 0x0d0e25,

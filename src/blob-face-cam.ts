@@ -1,5 +1,5 @@
 import { BlobFaceCamScreen } from "./app/screens/BlobFaceCamScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(BlobFaceCamScreen, {
   background: "transparent",

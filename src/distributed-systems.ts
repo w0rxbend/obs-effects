@@ -1,5 +1,5 @@
 import { DistributedSystemsScreen } from "./app/screens/DistributedSystemsScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(DistributedSystemsScreen, {
   background: 0x05090f,

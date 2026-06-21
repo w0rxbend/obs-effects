@@ -1,5 +1,5 @@
 import { GoldMarbleDotsScreen } from "./app/screens/GoldMarbleDotsScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(GoldMarbleDotsScreen, {
   background: 0x000000,

@@ -1,5 +1,5 @@
 import { FluidDottedRingCamScreen } from "./app/screens/FluidDottedRingCamScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(FluidDottedRingCamScreen, {
   background: "transparent",

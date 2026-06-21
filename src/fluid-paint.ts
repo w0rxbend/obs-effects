@@ -1,5 +1,5 @@
 import { FluidPaintScreen } from "./app/screens/FluidPaintScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(FluidPaintScreen, {
   background: 0x11111b,

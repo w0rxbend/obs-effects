@@ -1,5 +1,5 @@
 import { PrismBiofoamScreen } from "./app/screens/PrismBiofoamScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(PrismBiofoamScreen, {
   background: 0x000000,

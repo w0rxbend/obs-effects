@@ -1,5 +1,5 @@
 import { GraphBgScreen } from "./app/screens/GraphBgScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(GraphBgScreen, {
   background: 0x11111b,

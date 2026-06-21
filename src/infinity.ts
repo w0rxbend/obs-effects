@@ -1,5 +1,5 @@
 import { InfinityScreen } from "./app/screens/InfinityScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(InfinityScreen, {
   background: "transparent",

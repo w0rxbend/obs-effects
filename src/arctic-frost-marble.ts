@@ -1,5 +1,5 @@
 import { ArcticFrostMarbleScreen } from "./app/screens/ArcticFrostMarbleScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(ArcticFrostMarbleScreen, {
   background: 0xd0e8f8,

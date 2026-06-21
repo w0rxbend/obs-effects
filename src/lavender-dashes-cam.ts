@@ -1,5 +1,5 @@
 import { LavenderDashesCamScreen } from "./app/screens/LavenderDashesCamScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(LavenderDashesCamScreen, {
   background: "transparent",

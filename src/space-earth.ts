@@ -1,5 +1,5 @@
 import { SpaceEarthScreen } from "./app/screens/SpaceEarthScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(SpaceEarthScreen, {
   background: 0x02040d,

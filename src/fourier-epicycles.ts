@@ -1,5 +1,5 @@
 import { FourierEpicyclesScreen } from "./app/screens/FourierEpicyclesScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(FourierEpicyclesScreen, {
   background: 0x11111b,

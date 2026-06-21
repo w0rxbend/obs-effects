@@ -1,5 +1,5 @@
 import { ConfidentialScreen } from "./app/screens/ConfidentialScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(ConfidentialScreen, {
   background: "transparent",

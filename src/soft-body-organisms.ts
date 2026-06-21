@@ -1,5 +1,5 @@
 import { SoftBodyOrganismsScreen } from "./app/screens/SoftBodyOrganismsScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(SoftBodyOrganismsScreen, {
   background: 0x060810,

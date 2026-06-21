@@ -1,5 +1,5 @@
 import { SmokeBarScreen } from "./app/screens/SmokeBarScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(SmokeBarScreen, {
   background: "transparent",

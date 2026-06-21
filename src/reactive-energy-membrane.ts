@@ -1,5 +1,5 @@
 import { ReactiveEnergyMembraneScreen } from "./app/screens/ReactiveEnergyMembraneScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(ReactiveEnergyMembraneScreen, {
   background: 0x020006,

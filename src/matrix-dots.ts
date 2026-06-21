@@ -1,5 +1,5 @@
 import { MatrixDotsScreen } from "./app/screens/MatrixDotsScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(MatrixDotsScreen, {
   background: "#11111b",

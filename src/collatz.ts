@@ -1,5 +1,5 @@
 import { CollatzScreen } from "./app/screens/CollatzScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(CollatzScreen, {
   background: 0x11111b,

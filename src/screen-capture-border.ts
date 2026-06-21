@@ -1,5 +1,5 @@
 import { ScreenCaptureBorderScreen } from "./app/screens/ScreenCaptureBorderScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(ScreenCaptureBorderScreen, {
   background: "transparent",

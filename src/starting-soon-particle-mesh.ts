@@ -1,5 +1,5 @@
 import { StartingSoonParticleMeshScreen } from "./app/screens/StartingSoonParticleMeshScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(StartingSoonParticleMeshScreen, {
   background: "transparent",

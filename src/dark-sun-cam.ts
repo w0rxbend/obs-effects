@@ -1,5 +1,5 @@
 import { DarkSunCamScreen } from "./app/screens/DarkSunCamScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(DarkSunCamScreen, {
   background: "transparent",

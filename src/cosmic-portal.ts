@@ -1,5 +1,5 @@
 import { CosmicPortalScreen } from "./app/screens/CosmicPortalScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(CosmicPortalScreen, {
   background: "transparent",

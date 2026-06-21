@@ -1,5 +1,5 @@
 import { RazerToxicMarbleScreen } from "./app/screens/RazerToxicMarbleScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(RazerToxicMarbleScreen, {
   background: 0x000000,

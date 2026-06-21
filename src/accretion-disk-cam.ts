@@ -1,5 +1,5 @@
 import { AccretionDiskCamScreen } from "./app/screens/AccretionDiskCamScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(AccretionDiskCamScreen, {
   background: "transparent",

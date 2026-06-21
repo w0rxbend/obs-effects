@@ -1,5 +1,5 @@
 import { FluidCircleCamScreen } from "./app/screens/FluidCircleCamScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(FluidCircleCamScreen, {
   background: "transparent",

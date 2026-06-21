@@ -1,5 +1,5 @@
 import { CamFrameOverlayScreen } from "./app/screens/CamFrameOverlayScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(CamFrameOverlayScreen, {
   background: "transparent",

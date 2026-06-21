@@ -1,5 +1,5 @@
 import { StartingSoonFluidScreen } from "./app/screens/StartingSoonFluidScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(StartingSoonFluidScreen, {
   background: 0x000000,

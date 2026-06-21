@@ -1,5 +1,5 @@
 import { MaurerRoseScreen } from "./app/screens/MaurerRoseScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(MaurerRoseScreen, {
   background: 0x11111b,

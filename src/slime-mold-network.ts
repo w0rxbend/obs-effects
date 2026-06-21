@@ -1,5 +1,5 @@
 import { SlimeMoldNetworkScreen } from "./app/screens/SlimeMoldNetworkScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(SlimeMoldNetworkScreen, {
   background: 0x010905,

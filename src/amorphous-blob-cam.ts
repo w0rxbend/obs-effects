@@ -1,5 +1,5 @@
 import { AmorphousBlobCamScreen } from "./app/screens/AmorphousBlobCamScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(AmorphousBlobCamScreen, {
   background: "transparent",

@@ -1,5 +1,5 @@
 import { LiquidPaperFrameScreen } from "./app/screens/LiquidPaperFrameScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(LiquidPaperFrameScreen, {
   background: 0xfdfbf7,

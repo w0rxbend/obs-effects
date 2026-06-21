@@ -1,5 +1,5 @@
 import { RedCorruptScreen } from "./app/screens/RedCorruptScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(RedCorruptScreen, {
   background: 0x080000,

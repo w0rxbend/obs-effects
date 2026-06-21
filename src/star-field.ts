@@ -1,5 +1,5 @@
 import { StarFieldScreen } from "./app/screens/StarFieldScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(StarFieldScreen, {
   background: "transparent",

@@ -1,5 +1,5 @@
 import { FluidCatppuccinRingsCamScreen } from "./app/screens/FluidCatppuccinRingsCamScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(FluidCatppuccinRingsCamScreen, {
   background: "transparent",

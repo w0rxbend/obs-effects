@@ -1,5 +1,5 @@
 import { AetherDriftScreen } from "./app/screens/AetherDriftScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(AetherDriftScreen, {
   background: 0x04060d,

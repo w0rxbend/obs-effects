@@ -1,5 +1,5 @@
 import { AmorphousSquareBorderScreen } from "./app/screens/AmorphousSquareBorderScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(AmorphousSquareBorderScreen, {
   background: "transparent",

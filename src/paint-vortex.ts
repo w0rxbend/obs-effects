@@ -1,5 +1,5 @@
 import { PaintVortexScreen } from "./app/screens/PaintVortexScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(PaintVortexScreen, {
   background: 0x0d0c38,

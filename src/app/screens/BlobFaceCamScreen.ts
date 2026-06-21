@@ -1,6 +1,6 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
-import { obsAudio } from "../../lib/obsAudio";
+import { obsAudio } from "../../lib";
 
 const TAU = Math.PI * 2;
 const BLOB_STEPS = 96;

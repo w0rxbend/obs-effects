@@ -1,5 +1,5 @@
 import { WaveBorderCamScreen } from "./app/screens/WaveBorderCamScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(WaveBorderCamScreen, {
   background: "transparent",

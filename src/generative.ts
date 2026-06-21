@@ -1,5 +1,5 @@
 import { GenerativeScreen } from "./app/screens/GenerativeScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(GenerativeScreen, {
   background: 0x11111b,

@@ -1,5 +1,5 @@
 import { CatppuccinLinuxOverlayScreen } from "./app/screens/CatppuccinLinuxOverlayScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(CatppuccinLinuxOverlayScreen, {
   background: 0x11111b,

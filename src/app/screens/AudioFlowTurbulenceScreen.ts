@@ -1,6 +1,6 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
-import { obsAudio } from "../../lib/obsAudio";
+import { obsAudio } from "../../lib";
 
 // ─── Palette ─────────────────────────────────────────────────────────────────
 const BG = 0x020508;

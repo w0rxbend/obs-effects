@@ -1,5 +1,5 @@
 import { GalaxyBgScreen } from "./app/screens/GalaxyBgScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(GalaxyBgScreen, {
   background: "transparent",

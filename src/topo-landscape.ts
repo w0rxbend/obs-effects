@@ -1,5 +1,5 @@
 import { TopoLandscapeScreen } from "./app/screens/TopoLandscapeScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(TopoLandscapeScreen, {
   background: "transparent",

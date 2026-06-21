@@ -1,5 +1,5 @@
 import { MyceliumNetworkScreen } from "./app/screens/MyceliumNetworkScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(MyceliumNetworkScreen, {
   background: 0x050810,

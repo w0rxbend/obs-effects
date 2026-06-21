@@ -1,5 +1,5 @@
 import { FluidMeshRingCamScreen } from "./app/screens/FluidMeshRingCamScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(FluidMeshRingCamScreen, {
   background: "transparent",

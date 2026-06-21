@@ -1,5 +1,5 @@
 import { BlueLiquidMarbleScreen } from "./app/screens/BlueLiquidMarbleScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(BlueLiquidMarbleScreen, {
   background: 0x000000,

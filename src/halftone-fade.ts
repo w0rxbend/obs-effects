@@ -1,5 +1,5 @@
 import { HalftoneFadeScreen } from "./app/screens/HalftoneFadeScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(HalftoneFadeScreen, {
   background: 0x000000,

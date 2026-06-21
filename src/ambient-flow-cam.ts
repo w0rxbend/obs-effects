@@ -1,5 +1,5 @@
 import { AmbientFlowCamScreen } from "./app/screens/AmbientFlowCamScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(AmbientFlowCamScreen, {
   background: "transparent",

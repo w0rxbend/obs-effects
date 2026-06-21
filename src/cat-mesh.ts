@@ -1,5 +1,5 @@
 import { CatMeshScreen } from "./app/screens/CatMeshScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(CatMeshScreen, {
   backgroundAlpha: 0,

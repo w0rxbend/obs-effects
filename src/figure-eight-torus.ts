@@ -1,5 +1,5 @@
 import { FigureEightTorusScreen } from "./app/screens/FigureEightTorusScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(FigureEightTorusScreen, {
   background: "transparent",

@@ -1,5 +1,5 @@
 import { BlueprintGlobeScreen } from "./app/screens/BlueprintGlobeScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(BlueprintGlobeScreen, {
   background: 0x030912,

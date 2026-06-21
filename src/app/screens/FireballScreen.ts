@@ -1,6 +1,6 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
-import { obsAudio } from "../../lib/obsAudio";
+import { obsAudio } from "../../lib";
 
 function clamp(v: number, lo: number, hi: number): number {
   return v < lo ? lo : v > hi ? hi : v;

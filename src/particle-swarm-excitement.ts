@@ -1,5 +1,5 @@
 import { ParticleSwarmExcitementScreen } from "./app/screens/ParticleSwarmExcitementScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(ParticleSwarmExcitementScreen, {
   background: 0x05070d,

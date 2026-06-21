@@ -1,5 +1,5 @@
 import { TriangleSparkleScreen } from "./app/screens/TriangleSparkleScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(TriangleSparkleScreen, {
   background: 0x000000,

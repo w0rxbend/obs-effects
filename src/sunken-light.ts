@@ -1,5 +1,5 @@
 import { SunkenLightScreen } from "./app/screens/SunkenLightScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(SunkenLightScreen, {
   background: 0x020f17,

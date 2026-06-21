@@ -1,5 +1,5 @@
 import { MicrobialColonyScreen } from "./app/screens/MicrobialColonyScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(MicrobialColonyScreen, {
   background: 0x11111b,

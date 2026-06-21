@@ -1,5 +1,5 @@
 import { WorxbendMolecularScreen } from "./app/screens/WorxbendMolecularScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(WorxbendMolecularScreen, {
   background: 0x11111b,

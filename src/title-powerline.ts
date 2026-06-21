@@ -1,5 +1,5 @@
 import { TitlePowerlineScreen } from "./app/screens/TitlePowerlineScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(TitlePowerlineScreen, {
   background: "transparent",

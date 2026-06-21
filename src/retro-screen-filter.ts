@@ -1,5 +1,5 @@
 import { RetroScreenFilterScreen } from "./app/screens/RetroScreenFilterScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(RetroScreenFilterScreen, {
   background: "transparent",

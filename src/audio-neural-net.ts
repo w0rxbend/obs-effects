@@ -1,5 +1,5 @@
 import { AudioNeuralNetScreen } from "./app/screens/AudioNeuralNetScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(AudioNeuralNetScreen, {
   background: 0x030810,

@@ -1,5 +1,5 @@
 import { PixelSkullScreen } from "./app/screens/PixelSkullScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(PixelSkullScreen, {
   background: 0x000000,

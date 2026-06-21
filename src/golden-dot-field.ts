@@ -1,5 +1,5 @@
 import { GoldenDotFieldScreen } from "./app/screens/GoldenDotFieldScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(GoldenDotFieldScreen, {
   background: 0x0f1932,

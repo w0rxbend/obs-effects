@@ -1,5 +1,5 @@
 import { PlanetScreen } from "./app/screens/PlanetScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(PlanetScreen, {
   background: "transparent",

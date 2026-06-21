@@ -1,5 +1,5 @@
 import { CrystalCamScreen } from "./app/screens/CrystalCamScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(CrystalCamScreen, {
   background: "transparent",

@@ -1,5 +1,5 @@
 import { UaRedBlackMeshScreen } from "./app/screens/UaRedBlackMeshScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(UaRedBlackMeshScreen, {
   backgroundAlpha: 0,

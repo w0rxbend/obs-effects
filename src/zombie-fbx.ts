@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { FBXLoader } from "three/addons/loaders/FBXLoader.js";
-import { obsAudio } from "./lib/obsAudio";
+import { obsAudio } from "./lib";
 
 const MODEL_URL = "/assets/main/zombie/source/Zombie/Zombie1.FBX";
 const WALK_ANIM_URL =

@@ -1,5 +1,5 @@
 import { UkrainianWaveMeshScreen } from "./app/screens/UkrainianWaveMeshScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(UkrainianWaveMeshScreen, {
   backgroundAlpha: 0,

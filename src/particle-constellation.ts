@@ -1,5 +1,5 @@
 import { ParticleConstellationScreen } from "./app/screens/ParticleConstellationScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(ParticleConstellationScreen, {
   background: 0x03050f,

@@ -1,5 +1,5 @@
 import { GeometricLinesScreen } from "./app/screens/GeometricLinesScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(GeometricLinesScreen, {
   background: 0x000000,

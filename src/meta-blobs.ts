@@ -1,5 +1,5 @@
 import { MetaBlobsScreen } from "./app/screens/MetaBlobsScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(MetaBlobsScreen, {
   backgroundAlpha: 0,

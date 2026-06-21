@@ -1,5 +1,5 @@
 import { TealRedMarbleScreen } from "./app/screens/TealRedMarbleScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(TealRedMarbleScreen, {
   background: 0x0a0e0e,

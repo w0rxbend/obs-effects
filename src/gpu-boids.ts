@@ -1,5 +1,5 @@
 import { GpuBoidsScreen } from "./app/screens/GpuBoidsScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(GpuBoidsScreen, {
   background: 0x040810,

@@ -1,5 +1,5 @@
 import { WireframeSphereCamScreen } from "./app/screens/WireframeSphereCamScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(WireframeSphereCamScreen, {
   background: "transparent",

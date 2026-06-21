@@ -1,5 +1,5 @@
 import { WormholeDiveScreen } from "./app/screens/WormholeDiveScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(WormholeDiveScreen, {
   background: 0x000000,

@@ -1,5 +1,5 @@
 import { HalftoneGradientScreen } from "./app/screens/HalftoneGradientScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(HalftoneGradientScreen, {
   background: 0x2a0a3a,

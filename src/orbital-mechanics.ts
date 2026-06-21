@@ -1,5 +1,5 @@
 import { OrbitalMechanicsScreen } from "./app/screens/OrbitalMechanicsScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(OrbitalMechanicsScreen, {
   background: 0x11111b,

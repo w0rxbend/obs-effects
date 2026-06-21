@@ -1,5 +1,5 @@
 import { WavyPlanetMeshScreen } from "./app/screens/WavyPlanetMeshScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(WavyPlanetMeshScreen, {
   background: 0x070b13,

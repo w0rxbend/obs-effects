@@ -1,5 +1,5 @@
 import { WorxbendTextScreen } from "./app/screens/WorxbendTextScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(WorxbendTextScreen, {
   background: 0x11111b,

@@ -1,5 +1,5 @@
 import { HexRippleScreen } from "./app/screens/HexRippleScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(HexRippleScreen, {
   background: 0x11111b,

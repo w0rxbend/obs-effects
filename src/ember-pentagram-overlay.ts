@@ -1,5 +1,5 @@
 import { EmberPentagramOverlayScreen } from "./app/screens/EmberPentagramOverlayScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(EmberPentagramOverlayScreen, {
   background: 0x09070b,

@@ -1,5 +1,5 @@
 import { PlanetHologramScreen } from "./app/screens/PlanetHologramScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(PlanetHologramScreen, {
   background: "transparent",

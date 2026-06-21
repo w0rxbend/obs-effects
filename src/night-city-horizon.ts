@@ -1,5 +1,5 @@
 import { NightCityHorizonScreen } from "./app/screens/NightCityHorizonScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(NightCityHorizonScreen, {
   background: 0x050811,

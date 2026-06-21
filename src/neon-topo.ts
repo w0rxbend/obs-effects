@@ -1,5 +1,5 @@
 import { NeonTopoScreen } from "./app/screens/NeonTopoScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(NeonTopoScreen, {
   background: 0x050005,

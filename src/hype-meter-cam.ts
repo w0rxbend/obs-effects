@@ -1,5 +1,5 @@
 import { HypeMeterCamScreen } from "./app/screens/HypeMeterCamScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(HypeMeterCamScreen, {
   background: "transparent",

@@ -1,5 +1,5 @@
 import { StippledGeodesicScreen } from "./app/screens/StippledGeodesicScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(StippledGeodesicScreen, {
   background: 0x1e1e2e,

@@ -1,5 +1,5 @@
 import { VoronoiStipplingScreen } from "./app/screens/VoronoiStipplingScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(VoronoiStipplingScreen, {
   background: 0x11111b,

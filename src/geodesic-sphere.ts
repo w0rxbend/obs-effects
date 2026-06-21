@@ -1,5 +1,5 @@
 import { GeodesicSphereScreen } from "./app/screens/GeodesicSphereScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(GeodesicSphereScreen, {
   background: 0x1e1e2e,

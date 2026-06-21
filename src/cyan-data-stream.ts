@@ -1,5 +1,5 @@
 import { CyanDataStreamScreen } from "./app/screens/CyanDataStreamScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(CyanDataStreamScreen, {
   background: 0x00080a,

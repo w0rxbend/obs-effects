@@ -1,5 +1,5 @@
 import { GlitchCircleRingCamScreen } from "./app/screens/GlitchCircleRingCamScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(GlitchCircleRingCamScreen, {
   background: "transparent",

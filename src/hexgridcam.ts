@@ -1,5 +1,5 @@
 import { HexGridCamScreen } from "./app/screens/HexGridCamScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(HexGridCamScreen, {
   background: "transparent",

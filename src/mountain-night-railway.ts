@@ -1,5 +1,5 @@
 import { MountainNightRailwayScreen } from "./app/screens/MountainNightRailwayScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(MountainNightRailwayScreen, {
   background: 0x06060f,

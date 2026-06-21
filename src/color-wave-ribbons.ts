@@ -1,5 +1,5 @@
 import { ColorWaveRibbonsScreen } from "./app/screens/ColorWaveRibbonsScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(ColorWaveRibbonsScreen, {
   background: 0xfbe1d1,

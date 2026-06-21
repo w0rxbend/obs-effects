@@ -1,5 +1,5 @@
 import { BioluminescentCellScreen } from "./app/screens/BioluminescentCellScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(BioluminescentCellScreen, {
   backgroundAlpha: 0,

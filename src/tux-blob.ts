@@ -1,5 +1,5 @@
 import { TuxBlobScreen } from "./app/screens/TuxBlobScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(TuxBlobScreen, {
   background: "transparent",

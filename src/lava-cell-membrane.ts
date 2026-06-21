@@ -1,5 +1,5 @@
 import { LavaCellMembraneScreen } from "./app/screens/LavaCellMembraneScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(LavaCellMembraneScreen, {
   background: 0x000000,

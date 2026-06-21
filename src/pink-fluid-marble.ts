@@ -1,5 +1,5 @@
 import { PinkFluidMarbleScreen } from "./app/screens/PinkFluidMarbleScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(PinkFluidMarbleScreen, {
   background: 0x171a2a,

@@ -1,5 +1,5 @@
 import { BlueDiamondHalftoneScreen } from "./app/screens/BlueDiamondHalftoneScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(BlueDiamondHalftoneScreen, {
   background: 0x040609,

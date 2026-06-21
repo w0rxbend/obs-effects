@@ -1,5 +1,5 @@
 import { NebulaScreen } from "./app/screens/NebulaScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(NebulaScreen, {
   background: 0x11111b,

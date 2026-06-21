@@ -1,5 +1,5 @@
 import { RadialEnergyCoreScreen } from "./app/screens/RadialEnergyCoreScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(RadialEnergyCoreScreen, {
   background: 0x000000,

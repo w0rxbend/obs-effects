@@ -1,5 +1,5 @@
 import { SoftVolFogScreen } from "./app/screens/SoftVolFogScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(SoftVolFogScreen, {
   background: "transparent",

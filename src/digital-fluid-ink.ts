@@ -1,5 +1,5 @@
 import { DigitalFluidInkScreen } from "./app/screens/DigitalFluidInkScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(DigitalFluidInkScreen, {
   background: 0x000000,

@@ -1,5 +1,5 @@
 import { AmbientEnergyScreen } from "./app/screens/AmbientEnergyScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(AmbientEnergyScreen, {
   background: 0x060810,

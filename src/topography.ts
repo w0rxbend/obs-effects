@@ -1,5 +1,5 @@
 import { LuminescentTopographyScreen } from "./app/screens/LuminescentTopographyScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(LuminescentTopographyScreen, {
   background: "transparent",

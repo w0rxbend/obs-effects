@@ -1,5 +1,5 @@
 import { DarkGlassLatticeScreen } from "./app/screens/DarkGlassLatticeScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(DarkGlassLatticeScreen, {
   background: 0x000000,

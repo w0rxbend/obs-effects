@@ -1,5 +1,5 @@
 import { LinuxIconMeshScreen } from "./app/screens/LinuxIconMeshScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(LinuxIconMeshScreen, {
   background: 0x11111b,

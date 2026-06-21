@@ -1,5 +1,5 @@
 import { SolarWindScreen } from "./app/screens/SolarWindScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(SolarWindScreen, {
   background: 0x11111b,

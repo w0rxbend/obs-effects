@@ -1,5 +1,5 @@
 import { InkInWaterScreen } from "./app/screens/InkInWaterScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(InkInWaterScreen, {
   background: 0x020108,

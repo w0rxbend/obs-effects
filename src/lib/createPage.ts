@@ -26,6 +26,14 @@ export function createPage(
   setEngine(engine);
 
   (async () => {
+    const named = Object.fromEntries(
+      Object.entries({
+        background: opts.background,
+        backgroundAlpha: opts.backgroundAlpha,
+        antialias: opts.antialias,
+      }).filter(([, value]) => value !== undefined),
+    );
+
     if (opts.waitForFonts) {
       await document.fonts.ready;
     }
@@ -36,14 +44,12 @@ export function createPage(
 
     await engine.init({
       ...opts.extra,
-      background: opts.background,
-      backgroundAlpha: opts.backgroundAlpha,
-      antialias: opts.antialias,
       resizeOptions: opts.resizeOptions ?? {
         minWidth: 1920,
         minHeight: 1080,
         letterbox: false,
       },
+      ...named,
     });
 
     await engine.navigation.showScreen(ScreenClass);

@@ -1,5 +1,5 @@
 import { FluidBlobFrameScreen } from "./app/screens/FluidBlobFrameScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(FluidBlobFrameScreen, {
   background: 0x2c2e44,

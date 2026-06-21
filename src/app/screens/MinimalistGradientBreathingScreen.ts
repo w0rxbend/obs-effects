@@ -1,6 +1,6 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics, Sprite, Texture } from "pixi.js";
-import { obsAudio } from "../../lib/obsAudio";
+import { obsAudio } from "../../lib";
 
 type RGB = [number, number, number];
 

@@ -1,5 +1,5 @@
 import { MonolithicBlackGeometryScreen } from "./app/screens/MonolithicBlackGeometryScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(MonolithicBlackGeometryScreen, {
   background: 0x000000,

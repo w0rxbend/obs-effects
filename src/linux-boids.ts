@@ -1,5 +1,5 @@
 import { LinuxBoidsScreen } from "./app/screens/LinuxBoidsScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(LinuxBoidsScreen, {
   background: "transparent",

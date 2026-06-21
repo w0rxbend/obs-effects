@@ -1,5 +1,5 @@
 import { GlitchVeilScreen } from "./app/screens/GlitchVeilScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(GlitchVeilScreen, {
   backgroundAlpha: 0,

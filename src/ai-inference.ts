@@ -1,5 +1,5 @@
 import { AIInferenceScreen } from "./app/screens/AIInferenceScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(AIInferenceScreen, {
   background: 0x020810,

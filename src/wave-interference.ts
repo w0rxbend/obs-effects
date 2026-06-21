@@ -1,5 +1,5 @@
 import { WaveInterferenceScreen } from "./app/screens/WaveInterferenceScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(WaveInterferenceScreen, {
   background: 0x000c08,

@@ -1,5 +1,5 @@
 import { AmethystMarbleScreen } from "./app/screens/AmethystMarbleScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(AmethystMarbleScreen, {
   background: 0x0c0719,

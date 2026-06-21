@@ -1,5 +1,5 @@
 import { NeonRibbonPatternScreen } from "./app/screens/NeonRibbonPatternScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(NeonRibbonPatternScreen, {
   background: 0x03050b,

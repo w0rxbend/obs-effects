@@ -1,5 +1,5 @@
 import { SmokeRingCamScreen } from "./app/screens/SmokeRingCamScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(SmokeRingCamScreen, {
   background: "transparent",

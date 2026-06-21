@@ -1,5 +1,5 @@
 import { SciFiHudScreen } from "./app/screens/SciFiHudScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(SciFiHudScreen, {
   background: 0x000508,

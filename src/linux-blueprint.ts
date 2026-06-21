@@ -1,5 +1,5 @@
 import { LinuxBlueprintScreen } from "./app/screens/LinuxBlueprintScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(LinuxBlueprintScreen, {
   background: 0x030d1f,

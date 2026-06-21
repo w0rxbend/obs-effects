@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { obsAudio } from "./lib/obsAudio";
+import { obsAudio } from "./lib";
 
 // ── Audio ─────────────────────────────────────────────────────────────────────
 void obsAudio.connect();

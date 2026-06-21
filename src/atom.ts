@@ -1,5 +1,5 @@
 import { AtomScreen } from "./app/screens/AtomScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(AtomScreen, {
   background: "transparent",

@@ -1,5 +1,5 @@
 import { SPHScreen } from "./app/screens/SPHScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(SPHScreen, {
   background: 0x11111b,

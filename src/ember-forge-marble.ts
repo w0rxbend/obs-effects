@@ -1,5 +1,5 @@
 import { EmberForgeMarbleScreen } from "./app/screens/EmberForgeMarbleScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(EmberForgeMarbleScreen, {
   background: 0x0f0804,

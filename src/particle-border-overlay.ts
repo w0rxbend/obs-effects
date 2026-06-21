@@ -1,5 +1,5 @@
 import { ParticleBorderOverlayScreen } from "./app/screens/ParticleBorderOverlayScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(ParticleBorderOverlayScreen, {
   backgroundAlpha: 0,

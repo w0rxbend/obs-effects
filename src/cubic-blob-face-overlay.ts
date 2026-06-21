@@ -1,5 +1,5 @@
 import { CubicBlobFaceOverlayScreen } from "./app/screens/CubicBlobFaceOverlayScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(CubicBlobFaceOverlayScreen, {
   background: "transparent",

@@ -1,5 +1,5 @@
 import { MinimalistGradientBreathingScreen } from "./app/screens/MinimalistGradientBreathingScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(MinimalistGradientBreathingScreen, {
   background: 0x11111b,

@@ -1,5 +1,5 @@
 import { CyberMarbleScreen } from "./app/screens/CyberMarbleScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(CyberMarbleScreen, {
   background: 0x000000,

@@ -1,5 +1,5 @@
 import { AvatarScreen } from "./app/screens/AvatarScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(AvatarScreen, {
   background: "transparent",

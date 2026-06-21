@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { createThreeScene } from "./lib/createThreeScene";
-import { obsAudio } from "./lib/obsAudio";
+import { obsAudio } from "./lib";
 
 const MODEL_URL =
   "/assets/main/dji-fpv/source/e4e0a592c53ea71bfc3cd948397e31a1.glb";

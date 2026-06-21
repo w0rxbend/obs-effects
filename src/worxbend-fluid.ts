@@ -1,5 +1,5 @@
 import { WorxbendFluidScreen } from "./app/screens/WorxbendFluidScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(WorxbendFluidScreen, {
   background: 0x11111b,

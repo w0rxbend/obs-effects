@@ -1,5 +1,5 @@
 import { BioluminescentMarbleScreen } from "./app/screens/BioluminescentMarbleScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(BioluminescentMarbleScreen, {
   background: 0x00070f,

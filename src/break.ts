@@ -1,5 +1,5 @@
 import { BreakScreen } from "./app/screens/BreakScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(BreakScreen, {
   background: "transparent",

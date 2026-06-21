@@ -7,7 +7,7 @@ import {
   TextStyle,
   Texture,
 } from "pixi.js";
-import { obsAudio } from "../../../lib/obsAudio";
+import { obsAudio } from "../../../lib";
 
 // ── Palette ───────────────────────────────────────────────────────────────────
 // Razer signature greens + LoL blues/purples + toxic black-green-violet

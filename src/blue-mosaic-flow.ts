@@ -1,5 +1,5 @@
 import { BlueMosaicFlowScreen } from "./app/screens/BlueMosaicFlowScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(BlueMosaicFlowScreen, {
   background: 0x04111a,

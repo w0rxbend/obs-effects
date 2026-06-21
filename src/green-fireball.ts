@@ -1,5 +1,5 @@
 import { GreenFireballScreen } from "./app/screens/GreenFireballScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(GreenFireballScreen, {
   backgroundAlpha: 0,

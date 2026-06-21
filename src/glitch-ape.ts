@@ -1,5 +1,5 @@
 import { GlitchApeScreen } from "./app/screens/GlitchApeScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(GlitchApeScreen, {
   background: 0x000000,

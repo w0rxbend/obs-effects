@@ -1,5 +1,5 @@
 import { StartingSoonJellyScreen } from "./app/screens/StartingSoonJellyScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(StartingSoonJellyScreen, {
   background: "transparent",

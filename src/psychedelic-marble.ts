@@ -1,5 +1,5 @@
 import { PsychedelicMarbleScreen } from "./app/screens/PsychedelicMarbleScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(PsychedelicMarbleScreen, {
   background: 0x15143a,

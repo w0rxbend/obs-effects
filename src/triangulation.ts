@@ -1,5 +1,5 @@
 import { TriangulationScreen } from "./app/screens/TriangulationScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(TriangulationScreen, {
   background: "transparent",

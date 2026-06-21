@@ -1,5 +1,5 @@
 import { WavyCamScreen } from "./app/screens/WavyCamScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(WavyCamScreen, {
   background: "transparent",

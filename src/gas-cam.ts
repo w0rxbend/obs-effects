@@ -1,5 +1,5 @@
 import { GasCamScreen } from "./app/screens/GasCamScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(GasCamScreen, {
   background: "transparent",

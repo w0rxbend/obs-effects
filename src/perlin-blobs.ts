@@ -1,5 +1,5 @@
 import { PerlinBlobsScreen } from "./app/screens/PerlinBlobsScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(PerlinBlobsScreen, {
   background: 0x11111b,

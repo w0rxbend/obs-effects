@@ -1,5 +1,5 @@
 import { PcbBgScreen } from "./app/screens/PcbBgScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(PcbBgScreen, {
   background: "transparent",

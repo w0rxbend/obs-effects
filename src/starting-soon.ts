@@ -1,5 +1,5 @@
 import { Placeholder1Screen } from "./app/screens/Placeholder1Screen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(Placeholder1Screen, {
   background: "transparent",

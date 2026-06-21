@@ -1,5 +1,5 @@
 import { StreamEndedParticleMeshScreen } from "./app/screens/StreamEndedParticleMeshScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(StreamEndedParticleMeshScreen, {
   background: "transparent",

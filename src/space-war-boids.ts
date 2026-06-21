@@ -1,5 +1,5 @@
 import { SpaceWarBoidsScreen } from "./app/screens/SpaceWarBoidsScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(SpaceWarBoidsScreen, {
   background: 0x010108,

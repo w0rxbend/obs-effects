@@ -1,5 +1,5 @@
 import { AudioFlowTurbulenceScreen } from "./app/screens/AudioFlowTurbulenceScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(AudioFlowTurbulenceScreen, {
   background: 0x020508,

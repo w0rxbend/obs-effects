@@ -1,5 +1,5 @@
 import { ChaoticParticlesScreen } from "./app/screens/ChaoticParticlesScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(ChaoticParticlesScreen, {
   background: 0x11111b,

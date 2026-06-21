@@ -1,5 +1,5 @@
 import { WaterSplashRingCamScreen } from "./app/screens/WaterSplashRingCamScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(WaterSplashRingCamScreen, {
   background: "transparent",

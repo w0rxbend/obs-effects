@@ -1,5 +1,5 @@
 import { LiquidAuroraFieldScreen } from "./app/screens/LiquidAuroraFieldScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(LiquidAuroraFieldScreen, {
   background: 0x030508,

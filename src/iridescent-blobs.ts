@@ -1,5 +1,5 @@
 import { IridescentBlobsScreen } from "./app/screens/IridescentBlobsScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(IridescentBlobsScreen, {
   background: "transparent",

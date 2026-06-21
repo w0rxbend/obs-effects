@@ -1,5 +1,5 @@
 import { LogoScreen } from "./app/screens/LogoScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(LogoScreen, {
   background: "transparent",

@@ -1,5 +1,5 @@
 import { FlightSimulationScreen } from "./app/screens/FlightSimulationScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(FlightSimulationScreen, {
   background: "transparent",

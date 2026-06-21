@@ -1,5 +1,5 @@
 import { FpvBlueprintBgScreen } from "./app/screens/FpvBlueprintBgScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(FpvBlueprintBgScreen, {
   background: 0x050d1a,

@@ -1,5 +1,5 @@
 import { NetworkSurgeScreen } from "./app/screens/NetworkSurgeScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(NetworkSurgeScreen, {
   background: 0x05080f,

@@ -1,5 +1,5 @@
 import { GrassScreen } from "./app/screens/GrassScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(GrassScreen, {
   background: "transparent",

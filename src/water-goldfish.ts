@@ -1,5 +1,5 @@
 import { WaterGoldfishScreen } from "./app/screens/WaterGoldfishScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(WaterGoldfishScreen, {
   background: 0x010816,

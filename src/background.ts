@@ -1,5 +1,5 @@
 import { BackgroundScreen } from "./app/screens/BackgroundScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(BackgroundScreen, {
   background: 0x11111b,

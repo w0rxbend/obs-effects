@@ -1,5 +1,5 @@
 import { RainbowLightningRingCamScreen } from "./app/screens/RainbowLightningRingCamScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(RainbowLightningRingCamScreen, {
   background: "transparent",

@@ -1,5 +1,5 @@
 import { DarkFluidSwirlScreen } from "./app/screens/DarkFluidSwirlScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(DarkFluidSwirlScreen, {
   background: 0x12141e,

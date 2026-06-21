@@ -1,5 +1,5 @@
 import { BlackHoleCamScreen } from "./app/screens/BlackHoleCamScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(BlackHoleCamScreen, {
   background: "transparent",

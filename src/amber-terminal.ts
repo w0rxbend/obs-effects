@@ -1,5 +1,5 @@
 import { AmberTerminalScreen } from "./app/screens/AmberTerminalScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(AmberTerminalScreen, {
   background: 0x060300,

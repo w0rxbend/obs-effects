@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { FBXLoader } from "three/addons/loaders/FBXLoader.js";
-import { obsAudio } from "./lib/obsAudio";
+import { obsAudio } from "./lib";
 
 // Renderer
 const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });

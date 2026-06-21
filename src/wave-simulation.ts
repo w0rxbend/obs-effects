@@ -1,5 +1,5 @@
 import { WaveSimulationScreen } from "./app/screens/WaveSimulationScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(WaveSimulationScreen, {
   background: 0x050a14,

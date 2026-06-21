@@ -1,5 +1,5 @@
 import { MagneticFieldScreen } from "./app/screens/MagneticFieldScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(MagneticFieldScreen, {
   background: "transparent",

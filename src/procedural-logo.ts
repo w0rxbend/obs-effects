@@ -1,5 +1,5 @@
 import { ProceduralLogoScreen } from "./app/screens/ProceduralLogoScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(ProceduralLogoScreen, {
   background: "transparent",

@@ -1,5 +1,5 @@
 import { PhysicsParticlesScreen } from "./app/screens/PhysicsParticlesScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(PhysicsParticlesScreen, {
   background: 0x11111b,

@@ -1,5 +1,5 @@
 import { NeonStarburstScreen } from "./app/screens/NeonStarburstScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(NeonStarburstScreen, {
   background: 0x000000,

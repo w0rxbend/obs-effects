@@ -1,5 +1,5 @@
 import { HexLayerCamScreen } from "./app/screens/HexLayerCamScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(HexLayerCamScreen, {
   background: "transparent",

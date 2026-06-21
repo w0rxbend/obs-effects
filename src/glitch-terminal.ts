@@ -1,5 +1,5 @@
 import { GlitchTerminalScreen } from "./app/screens/GlitchTerminalScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(GlitchTerminalScreen, {
   background: 0x000000,

@@ -1,5 +1,5 @@
 import { JapaneseTempleLofiScreen } from "./app/screens/JapaneseTempleLofiScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(JapaneseTempleLofiScreen, {
   background: 0x020510,

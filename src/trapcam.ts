@@ -1,5 +1,5 @@
 import { TrapCamScreen } from "./app/screens/TrapCamScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(TrapCamScreen, {
   background: "transparent",

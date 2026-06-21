@@ -1,5 +1,5 @@
 import { DottedMeshScreen } from "./app/screens/DottedMeshScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(DottedMeshScreen, {
   background: "#181825",

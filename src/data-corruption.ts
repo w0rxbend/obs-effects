@@ -1,5 +1,5 @@
 import { DataCorruptionScreen } from "./app/screens/DataCorruptionScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(DataCorruptionScreen, {
   backgroundAlpha: 0,

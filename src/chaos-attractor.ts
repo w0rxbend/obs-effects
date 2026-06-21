@@ -1,5 +1,5 @@
 import { ChaosAttractorScreen } from "./app/screens/ChaosAttractorScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(ChaosAttractorScreen, {
   background: 0x11111b,

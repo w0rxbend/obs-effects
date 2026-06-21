@@ -1,5 +1,5 @@
 import { FlowFieldScreen } from "./app/screens/FlowFieldScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(FlowFieldScreen, {
   background: 0x11111b,

@@ -1,5 +1,5 @@
 import { MusicBreakScreen } from "./app/screens/MusicBreakScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(MusicBreakScreen, {
   background: "transparent",

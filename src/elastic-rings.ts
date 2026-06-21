@@ -1,5 +1,5 @@
 import { ElasticRingsScreen } from "./app/screens/ElasticRingsScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(ElasticRingsScreen, {
   background: "transparent",

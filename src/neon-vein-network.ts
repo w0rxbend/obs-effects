@@ -1,5 +1,5 @@
 import { NeonVeinNetworkScreen } from "./app/screens/NeonVeinNetworkScreen";
-import { createPage } from "./lib/createPage";
+import { createPage } from "./lib";
 
 createPage(NeonVeinNetworkScreen, {
   background: 0x000000,
