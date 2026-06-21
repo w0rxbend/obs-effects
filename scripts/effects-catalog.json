@@ -20,6 +20,11 @@
       "tags": ["Shader", "Silk", "Cinematic", "Fluid"]
     },
     {
+      "href": "razer-aether-drift.html",
+      "category": "Backgrounds",
+      "tags": ["Shader", "Razer", "Toxic", "Green", "Atmospheric", "Silk"]
+    },
+    {
       "href": "ai-character-final.html",
       "category": "3D",
       "tags": [
@@ -84,6 +89,11 @@
       "tags": ["Physics", "Loop"]
     },
     {
+      "href": "audio-reactive-black-blob.html",
+      "category": "Audio Visualizers",
+      "tags": ["Audio-Reactive", "Character", "Blob", "OBS", "Emotion"]
+    },
+    {
       "href": "audio-flow-turbulence.html",
       "category": "Backgrounds",
       "tags": [
@@ -109,6 +119,16 @@
         "Particle",
         "Tech"
       ]
+    },
+    {
+      "href": "audio-waveform.html",
+      "category": "Audio Visualizers",
+      "tags": ["Audio-Reactive", "Waveform", "Visualizer", "OBS", "Overlay"]
+    },
+    {
+      "href": "audio-waveform-razer.html",
+      "category": "Audio Visualizers",
+      "tags": ["Audio-Reactive", "Waveform", "Razer", "Toxic", "Overlay"]
     },
     {
       "href": "aurora-borealis.html",
@@ -346,6 +366,36 @@
       "tags": ["Lines", "Neon", "Looping", "Parallax"]
     },
     {
+      "href": "razer-diagonal-streaks.html",
+      "category": "Audio Visualizers",
+      "tags": ["Audio-Reactive", "OBS", "Razer", "Toxic", "Green", "Lines"]
+    },
+    {
+      "href": "cyan-diagonal-streaks.html",
+      "category": "Audio Visualizers",
+      "tags": ["Audio-Reactive", "OBS", "Cyan", "Neon", "Lines"]
+    },
+    {
+      "href": "magenta-diagonal-streaks.html",
+      "category": "Audio Visualizers",
+      "tags": ["Audio-Reactive", "OBS", "Magenta", "Neon", "Lines"]
+    },
+    {
+      "href": "amber-diagonal-streaks.html",
+      "category": "Audio Visualizers",
+      "tags": ["Audio-Reactive", "OBS", "Amber", "Orange", "Lines"]
+    },
+    {
+      "href": "ultraviolet-diagonal-streaks.html",
+      "category": "Audio Visualizers",
+      "tags": ["Audio-Reactive", "OBS", "Purple", "Cyan", "Lines"]
+    },
+    {
+      "href": "whiteout-diagonal-streaks.html",
+      "category": "Audio Visualizers",
+      "tags": ["Audio-Reactive", "OBS", "White", "Ice", "Lines"]
+    },
+    {
       "href": "digital-fluid-ink.html",
       "category": "Backgrounds",
       "tags": ["Fluid", "Shader", "Artistic"]
@@ -386,6 +436,21 @@
       "href": "drone-visualization.html",
       "category": "3D",
       "tags": ["Three.js", "GLB", "Drone", "Transparent", "Overlay"]
+    },
+    {
+      "href": "three-factory-init-fail.html",
+      "category": "Development Fixtures",
+      "tags": ["Three.js", "Fixture", "Failure", "Diagnostics"]
+    },
+    {
+      "href": "three-factory-frame-fail.html",
+      "category": "Development Fixtures",
+      "tags": ["Three.js", "Fixture", "Failure", "Diagnostics"]
+    },
+    {
+      "href": "three-factory-loader-fail.html",
+      "category": "Development Fixtures",
+      "tags": ["Three.js", "Fixture", "Failure", "Diagnostics"]
     },
     {
       "href": "eclipse-glow.html",
@@ -715,6 +780,11 @@
       "href": "halftone-fade.html",
       "category": "Backgrounds",
       "tags": ["Halftone", "Dots", "Monochrome", "Fade", "Minimal", "Abstract"]
+    },
+    {
+      "href": "razer-halftone-fade.html",
+      "category": "Backgrounds",
+      "tags": ["Halftone", "Dots", "Razer", "Toxic", "Green", "Fade"]
     },
     {
       "href": "halftone-gradient.html",

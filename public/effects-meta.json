@@ -67,6 +67,15 @@
     "createdAt": "2026-05-17T09:15:40+03:00"
   },
   {
+    "slug": "amber-diagonal-streaks",
+    "title": "Amber Diagonal Streaks",
+    "href": "amber-diagonal-streaks.html",
+    "category": "Audio Visualizers",
+    "tags": ["audio-reactive", "obs", "amber", "orange", "lines"],
+    "description": "",
+    "createdAt": "2026-06-21T11:41:28.153Z"
+  },
+  {
     "slug": "amber-terminal",
     "title": "Amber Terminal",
     "href": "amber-terminal.html",
@@ -81,7 +90,7 @@
       "abstract"
     ],
     "description": "",
-    "createdAt": "2026-06-20T15:14:23.844Z"
+    "createdAt": "2026-06-21T00:30:31+03:00"
   },
   {
     "slug": "ambient-energy",
@@ -198,6 +207,33 @@
     ],
     "description": "Audio-reactive neural network visualization with pulsing nodes, signal paths, and machine-learning interface energy.",
     "createdAt": "2026-05-17T01:42:36+03:00"
+  },
+  {
+    "slug": "audio-reactive-black-blob",
+    "title": "Audio Reactive Black Blob",
+    "href": "audio-reactive-black-blob.html",
+    "category": "Audio Visualizers",
+    "tags": ["audio-reactive", "character", "blob", "obs", "emotion"],
+    "description": "",
+    "createdAt": "2026-06-21T09:37:02.830Z"
+  },
+  {
+    "slug": "audio-waveform",
+    "title": "Audio Waveform",
+    "href": "audio-waveform.html",
+    "category": "Audio Visualizers",
+    "tags": ["audio-reactive", "waveform", "visualizer", "obs", "overlay"],
+    "description": "",
+    "createdAt": "2026-06-21T09:01:57.699Z"
+  },
+  {
+    "slug": "audio-waveform-razer",
+    "title": "Audio Waveform Razer",
+    "href": "audio-waveform-razer.html",
+    "category": "Audio Visualizers",
+    "tags": ["audio-reactive", "waveform", "razer", "toxic", "overlay"],
+    "description": "",
+    "createdAt": "2026-06-21T09:26:01.842Z"
   },
   {
     "slug": "aurora-borealis",
@@ -521,7 +557,16 @@
       "abstract"
     ],
     "description": "",
-    "createdAt": "2026-06-20T15:14:28.151Z"
+    "createdAt": "2026-06-21T00:30:31+03:00"
+  },
+  {
+    "slug": "cyan-diagonal-streaks",
+    "title": "Cyan Diagonal Streaks",
+    "href": "cyan-diagonal-streaks.html",
+    "category": "Audio Visualizers",
+    "tags": ["audio-reactive", "obs", "cyan", "neon", "lines"],
+    "description": "",
+    "createdAt": "2026-06-21T11:41:28.153Z"
   },
   {
     "slug": "cyber-marble",
@@ -1233,7 +1278,7 @@
     "category": "Backgrounds",
     "tags": ["fluid", "artistic", "atmospheric"],
     "description": "",
-    "createdAt": "2026-06-20T21:21:08.308Z"
+    "createdAt": "2026-06-21T00:30:31+03:00"
   },
   {
     "slug": "ink-dissolve-black-toxic",
@@ -1242,7 +1287,7 @@
     "category": "Backgrounds",
     "tags": ["fluid", "artistic", "atmospheric"],
     "description": "",
-    "createdAt": "2026-06-20T21:20:09.531Z"
+    "createdAt": "2026-06-21T00:30:31+03:00"
   },
   {
     "slug": "ink-dissolve-blue-black",
@@ -1251,7 +1296,7 @@
     "category": "Backgrounds",
     "tags": ["fluid", "artistic", "atmospheric"],
     "description": "",
-    "createdAt": "2026-06-20T21:23:41.712Z"
+    "createdAt": "2026-06-21T00:30:31+03:00"
   },
   {
     "slug": "ink-dissolve-indigo",
@@ -1260,7 +1305,7 @@
     "category": "Backgrounds",
     "tags": ["fluid", "artistic", "atmospheric"],
     "description": "",
-    "createdAt": "2026-06-20T21:24:39.980Z"
+    "createdAt": "2026-06-21T00:30:31+03:00"
   },
   {
     "slug": "ink-dissolve-razer",
@@ -1269,7 +1314,7 @@
     "category": "Backgrounds",
     "tags": ["fluid", "artistic", "atmospheric"],
     "description": "",
-    "createdAt": "2026-06-20T21:19:18.345Z"
+    "createdAt": "2026-06-21T00:30:31+03:00"
   },
   {
     "slug": "ink-dissolve-red-black",
@@ -1278,7 +1323,7 @@
     "category": "Backgrounds",
     "tags": ["fluid", "artistic", "atmospheric"],
     "description": "",
-    "createdAt": "2026-06-20T21:22:05.962Z"
+    "createdAt": "2026-06-21T00:30:31+03:00"
   },
   {
     "slug": "ink-dissolve-toxic",
@@ -1287,7 +1332,7 @@
     "category": "Backgrounds",
     "tags": ["fluid", "artistic", "atmospheric"],
     "description": "",
-    "createdAt": "2026-06-20T21:19:18.296Z"
+    "createdAt": "2026-06-21T00:30:31+03:00"
   },
   {
     "slug": "ink-in-water",
@@ -1432,6 +1477,15 @@
     "tags": ["brand", "loop"],
     "description": "",
     "createdAt": "2026-04-16T02:09:21+03:00"
+  },
+  {
+    "slug": "magenta-diagonal-streaks",
+    "title": "Magenta Diagonal Streaks",
+    "href": "magenta-diagonal-streaks.html",
+    "category": "Audio Visualizers",
+    "tags": ["audio-reactive", "obs", "magenta", "neon", "lines"],
+    "description": "",
+    "createdAt": "2026-06-21T11:41:28.153Z"
   },
   {
     "slug": "magenta-dot-flow",
@@ -1983,6 +2037,33 @@
     "createdAt": "2026-06-19T18:57:59+03:00"
   },
   {
+    "slug": "razer-aether-drift",
+    "title": "Razer Aether Drift",
+    "href": "razer-aether-drift.html",
+    "category": "Backgrounds",
+    "tags": ["shader", "razer", "toxic", "green", "atmospheric", "silk"],
+    "description": "",
+    "createdAt": "2026-06-21T12:32:25.427Z"
+  },
+  {
+    "slug": "razer-diagonal-streaks",
+    "title": "Razer Diagonal Streaks",
+    "href": "razer-diagonal-streaks.html",
+    "category": "Audio Visualizers",
+    "tags": ["audio-reactive", "obs", "razer", "toxic", "green", "lines"],
+    "description": "",
+    "createdAt": "2026-06-21T11:41:28.153Z"
+  },
+  {
+    "slug": "razer-halftone-fade",
+    "title": "Razer Halftone Fade",
+    "href": "razer-halftone-fade.html",
+    "category": "Backgrounds",
+    "tags": ["halftone", "dots", "razer", "toxic", "green", "fade"],
+    "description": "",
+    "createdAt": "2026-06-21T11:36:41.632Z"
+  },
+  {
     "slug": "razer-toxic-marble",
     "title": "Razer Toxic Marble",
     "href": "razer-toxic-marble.html",
@@ -2015,7 +2096,7 @@
       "abstract"
     ],
     "description": "",
-    "createdAt": "2026-06-20T15:14:31.936Z"
+    "createdAt": "2026-06-21T00:30:31+03:00"
   },
   {
     "slug": "retro-screen-filter",
@@ -2349,6 +2430,33 @@
     "createdAt": "2026-06-20T17:59:20+03:00"
   },
   {
+    "slug": "three-factory-frame-fail",
+    "title": "Three Factory Frame Fail",
+    "href": "three-factory-frame-fail.html",
+    "category": "Development Fixtures",
+    "tags": ["three.js", "fixture", "failure", "diagnostics"],
+    "description": "",
+    "createdAt": "2026-06-21T11:24:24+03:00"
+  },
+  {
+    "slug": "three-factory-init-fail",
+    "title": "Three Factory Init Fail",
+    "href": "three-factory-init-fail.html",
+    "category": "Development Fixtures",
+    "tags": ["three.js", "fixture", "failure", "diagnostics"],
+    "description": "",
+    "createdAt": "2026-06-21T11:24:24+03:00"
+  },
+  {
+    "slug": "three-factory-loader-fail",
+    "title": "Three Factory Loader Fail",
+    "href": "three-factory-loader-fail.html",
+    "category": "Development Fixtures",
+    "tags": ["three.js", "fixture", "failure", "diagnostics"],
+    "description": "",
+    "createdAt": "2026-06-21T11:24:24+03:00"
+  },
+  {
     "slug": "three-ring-cam-border",
     "title": "Three Ring Cam Border",
     "href": "three-ring-cam-border.html",
@@ -2472,6 +2580,15 @@
     "tags": ["mesh", "flag"],
     "description": "",
     "createdAt": "2026-05-01T21:56:08+03:00"
+  },
+  {
+    "slug": "ultraviolet-diagonal-streaks",
+    "title": "Ultraviolet Diagonal Streaks",
+    "href": "ultraviolet-diagonal-streaks.html",
+    "category": "Audio Visualizers",
+    "tags": ["audio-reactive", "obs", "purple", "cyan", "lines"],
+    "description": "",
+    "createdAt": "2026-06-21T11:41:28.153Z"
   },
   {
     "slug": "vector-field-bg",
@@ -2598,6 +2715,15 @@
     "tags": ["3d", "globe", "mesh", "fluid", "blue", "particle", "topography"],
     "description": "Rotating latitude and longitude mesh sphere with layered wave displacement, depth-aware dots, and calm topographic surface motion.",
     "createdAt": "2026-04-24T19:48:12+03:00"
+  },
+  {
+    "slug": "whiteout-diagonal-streaks",
+    "title": "Whiteout Diagonal Streaks",
+    "href": "whiteout-diagonal-streaks.html",
+    "category": "Audio Visualizers",
+    "tags": ["audio-reactive", "obs", "white", "ice", "lines"],
+    "description": "",
+    "createdAt": "2026-06-21T11:41:28.153Z"
   },
   {
     "slug": "wireframe-icosphere",

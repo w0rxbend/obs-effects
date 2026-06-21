@@ -1,5 +1,6 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
+import { obsAudio } from "../../lib";
 
 // ── Diagonal Streaks ─────────────────────────────────────────────────────────
 // Endless field of rounded "speed line" capsules drifting along a fixed
@@ -15,6 +16,11 @@ const PALETTE = [
   0x2dd4bf, // teal
 ];
 
+interface StreakPalette {
+  colors: number[];
+  background: number;
+}
+
 interface Streak {
   u: number; // position along the motion axis
   w: number; // lane offset across the motion axis (fixed)
@@ -25,6 +31,7 @@ interface Streak {
   speed: number; // px/sec along u
   twinklePhase: number;
   twinkleRate: number;
+  depth: number;
 }
 
 export class DiagonalStreaksScreen extends Container {
@@ -48,14 +55,44 @@ export class DiagonalStreaksScreen extends Container {
   private wSpan = 1;
   private margin = 400;
   private seeded = false;
+  private time = 0;
+  private beatPulse = 0;
 
   constructor() {
     super();
     this.addChild(this.gfx);
+    if (this.audioReactive) void obsAudio.connect();
   }
 
   public async show(): Promise<void> {}
   public async hide(): Promise<void> {}
+
+  protected get palette(): StreakPalette {
+    return {
+      colors: PALETTE,
+      background: 0x05060a,
+    };
+  }
+
+  protected get streakCount(): number {
+    return 320;
+  }
+
+  protected get audioReactive(): boolean {
+    return false;
+  }
+
+  protected get speedScale(): number {
+    return 1;
+  }
+
+  protected get widthScale(): number {
+    return 1;
+  }
+
+  protected get alphaScale(): number {
+    return 1;
+  }
 
   public resize(width: number, height: number): void {
     // Longest possible streak is the diagonal-ish; pad the oriented bounds so
@@ -100,7 +137,8 @@ export class DiagonalStreaksScreen extends Container {
 
   private seed(): void {
     this.streaks.length = 0;
-    const count = 320;
+    const count = this.streakCount;
+    const colors = this.palette.colors;
     for (let i = 0; i < count; i++) {
       // Three parallax depth bands: far (slow/thin/dim) → near (fast/bold).
       const depth = Math.random();
@@ -113,11 +151,12 @@ export class DiagonalStreaksScreen extends Container {
         w: this.wMin + Math.random() * this.wSpan,
         len,
         width,
-        color: PALETTE[(Math.random() * PALETTE.length) | 0],
+        color: colors[(Math.random() * colors.length) | 0],
         alpha,
         speed,
         twinklePhase: Math.random() * Math.PI * 2,
         twinkleRate: 0.4 + Math.random() * 1.4,
+        depth,
       });
     }
     // Draw nearer (faster) streaks on top.
@@ -126,8 +165,31 @@ export class DiagonalStreaksScreen extends Container {
 
   public update(ticker: Ticker): void {
     const dt = Math.min(ticker.deltaMS, 50) / 1000;
+    this.time += dt;
+    if (this.audioReactive) obsAudio.update(dt);
+
+    const level = this.audioReactive ? obsAudio.level : 0;
+    const bass = this.audioReactive ? obsAudio.bass : 0;
+    const mid = this.audioReactive ? obsAudio.mid : 0;
+    const high = this.audioReactive ? obsAudio.high : 0;
+    if (this.audioReactive && obsAudio.beat) this.beatPulse = 1;
+    this.beatPulse = Math.max(0, this.beatPulse - dt * 4.8);
+
+    const speedBoost = this.audioReactive
+      ? 1 + level * 1.4 + bass * 1.1 + this.beatPulse * 1.2
+      : 1;
+    const widthBoost = this.audioReactive ? 1 + bass * 0.75 : 1;
+    const alphaBoost = this.audioReactive ? 1 + mid * 0.75 + high * 0.45 : 1;
+    const laneJitter = this.audioReactive
+      ? Math.sin(this.time * (3.2 + high * 4)) * high * 18
+      : 0;
+
     const g = this.gfx;
     g.clear();
+    g.rect(0, 0, window.innerWidth, window.innerHeight).fill({
+      color: this.palette.background,
+      alpha: this.audioReactive ? 0.16 + level * 0.22 : 0,
+    });
 
     const uEnd = this.uMin + this.uSpan;
     const halfU = this.ux;
@@ -135,30 +197,126 @@ export class DiagonalStreaksScreen extends Container {
 
     for (const s of this.streaks) {
       // Drift down-left along the motion axis, wrapping seamlessly.
-      s.u -= s.speed * dt;
+      s.u -= s.speed * this.speedScale * speedBoost * dt;
       if (s.u < this.uMin) s.u += this.uSpan;
       else if (s.u > uEnd) s.u -= this.uSpan;
 
-      s.twinklePhase += s.twinkleRate * dt;
+      s.twinklePhase += s.twinkleRate * (1 + high * 2.2) * dt;
 
-      const cx = s.u * this.ux + s.w * this.wx;
-      const cy = s.u * this.uy + s.w * this.wy;
-      const h = s.len * 0.5;
+      const audioWave =
+        this.audioReactive && s.depth > 0.42
+          ? Math.sin(this.time * (2.2 + s.depth * 4.5) + s.twinklePhase) *
+            laneJitter *
+            s.depth
+          : 0;
+      const cx = s.u * this.ux + (s.w + audioWave) * this.wx;
+      const cy = s.u * this.uy + (s.w + audioWave) * this.wy;
+      const h =
+        s.len * (0.5 + (this.audioReactive ? bass * 0.18 * s.depth : 0));
       const x1 = cx - halfU * h;
       const y1 = cy - halfV * h;
       const x2 = cx + halfU * h;
       const y2 = cy + halfV * h;
 
-      const flicker = 0.85 + 0.15 * Math.sin(s.twinklePhase);
+      const flicker =
+        0.82 +
+        0.18 * Math.sin(s.twinklePhase) +
+        (this.audioReactive ? high * 0.22 + this.beatPulse * 0.2 : 0);
 
       g.moveTo(x1, y1)
         .lineTo(x2, y2)
         .stroke({
-          width: s.width,
+          width: s.width * this.widthScale * widthBoost,
           color: s.color,
-          alpha: s.alpha * flicker,
+          alpha: Math.min(1, s.alpha * this.alphaScale * alphaBoost * flicker),
           cap: "round",
         });
     }
+  }
+}
+
+export class RazerDiagonalStreaksScreen extends DiagonalStreaksScreen {
+  protected override get palette(): StreakPalette {
+    return {
+      background: 0x000800,
+      colors: [0x44ff00, 0x7cff2a, 0x00ff66, 0xb6ff00, 0x1eff00],
+    };
+  }
+
+  protected override get audioReactive(): boolean {
+    return true;
+  }
+}
+
+export class CyanDiagonalStreaksScreen extends DiagonalStreaksScreen {
+  protected override get palette(): StreakPalette {
+    return {
+      background: 0x02080d,
+      colors: [0x00e5ff, 0x4df8ff, 0x0a84ff, 0x80ffea, 0xffffff],
+    };
+  }
+
+  protected override get audioReactive(): boolean {
+    return true;
+  }
+}
+
+export class MagentaDiagonalStreaksScreen extends DiagonalStreaksScreen {
+  protected override get palette(): StreakPalette {
+    return {
+      background: 0x0b0209,
+      colors: [0xff2bd6, 0xff007a, 0xff6bd5, 0xb026ff, 0xffffff],
+    };
+  }
+
+  protected override get audioReactive(): boolean {
+    return true;
+  }
+}
+
+export class AmberDiagonalStreaksScreen extends DiagonalStreaksScreen {
+  protected override get palette(): StreakPalette {
+    return {
+      background: 0x0d0600,
+      colors: [0xffb000, 0xff6a00, 0xfff066, 0xff2f00, 0xffffff],
+    };
+  }
+
+  protected override get audioReactive(): boolean {
+    return true;
+  }
+}
+
+export class UltravioletDiagonalStreaksScreen extends DiagonalStreaksScreen {
+  protected override get palette(): StreakPalette {
+    return {
+      background: 0x05030d,
+      colors: [0x9b5cff, 0x6d28d9, 0xf0abfc, 0x38bdf8, 0xffffff],
+    };
+  }
+
+  protected override get audioReactive(): boolean {
+    return true;
+  }
+
+  protected override get streakCount(): number {
+    return 360;
+  }
+}
+
+export class WhiteoutDiagonalStreaksScreen extends DiagonalStreaksScreen {
+  protected override get palette(): StreakPalette {
+    return {
+      background: 0x030506,
+      colors: [0xffffff, 0xd8fbff, 0x9ee7ff, 0x7dd3fc, 0xe5e7eb],
+    };
+  }
+
+  protected override get audioReactive(): boolean {
+    return true;
+  }
+
+  protected override get alphaScale(): number {
+    return 0.82;
   }
 }

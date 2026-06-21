@@ -16,6 +16,14 @@ export class HalftoneFadeScreen extends Container {
   private h = 1080;
   private time = 0;
 
+  protected get backgroundColor(): number {
+    return 0x000000;
+  }
+
+  protected get dotColor(): number {
+    return DOT_COLOR;
+  }
+
   constructor() {
     super();
     this.addChild(this.gfx);
@@ -59,7 +67,7 @@ export class HalftoneFadeScreen extends Container {
   private draw(): void {
     const g = this.gfx;
     g.clear();
-    g.rect(0, 0, this.w, this.h).fill({ color: 0x000000 });
+    g.rect(0, 0, this.w, this.h).fill({ color: this.backgroundColor });
 
     const cols = Math.ceil(this.w / SPACING) + 1;
     const rows = Math.ceil(this.h / SPACING) + 1;
@@ -78,6 +86,6 @@ export class HalftoneFadeScreen extends Container {
         if (r > 0.4) g.circle(x, y, r);
       }
     }
-    g.fill({ color: DOT_COLOR });
+    g.fill({ color: this.dotColor });
   }
 }

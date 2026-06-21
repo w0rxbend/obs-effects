@@ -148,6 +148,33 @@ void main() {
   fragColor = vec4(max(col, vec3(0.0)), 1.0);
 }`;
 
+const RAZER_AETHER_FRAG = AETHER_FRAG.replace(
+  `vec3 deep = vec3(0.010, 0.014, 0.032);
+  vec3 abyss = vec3(0.043, 0.073, 0.150);
+  vec3 teal = vec3(0.000, 0.430, 0.520);
+  vec3 violet = vec3(0.470, 0.160, 0.640);
+  vec3 ember = vec3(1.000, 0.690, 0.400);`,
+  `vec3 deep = vec3(0.000, 0.010, 0.000);
+  vec3 abyss = vec3(0.000, 0.055, 0.014);
+  vec3 teal = vec3(0.000, 0.760, 0.260);
+  vec3 violet = vec3(0.210, 1.000, 0.000);
+  vec3 ember = vec3(0.690, 1.000, 0.000);`,
+)
+  .replace(
+    `col += irid * spec * 0.45;
+  col += vec3(0.90, 0.95, 1.00) * pow(diff, 90.0) * 0.35;`,
+    `col += mix(vec3(0.210, 1.000, 0.000), vec3(0.000, 1.000, 0.560), irid) * spec * 0.42;
+  col += vec3(0.75, 1.00, 0.45) * pow(diff, 90.0) * 0.32;`,
+  )
+  .replace(
+    `col += vec3(0.95, 0.85, 0.70) * dust * 0.5;`,
+    `col += vec3(0.55, 1.00, 0.08) * dust * 0.62;`,
+  )
+  .replace(
+    `col += vec3(0.10, 0.13, 0.22) * exp(-2.1 * length(uv - gpos));`,
+    `col += vec3(0.02, 0.18, 0.04) * exp(-2.1 * length(uv - gpos));`,
+  );
+
 export class AetherDriftScreen extends Container {
   public static assetBundles: string[] = [];
 
@@ -165,7 +192,10 @@ export class AetherDriftScreen extends Container {
     });
 
     const filter = new Filter({
-      glProgram: new GlProgram({ vertex: FILTER_VERT, fragment: AETHER_FRAG }),
+      glProgram: new GlProgram({
+        vertex: FILTER_VERT,
+        fragment: this.fragmentSource,
+      }),
       resources: { aetherUniforms: this.uniforms },
     });
 
@@ -189,5 +219,15 @@ export class AetherDriftScreen extends Container {
     const dt = Math.min(ticker.deltaMS, 50) / 1000;
     this.time += dt;
     this.uniforms.uniforms.uTime = this.time;
+  }
+
+  protected get fragmentSource(): string {
+    return AETHER_FRAG;
+  }
+}
+
+export class RazerAetherDriftScreen extends AetherDriftScreen {
+  protected override get fragmentSource(): string {
+    return RAZER_AETHER_FRAG;
   }
 }
