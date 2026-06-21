@@ -5,6 +5,13 @@ on:
     branches:
       - main
 
+permissions:
+  contents: write
+
+concurrency:
+  group: docker-image-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
@@ -12,6 +19,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+        with:
+          ref: ${{ github.ref }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v6
@@ -19,10 +28,32 @@ jobs:
           node-version: "25"
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
+
+      - name: Auto-fix lint and formatting
+        run: npm run fix
+
+      - name: Commit auto-fixes
+        run: |
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "No auto-fix changes to commit."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "style(ci): auto-fix lint and formatting"
+          git push
+
+      - name: Run lint
+        run: npm run lint
 
       - name: Run Prettier check
-        run: npx prettier --check .
+        run: npm run format:check
+
+      - name: Build application
+        run: npm run build
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4

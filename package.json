@@ -10,7 +10,11 @@
     "check:effects-meta:fresh": "node scripts/gen-metadata.js --check",
     "test": "npm run test:effects-meta",
     "test:effects-meta": "node scripts/test-effects-meta.js",
+    "fix": "npm run lint:fix && npm run format",
     "lint": "eslint .",
+    "lint:fix": "eslint --fix .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "smoke:three": "node scripts/smoke-three-canaries.js",
     "dev": "vite"
   },
