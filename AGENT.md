@@ -61,7 +61,7 @@ Recorded 2026-06-21. Each row covers the init pattern for one Three.js entry fil
 - Camera: `Persp(fov, near, far)`; `★` = near/far adjusted post-load from bounding box
 - Controls: `Orbit(d=damping)` = OrbitControls, `—` = none
 - Resize: `win` = window "resize" event listener (all files use this)
-- Loop: `rAF+perf` = requestAnimationFrame with performance.now() delta (clamped 0.05s); `rAF+Clock` = requestAnimationFrame with THREE.Clock
+- Loop: `rAF+perf` = requestAnimationFrame with performance.now() delta (clamped 0.05s); `rAF+Clock` = legacy requestAnimationFrame with THREE.Clock in unmigrated entries. In `createThreeScene()`, `loop: "clock"` is only a compatibility alias for the clamped `performance.now()` path.
 - Post: `EC(RP+OP)` = EffectComposer → RenderPass → OutputPass; `—` = none
 - Assets: loader abbreviations (GLTF/FBX/Tex), `PMREM` = PMREMGenerator+RoomEnvironment, `proc` = procedural only
 
@@ -88,7 +88,7 @@ Recorded 2026-06-21. Each row covers the init pattern for one Three.js entry fil
 3. **outputColorSpace**: 9 of 13 set SRGBColorSpace; 4 omit it entirely.
 4. **premultipliedAlpha**: Only `energy-orb` sets this to `false`.
 5. **Controls**: 7 files use OrbitControls; 6 use no controls (autonomous camera path or fixed position). Where OrbitControls is present, damping is always enabled (0.06–0.08) and pan is always disabled (except `discord-robot` which doesn't set `enablePan`).
-6. **Loop timing**: `rAF+perf` (performance.now delta, clamped 0.05s) is used by files with model loading and complex rigs; `rAF+Clock` (THREE.Clock) is used by simpler or baked-animation files.
+6. **Loop timing**: `rAF+perf` (performance.now delta, clamped 0.05s) is used by files with model loading and complex rigs; legacy `rAF+Clock` was used by simpler or baked-animation files. Migrated `createThreeScene()` pages may keep `loop: "clock"` for compatibility, but the factory no longer uses deprecated `THREE.Clock`.
 7. **Post-processing**: Only `discord-robot` uses EffectComposer (RenderPass + OutputPass). Resize handler must also resize the composer RT.
 8. **Asset loaders**: GLTFLoader (7 files), FBXLoader (3 files — gunan, zombie, city), procedural only (3 files — jelly-blob, hex-water, discord-robot). 4 files additionally use PMREMGenerator + RoomEnvironment for IBL.
 9. **Extra DOM**: 10 of 13 inject a loading overlay. 7 inject a progress bar inside the overlay. Only 4 (dji-fpv, gunan, zombie, meshy-post1) add cursor grab/grabbing handlers.
@@ -102,17 +102,25 @@ Recorded 2026-06-21. Each row covers the init pattern for one Three.js entry fil
 - `camera: { fov, near, far }` is required. The factory exposes the live `camera` through `ThreeSceneContext` because many model pages adjust position, near, or far after asset bounds are known.
 - Renderer variants remain explicit options: `shadowMap?: false | "PCF" | "PCFSoft"`, `toneMapping`, `toneMappingExposure`, `outputColorSpace`, and `premultipliedAlpha`.
 - `controls: "orbit"` creates `OrbitControls` with damping enabled and applies only provided `orbitOptions`. `controls: "none"` or omission leaves camera movement entirely page-owned.
-- `loop?: "performance" | "clock"` selects the delta source. Both paths clamp `dt` to `0.05`, update optional audio, update orbit controls, call `onFrame(ctx, dt)`, then render through the composer if present or directly through the renderer.
+- `loop?: "performance" | "clock"` preserves the public option shape, but `"clock"` is now only a compatibility alias. The factory always uses the clamped `performance.now()` delta path and no longer uses deprecated `THREE.Clock`.
 - `postProcessing: true` dynamically imports `EffectComposer`, `RenderPass`, and `OutputPass`, creates the default `RenderPass -> OutputPass` chain, stores it as `ctx.composer`, and uses `composer.render()` in the loop. Pages needing custom passes can mutate `ctx.composer` in `onInit`; do not statically import post-processing helpers for pages that do not opt in.
 - `ibl: true` dynamically imports `RoomEnvironment`, builds a temporary `PMREMGenerator`, assigns `scene.environment`, and disposes the PMREM generator. Keep this optional so non-IBL pages do not pay the extra module cost.
-- `audio: true` is a convenience only: it calls `obsAudio.connect()` and updates the shared singleton each frame. `obsAudio` is not included in `ThreeSceneContext`; pages that read `level`, `bass`, `mid`, or `treble` import `{ obsAudio }` from `"./lib"`.
+- `audio: true` is a convenience only: after successful initialization it calls `obsAudio.connect()` and updates the shared singleton each frame. `obsAudio` is not included in `ThreeSceneContext`; pages that read `level`, `bass`, `mid`, or `treble` import `{ obsAudio }` from `"./lib"`.
 - Default resize handling always updates the renderer size, camera aspect/projection, and default composer size. `onResize(renderer, camera, composer)` runs only after successful initialization and should resize page-owned render targets, overlays, or custom passes only.
-- Async initialization failures are explicit. If `postProcessing`, `ibl`, or `onInit` rejects, the factory logs a `[createThreeScene] initialization failed` error, adds a visible diagnostic overlay, rethrows the error, and does not start the render loop. The default resize listener is registered before initialization so factory-owned renderer/camera sizing remains deterministic; page-owned `onResize` is gated until initialization succeeds.
+- `createThreeScene()` returns a `Promise<ThreeSceneHandle>` with `destroy(): void`. Destroying stops the render loop, removes the factory resize listener, disposes orbit controls, composer, and renderer when present, removes the factory canvas, and removes the factory diagnostic overlay owned by that scene.
+- Initialization failures are explicit. Renderer creation/setup, dynamic optional imports, and `onInit` all run inside factory error handling. On failure the factory logs `[createThreeScene] initialization failed`, shows one replaceable factory diagnostic overlay, removes the resize listener, disposes controls/composer/renderer where present, removes the factory canvas if appended, rethrows, and does not connect audio or start the render loop.
+- Frame failures are contained. If `onFrame` throws, the factory logs `[createThreeScene] frame failed`, shows the same single replaceable diagnostic overlay with frame-failure text, and stops scheduling additional animation frames.
 - Three.js migrations that use `GLTFLoader`, `FBXLoader`, `TextureLoader`, or similar asset loaders must return or await the loader Promise from `onInit` by using `loadAsync()` or an explicit Promise wrapper around callback-only loaders. Do not leave callback-only loader work inside `onInit`; it bypasses factory diagnostics and starts the render loop before assets have either loaded or failed.
 
-### Three.js Factory Smoke Results
+### Three.js Factory Smoke Workflow
 
-Recorded 2026-06-21 against a local Vite server at `http://127.0.0.1:5173/` using a one-off Playwright 1.61 Chromium smoke runner via `npm exec --yes --package=playwright`.
+Run the manual Three.js browser smoke with:
 
-- `discord-robot.html`: rendered a nonblank canvas at `1280x720` (`mean=0.0187902`, `stddev=0.116916`) and after resize to `960x540` (`mean=0.018656`, `stddev=0.116398`). The browser loaded the dynamic `EffectComposer` post-processing resource, and the canvas render size, CSS size, and viewport aspect stayed coherent at both viewports.
-- `dji-fpv.html`: loaded the local DJI GLB successfully and rendered a nonblank canvas at `1280x720` (`mean=0.008072`, `stddev=0.0547095`) and after resize to `960x540` (`mean=0.00765624`, `stddev=0.0500758`). No factory diagnostic overlay appeared; the page-specific loader overlay reached the loaded state and was removed.
+```bash
+npm run smoke:three
+```
+
+The script uses `BASE_URL` when provided; otherwise it starts a local Vite server. It is optional/manual and is not part of `npm run build`.
+
+- Canary pages: opens `discord-robot.html` and `dji-fpv.html`, verifies each page has a nonblank canvas at `1280x720` and `960x540`, checks canvas CSS/render-size coherence, confirms `discord-robot.html` requests the dynamic `EffectComposer` resource, and confirms `dji-fpv.html` reaches loaded state with its page-specific loading overlay removed.
+- Failure fixtures: opens `three-factory-init-fail.html`, `three-factory-frame-fail.html`, and `three-factory-loader-fail.html`. These verify initialization diagnostics without render-loop start, frame diagnostics with stopped scheduling, loader failure diagnostics, canvas cleanup after initialization failure, and preservation of the loader fixture's page-specific failure label.

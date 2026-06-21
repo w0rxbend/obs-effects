@@ -27,3 +27,5 @@
 [pattern] Shared factories should defer external side effects, such as audio socket connections, until awaited initialization succeeds so failed pages do not leave background activity running.
 [pattern] Visual browser smoke for rendering factories should be scriptable and repeatable; one-off screenshot metrics prove a moment, but a checked-in runner protects future migration batches.
 [learning] Three.js release changes can deprecate core timing helpers; hide timing behind the factory contract so pages are not coupled to `THREE.Clock` or any specific upstream timer primitive.
+[anti-pattern] Root-level HTML test fixtures are indistinguishable from effect pages to metadata checks based on tracked root `*.html`; keep smoke fixtures under a non-root path or add an explicit tested exclusion.
+[learning] Canvas smoke tests should combine variance with visible-pixel or alpha/luma thresholds; variance-only nonblank checks can false-fail legitimate uniform renders.

@@ -90,19 +90,31 @@ Shared code should own:
 - [x] Committed the checkpoint in `e962b04 refactor(three): harden canary scene contract`.
 - [x] Reviewer validation passed: `npm run lint`, `npm run build`, and an independent CLI screenshot smoke of both canaries at `1280x720` and `960x540`.
 
+### Iteration 13 (2026-06-21): Three.js lifecycle and smoke runner draft
+- [x] Hardened `src/lib/createThreeScene.ts` lifecycle behavior:
+  - Renderer creation/setup now runs inside the initialization `try` path.
+  - Failed initialization removes the factory resize listener and factory canvas, disposes controls/composer/renderer where present, rethrows, and does not start the render loop.
+  - Successful initialization returns `Promise<ThreeSceneHandle>` with `destroy(): void`.
+  - Frame failures use one replaceable factory diagnostic overlay and stop future frame scheduling.
+  - `loop: "clock"` is now documented and implemented as a compatibility alias for the clamped `performance.now()` path, avoiding deprecated `THREE.Clock`.
+- [x] Added `scripts/smoke-three-canaries.js` plus `npm run smoke:three`.
+- [x] Added deterministic smoke fixtures for rejecting `onInit`, throwing `onFrame`, and failing loader initialization.
+- [x] Registered the smoke fixture HTML pages in `vite.config.ts` so Vite can serve/build them.
+- [x] Updated `AGENT.md` with the stabilized factory lifecycle contract and smoke workflow.
+- [x] Reviewer validation passed on the current uncommitted tree: `npm run lint`, `npm run build`, `npm run smoke:three`, and `git diff --check`.
+- [!] The new smoke fixture HTML/TS/script files are still untracked at review time. Because the metadata checker only sees tracked root HTML files, the current build does not prove that committing root-level `three-factory-*.html` fixtures is metadata-safe.
+
 ---
 
 ## Current Findings
 
-- The shared-library guidance drift and `createThreeScene` pilot barrel imports are fixed.
-- The Iteration 10 and 12 Three.js contract changes are committed in `a04e682` and `e962b04`; the old "uncommitted contract work" blocker is resolved.
-- The original canary gate is substantially complete: optional post-processing, IBL, and orbit controls are dynamically imported; DJI model loading now participates in async factory initialization; `obsAudio.connect()` waits until successful init; frame exceptions are caught; and the two pilot pages have browser-smoke evidence.
-- The browser smoke is still a one-off process documented in `AGENT.md`, not a reusable checked-in script. This makes future migration batches vulnerable to unrepeatable or forgotten visual checks.
-- The factory still creates the renderer and registers the resize listener before the initialization `try` block. WebGL renderer creation failures would not get the factory diagnostic overlay, and failed initialization leaves the canvas and resize listener in place.
-- The factory has no lifecycle/dispose contract. This is acceptable for one page load, but it makes failure cleanup, future hot-reload behavior, and automated smoke tests messier than they need to be.
-- Diagnostic overlays are simple and useful, but repeated init/frame failures can append multiple overlays. A single replaceable factory diagnostic element would be cleaner.
-- Browser smoke surfaced a runtime warning from the installed Three.js version: `THREE.Clock` is deprecated in favor of `THREE.Timer`. `loop: "clock"` still works, but broad migration should avoid copying a deprecated timing path.
-- The DJI failure path now rethrows from `loadAsync()`, but it has not been browser-smoked with an intentionally missing/rejecting model URL. The contract is code-reviewed, not yet failure-path smoke-tested.
+- The reusable Three.js smoke runner now exists and passes locally on the current tree. It starts Vite when `BASE_URL` is not provided, opens the two production canaries, checks nonblank canvas output at `1280x720` and `960x540`, checks canvas CSS/render-size coherence, verifies the dynamic `EffectComposer` request, verifies DJI overlay removal, and exercises three deterministic factory failure fixtures.
+- The `createThreeScene()` lifecycle contract is much stronger: renderer setup is diagnosed, failed init cleans up factory-owned browser resources, `destroy()` exists for successful scenes, duplicate diagnostics are replaced instead of appended, and deprecated `THREE.Clock` is no longer used.
+- High-priority checkpoint risk: `three-factory-init-fail.html`, `three-factory-frame-fail.html`, and `three-factory-loader-fail.html` are root-level HTML files but are currently untracked. `scripts/check-effects-meta.js` lists tracked root `*.html` files as effect pages, so adding these files to git as root HTML will likely make `npm run build` fail unless the fixtures are moved under a non-root test path or explicitly excluded from the metadata contract.
+- The smoke runner is optional/manual through `npm run smoke:three`; it is intentionally not part of `npm run build` yet because it depends on browser availability and runtime cost.
+- The smoke runner's nonblank heuristic currently uses alpha/luma standard deviation only. This works for the current canaries, but it can false-fail a legitimate mostly-uniform render; `visibleRatio`, `alphaMean`, or page-specific thresholds would make it more robust before it becomes a broader migration gate.
+- The smoke runner's browser error handling throws directly from Playwright event callbacks. It worked in the reviewer run, but collecting page errors and failing at deterministic checkpoints would produce clearer diagnostics and avoid event-timing surprises.
+- The factory cleanup contract covers factory-owned renderer/control/composer/canvas/listener resources. Page-owned resources created during `onInit` still need page-owned cleanup if future migrated pages allocate custom targets, DOM, or listeners before a later async failure.
 - `createPage()` now handles the original undefined-named-field bug, but `resizeOptions` is still always passed after `extra`, so `extra.resizeOptions` cannot opt out of the 1920x1080 default.
 
 ---
@@ -138,51 +150,35 @@ Shared code should own:
 
 ### Critical
 
-**C1 — Keep broad Three.js migration controlled, not frozen**
+**C0 — Make smoke fixtures metadata-safe before checkpointing**
 
-The initial canary gate has passed for the two pilots. Do not mass-migrate all remaining Three.js pages in one sweep. Migrate in small variance-grouped batches, and require standard validation plus a browser smoke result after each batch.
+Do not commit the current root-level `three-factory-*.html` fixture pages as-is without proving the metadata contract still passes after they are tracked. Preferred fix: move smoke-only fixture HTML under a non-root test path such as `fixtures/three-factory-*.html` or `test-pages/three-factory-*.html`, update `vite.config.ts` and `scripts/smoke-three-canaries.js`, and rerun `npm run build` after staging or otherwise simulating tracked files. Alternative: add an explicit fixture exclusion to the metadata generator/checker contract, with regression coverage so future root effect pages are not accidentally excluded.
+
+**C1 — Checkpoint the lifecycle/smoke work cleanly**
+
+After C0 is resolved, stage the implementation files (`src/lib/createThreeScene.ts`, `scripts/smoke-three-canaries.js`, smoke fixture entry/html files, `package.json`, `package-lock.json`, `vite.config.ts`, `AGENT.md`, and plan/log/memory updates) and commit a non-empty conventional commit. Verify the staged state with `npm run lint`, `npm run build`, `npm run smoke:three`, and `git diff --check --cached` before committing.
+
+**C2 — Keep broad Three.js migration controlled, not frozen**
+
+The canary gate is now close to reusable, but do not mass-migrate all remaining Three.js pages in one sweep. Migrate in small variance-grouped batches, and require standard validation plus a browser smoke result after each batch.
 
 ### High Priority
 
-**H1 — Add a reusable Three.js canary smoke runner**
+**H1 — Harden the reusable smoke runner before broad use**
 
-Turn the one-off Playwright smoke into a checked-in script, for example `scripts/smoke-three-canaries.js`, that:
-- Starts or targets a local Vite server.
-- Opens `discord-robot.html` and `dji-fpv.html`.
-- Verifies a canvas exists and is nonblank.
-- Verifies resize coherence at `1280x720` and `960x540`.
-- Verifies `discord-robot` requests the dynamic composer resource.
-- Verifies `dji-fpv` reaches the loaded state and removes the loading overlay.
+Keep `npm run smoke:three` optional/manual for now, but improve it before using it as the standard migration gate:
+- Make page-error and console-error collection deterministic instead of throwing directly from event callbacks.
+- Improve the nonblank predicate to consider `visibleRatio` and `alphaMean` as well as variance, so uniform-but-visible scenes do not false-fail.
+- Print Vite stderr/stdout on startup failure instead of discarding it.
+- Add a documented `BASE_URL` example for targeting `vite preview` or an already-running dev server.
 
-Keep it optional/manual at first or wire it to a dedicated `npm run smoke:three` script; do not put it in `npm run build` until runtime cost and browser availability are acceptable.
+**H2 — Validate the factory cleanup contract against page-owned resources**
 
-**H2 — Smoke-test factory failure paths**
+Before migrating loader-heavy pages, document or implement a page-owned cleanup convention for resources allocated during `onInit` before a later rejection. A minimal option is an `onDestroy(ctx)` callback or a documented local `try/catch` cleanup pattern for custom DOM overlays, render targets, listeners, and temporary geometries.
 
-Add targeted browser checks for negative paths before broad loader migration:
-- A rejecting `onInit` page or test fixture shows the initialization diagnostic and does not start the render loop.
-- A missing DJI/model-loader URL preserves the page-specific failure label and also trips the factory diagnostic.
-- A throwing `onFrame` shows the frame diagnostic and stops future frame scheduling.
+**H3 — Migrate remaining Three.js entries in small batches**
 
-Prefer a small fixture entry over mutating production URLs at runtime if that keeps the tests deterministic.
-
-**H3 — Tighten `createThreeScene()` lifecycle and cleanup**
-
-Decide and implement the desired contract for:
-- Renderer creation failures before the current `try` block.
-- Resize listener cleanup when initialization rejects.
-- Optional renderer/control/composer disposal after initialization or frame failure.
-- A single replaceable diagnostic overlay instead of appending duplicates.
-- Whether `createThreeScene()` should return a small handle such as `{ destroy(): void }` for tests and future hot reload scenarios.
-
-Keep the behavior simple; this project mostly uses one standalone page per browser source, so cleanup should be pragmatic rather than framework-like.
-
-**H4 — Replace deprecated Three.js clock timing**
-
-The installed Three.js version warns that `THREE.Clock` is deprecated. Replace `loop: "clock"` internals with `THREE.Timer` if it fits the current version, or collapse the factory to the existing `performance.now()` delta path while preserving the `"clock"` option as a compatibility alias. Browser-smoke `discord-robot.html` after this change because it currently uses `loop: "clock"`.
-
-**H5 — Migrate remaining Three.js entries in small batches**
-
-After H1-H4, migrate remaining Three.js files by variance group:
+After C0-C2 and H1 are resolved, migrate remaining Three.js files by variance group:
 - Procedural/no-loader pages: `hex-water-island.ts`
 - GLTF + PMREM pages: `energy-orb.ts`, `ai-character-final.ts`, `ai-character-natural.ts`, `meshy-post1-avatar.ts`, `cyclops-avatar.ts`
 - FBX/texture pages: `gunan-skeleton.ts`, `zombie-fbx.ts`, `city-view.ts`
@@ -190,7 +186,7 @@ After H1-H4, migrate remaining Three.js files by variance group:
 
 For loader pages, return/reject an async initialization Promise; do not leave callback-only loaders inside `onInit`. Run the quality gate and a visual smoke check after each batch. Watch for pages that style `<html>`, use PMREM, or implement custom camera paths.
 
-**H6 — Clarify `createPage()` resize override semantics**
+**H4 — Clarify `createPage()` resize override semantics**
 
 Decide whether the 1920x1080 default is mandatory or overridable:
 - If mandatory, document that `extra.resizeOptions` is intentionally ignored.

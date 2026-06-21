@@ -1735,3 +1735,81 @@ M  ALTERNATIVES.jsonl
 M  MEMORY.md
 M  PLAN.md
 M  SCORES.jsonl
+2026-06-21T08:04:33Z iteration 5 started remaining=15444s
+2026-06-21T08:04:33Z iteration 5 preplanner effective budgets untracked_scan_max_bytes=536870912 untracked_scan_max_count=10000 snapshot_copy_max_bytes=536870912 snapshot_copy_max_count=10000 snapshot_copy_max_file_bytes=134217728
+2026-06-21T08:04:33Z iteration 5 disposable preplanner repo created path=/tmp/agent-loop-preplanner-repo-wouzi84n/repo copied_entries=879
+2026-06-21T08:04:33Z iteration 5 ideator phase started count=3
+2026-06-21T08:04:33Z iteration 5 ideator phase concurrency workers=3
+2026-06-21T08:04:33Z iteration 5 ideator 1 role="the pragmatist" started
+2026-06-21T08:04:33Z iteration 5 ideator 2 role="the architect" started
+2026-06-21T08:04:33Z iteration 5 ideator 3 role="the contrarian" started
+2026-06-21T08:04:42Z iteration 5 ideator 2 role="the architect" completed status=0
+2026-06-21T08:04:45Z iteration 5 ideator 3 role="the contrarian" completed status=0
+2026-06-21T08:04:46Z iteration 5 ideator 1 role="the pragmatist" completed status=0
+2026-06-21T08:04:46Z iteration 5 ideator phase completed approaches=3
+2026-06-21T08:04:46Z iteration 5 selector started approaches=3
+2026-06-21T08:04:55Z iteration 5 selector completed status=0
+2026-06-21T08:04:55Z iteration 5 disposable preplanner repo cleanup path=/tmp/agent-loop-preplanner-repo-wouzi84n/repo
+2026-06-21T08:04:55Z iteration 5 selector rejected alternative role="the architect" approach="Stabilize the Contract Before Expanding the Migration: treat the Three.js factory as a product boundary first, hardening repeatable smoke coverage, failure behavior, cleanup sem..." reason="Selected in substance, but not as a pure stabilization pause; the Planner should preserve a near-term feedback loop from real page variance so contract work does not become abstract cleanup."
+2026-06-21T08:04:55Z iteration 5 selector rejected alternative role="the contrarian" approach="Variance-First Canary Expansion: deliberately migrate one high-variance remaining Three.js page next, using it to pressure-test the factory before polishing the factory contract..." reason="Not selected as-is because migrating a messy page before repeatable smoke and failure-path checks risks mixing harness work, factory churn, and page-specific migration issues in one noisy iteration."
+2026-06-21T08:04:55Z iteration 5 selector rejected alternative role="the pragmatist" approach="Contract-first migration gate: stabilize the Three.js factory around repeatable smoke evidence and failure cleanup before migrating more pages, then advance only in small varian..." reason="Selected in substance, but strengthened with the contrarian requirement that the stabilized contract should soon be tested against a real high-variance page rather than only polished around the existing canaries."
+2026-06-21T08:04:55Z iteration 5 selector alternatives persisted count=3
+2026-06-21T08:04:55Z iteration 5 selector structured alternatives persisted count=3
+2026-06-21T08:04:55Z iteration 5 planner started
+2026-06-21T08:05:31Z iteration 5 plan: 4 task(s) in 3 phase(s). This slice stabilizes the Three.js factory before any broader migration: lifecycle and timing semantics, repeatable canary smoke, deterministic negative-path coverage, and documentation. The first two tasks can run concurrently because they touch different files and the smoke runner can target the current canaries while the factory lifecycle work proceeds separately. Failure fixtures depend on both the hardened factory contract and the reusable runner, so they are sequenced afterward.
+2026-06-21T08:05:31Z iteration 5 phase 1 started parallel=True tasks=2
+2026-06-21T08:09:46Z iteration 5 task t1 ('Harden Three.js factory lifecycle') status=0
+2026-06-21T08:13:19Z iteration 5 task t2 ('Add reusable Three.js canary smoke runner') status=0
+2026-06-21T08:13:19Z iteration 5 phase 2 started parallel=False tasks=1
+2026-06-21T08:16:54Z iteration 5 task t3 ('Add deterministic factory failure smoke fixtures') status=0
+2026-06-21T08:16:54Z iteration 5 phase 3 started parallel=False tasks=1
+2026-06-21T08:19:08Z iteration 5 task t4 ('Document stabilized Three.js factory contract') status=0
+2026-06-21T08:19:08Z iteration 5 reviewer started
+
+## Reviewer Summary — Iteration 13 / Loop Iteration 5 (2026-06-21)
+
+### What Was Done
+
+- Inspected the actual uncommitted diff and all new files for this iteration: `src/lib/createThreeScene.ts`, `scripts/smoke-three-canaries.js`, `src/three-factory-init-fail.ts`, `src/three-factory-frame-fail.ts`, `src/three-factory-loader-fail.ts`, the three fixture HTML files, `vite.config.ts`, `package.json`, `package-lock.json`, `AGENT.md`, `AGENT_LOG.md`, and `ALTERNATIVES.jsonl`.
+- Confirmed `createThreeScene()` now returns a `ThreeSceneHandle`, wraps renderer setup in initialization error handling, cleans up factory-owned canvas/listeners/renderer/controls/composer on init failure, uses one replaceable diagnostic overlay, stops frame scheduling on `onFrame` failure, and treats `loop: "clock"` as a `performance.now()` compatibility alias.
+- Confirmed `npm run smoke:three` exists and runs a Playwright smoke over the two production canaries plus deterministic init/frame/loader failure fixtures.
+- Confirmed `AGENT.md` documents the lifecycle contract, loader Promise requirement, and smoke workflow.
+- Reviewer validation run: `npm run lint`, `npm run build`, `npm run smoke:three`, and `git diff --check`. All passed on the current working tree.
+
+### What Was Found
+
+- No direct runtime regression was found in the current working tree. The reusable smoke runner passed: `discord-robot.html` and `dji-fpv.html` rendered nonblank at `1280x720` and `960x540`, the dynamic composer request was observed, DJI loading overlay removal was verified, and all three failure fixtures produced the expected diagnostics.
+- High priority: the new smoke fixture HTML/TS/script files are untracked at review time. Because `scripts/check-effects-meta.js` discovers only tracked root `*.html` files, the current `npm run build` does not prove that committing root-level `three-factory-*.html` fixtures is metadata-safe. Once tracked, those root HTML files will be treated as effect pages unless they are moved under a non-root test path or explicitly excluded from the metadata contract.
+- Medium priority: `scripts/smoke-three-canaries.js` throws directly from Playwright event handlers for page errors. It worked in this run, but collecting errors and asserting them at deterministic checkpoints would make failures easier to diagnose.
+- Medium priority: the nonblank predicate uses alpha/luma standard deviation only. That is sufficient for the current canaries, but could false-fail a valid mostly-uniform render; the already-computed `visibleRatio` and `alphaMean` should participate before this becomes a wider migration gate.
+- Medium priority: factory cleanup now covers factory-owned resources, but page-owned resources allocated during `onInit` before a later rejection still need an explicit cleanup convention before migrating heavier loader pages.
+
+### Top Improvement Proposals
+
+1. Make smoke fixtures metadata-safe before committing: preferably move fixture HTML under a non-root `fixtures/` or `test-pages/` path and update `vite.config.ts` plus `scripts/smoke-three-canaries.js`; alternatively add a deliberate metadata exclusion with regression coverage.
+2. After the fixture location issue is resolved, stage the new files and rerun `npm run lint`, `npm run build`, `npm run smoke:three`, and `git diff --check --cached` before creating a non-empty conventional commit.
+3. Harden `scripts/smoke-three-canaries.js` diagnostics: collect `pageerror`/console errors, include Vite stderr on startup failure, and make the canvas nonblank heuristic use visible-pixel and alpha/luma evidence.
+4. Define a page-owned cleanup pattern for failed Three.js `onInit` work before migrating GLTF/FBX/texture-heavy pages.
+5. Resume Three.js migration only in small variance-grouped batches, each guarded by the standard quality gate and a smoke result.
+2026-06-21T08:24:24Z iteration 5 reviewer completed status=0
+2026-06-21T08:24:24Z iteration 5 memory updated
+2026-06-21T08:24:24Z iteration 5 completed validation_status=0
+2026-06-21T08:24:24Z iteration 5 checkpoint started
+2026-06-21T08:24:24Z iteration 5 checkpoint status before commit:
+M  AGENT.md
+M  AGENT_LOG.md
+M  ALTERNATIVES.jsonl
+M  MEMORY.md
+M  PLAN.md
+M  SCORES.jsonl
+M  package-lock.json
+M  package.json
+A  scripts/smoke-three-canaries.js
+M  src/lib/createThreeScene.ts
+A  src/three-factory-frame-fail.ts
+A  src/three-factory-init-fail.ts
+A  src/three-factory-loader-fail.ts
+A  three-factory-frame-fail.html
+A  three-factory-init-fail.html
+A  three-factory-loader-fail.html
+M  vite.config.ts

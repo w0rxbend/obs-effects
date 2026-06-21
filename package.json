@@ -11,6 +11,7 @@
     "test": "npm run test:effects-meta",
     "test:effects-meta": "node scripts/test-effects-meta.js",
     "lint": "eslint .",
+    "smoke:three": "node scripts/smoke-three-canaries.js",
     "dev": "vite"
   },
   "dependencies": {
@@ -29,6 +30,8 @@
     "eslint": "^10.5.0",
     "eslint-config-prettier": "^10.1.2",
     "eslint-plugin-prettier": "^5.2.6",
+    "playwright": "^1.61.0",
+    "pngjs": "^7.0.0",
     "prettier": "^3.5.3",
     "typescript": "~6.0.0",
     "typescript-eslint": "^8.25.0",

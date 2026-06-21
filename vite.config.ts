@@ -259,6 +259,18 @@ export default defineConfig({
         droneVisualization: resolve(__dirname, "drone-visualization.html"),
         ergodoxShowroom: resolve(__dirname, "ergodox-showroom.html"),
         djiFpv: resolve(__dirname, "dji-fpv.html"),
+        threeFactoryInitFail: resolve(
+          __dirname,
+          "three-factory-init-fail.html",
+        ),
+        threeFactoryFrameFail: resolve(
+          __dirname,
+          "three-factory-frame-fail.html",
+        ),
+        threeFactoryLoaderFail: resolve(
+          __dirname,
+          "three-factory-loader-fail.html",
+        ),
         energyOrb: resolve(__dirname, "energy-orb.html"),
         hexWaterIsland: resolve(__dirname, "hex-water-island.html"),
         aiCharacterNatural: resolve(__dirname, "ai-character-natural.html"),

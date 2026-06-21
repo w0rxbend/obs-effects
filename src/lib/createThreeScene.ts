@@ -29,6 +29,10 @@ export interface ThreeSceneOptions {
     camera: THREE.PerspectiveCamera,
     composer?: EffectComposer,
   ) => void;
+  /**
+   * "clock" is kept as a compatibility alias for the clamped performance.now()
+   * loop; the factory no longer uses deprecated THREE.Clock.
+   */
   loop?: "performance" | "clock";
   postProcessing?: boolean;
   ibl?: boolean;
@@ -48,6 +52,17 @@ export interface ThreeSceneContext {
   composer?: EffectComposer;
   controls?: OrbitControls;
 }
+
+export interface ThreeSceneHandle {
+  destroy(): void;
+}
+
+interface RenderLoopHandle {
+  stop(): void;
+}
+
+let diagnosticOverlay: HTMLPreElement | undefined;
+let diagnosticOwner: symbol | undefined;
 
 function applyDefaultBodyStyles(): void {
   document.body.style.margin = "0";
@@ -84,24 +99,35 @@ async function applyRoomEnvironment(
   pmrem.dispose();
 }
 
-function showDiagnosticOverlay(text: string): void {
-  const message = document.createElement("pre");
-  message.textContent = text;
-  message.style.position = "fixed";
-  message.style.inset = "16px";
-  message.style.zIndex = "2147483647";
-  message.style.margin = "0";
-  message.style.color = "rgba(255, 230, 230, 0.94)";
-  message.style.background = "rgba(24, 0, 0, 0.82)";
-  message.style.border = "1px solid rgba(255, 120, 120, 0.45)";
-  message.style.padding = "12px";
-  message.style.font = "13px/1.45 monospace";
-  message.style.pointerEvents = "none";
-  message.style.whiteSpace = "pre-wrap";
-  document.body.appendChild(message);
+function showDiagnosticOverlay(text: string, owner: symbol): void {
+  if (!diagnosticOverlay?.isConnected) {
+    diagnosticOverlay = document.createElement("pre");
+    diagnosticOverlay.style.position = "fixed";
+    diagnosticOverlay.style.inset = "16px";
+    diagnosticOverlay.style.zIndex = "2147483647";
+    diagnosticOverlay.style.margin = "0";
+    diagnosticOverlay.style.color = "rgba(255, 230, 230, 0.94)";
+    diagnosticOverlay.style.background = "rgba(24, 0, 0, 0.82)";
+    diagnosticOverlay.style.border = "1px solid rgba(255, 120, 120, 0.45)";
+    diagnosticOverlay.style.padding = "12px";
+    diagnosticOverlay.style.font = "13px/1.45 monospace";
+    diagnosticOverlay.style.pointerEvents = "none";
+    diagnosticOverlay.style.whiteSpace = "pre-wrap";
+    document.body.appendChild(diagnosticOverlay);
+  }
+
+  diagnosticOwner = owner;
+  diagnosticOverlay.textContent = text;
 }
 
-function reportInitFailure(error: unknown): void {
+function removeDiagnosticOverlay(owner: symbol): void {
+  if (diagnosticOwner !== owner) return;
+  diagnosticOverlay?.remove();
+  diagnosticOverlay = undefined;
+  diagnosticOwner = undefined;
+}
+
+function reportInitFailure(error: unknown, owner: symbol): void {
   console.error(
     "[createThreeScene] initialization failed; render loop was not started.",
     error,
@@ -109,14 +135,16 @@ function reportInitFailure(error: unknown): void {
 
   showDiagnosticOverlay(
     "Three.js scene failed to initialize. See browser console for details.",
+    owner,
   );
 }
 
-function reportFrameFailure(error: unknown): void {
+function reportFrameFailure(error: unknown, owner: symbol): void {
   console.error("[createThreeScene] frame failed", error);
 
   showDiagnosticOverlay(
     "Three.js scene failed during rendering. See browser console for details.",
+    owner,
   );
 }
 
@@ -144,13 +172,17 @@ function startRenderLoop(
   opts: ThreeSceneOptions,
   ctx: ThreeSceneContext,
   orbitControls: OrbitControls | undefined,
-): void {
+  owner: symbol,
+): RenderLoopHandle {
   const render = (): void => {
     if (ctx.composer) ctx.composer.render();
     else ctx.renderer.render(ctx.scene, ctx.camera);
   };
 
   let stopped = false;
+  let frameId: number | undefined;
+  let last = performance.now();
+
   const runFrame = (dt: number): boolean => {
     if (stopped) return false;
 
@@ -162,94 +194,139 @@ function startRenderLoop(
       return true;
     } catch (error) {
       stopped = true;
-      reportFrameFailure(error);
+      reportFrameFailure(error, owner);
       return false;
     }
   };
 
-  if (opts.loop === "performance") {
-    let last = performance.now();
-    const animPerf = (): void => {
-      const now = performance.now();
-      const dt = Math.min((now - last) * 0.001, 0.05);
-      last = now;
-      if (runFrame(dt)) requestAnimationFrame(animPerf);
-    };
-    animPerf();
-    return;
-  }
-
-  const clock = new THREE.Clock();
-  const animClock = (): void => {
-    const dt = Math.min(clock.getDelta(), 0.05);
-    if (runFrame(dt)) requestAnimationFrame(animClock);
+  const animate = (): void => {
+    frameId = undefined;
+    const now = performance.now();
+    const dt = Math.min((now - last) * 0.001, 0.05);
+    last = now;
+    if (runFrame(dt)) frameId = requestAnimationFrame(animate);
   };
-  animClock();
+
+  animate();
+
+  return {
+    stop(): void {
+      stopped = true;
+      if (frameId !== undefined) {
+        cancelAnimationFrame(frameId);
+        frameId = undefined;
+      }
+    },
+  };
 }
 
-export async function createThreeScene(opts: ThreeSceneOptions): Promise<void> {
-  const renderer = new THREE.WebGLRenderer({
-    antialias: true,
-    alpha: true,
-    ...(opts.premultipliedAlpha !== undefined
-      ? { premultipliedAlpha: opts.premultipliedAlpha }
-      : {}),
-  });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.setClearColor(0x000000, 0);
-  applyDefaultBodyStyles();
-  document.body.appendChild(renderer.domElement);
-
-  if (opts.shadowMap !== undefined) {
-    if (opts.shadowMap === false) {
-      renderer.shadowMap.enabled = false;
-    } else {
-      renderer.shadowMap.enabled = true;
-      renderer.shadowMap.type =
-        opts.shadowMap === "PCF" ? THREE.PCFShadowMap : THREE.PCFSoftShadowMap;
-    }
-  }
-  if (opts.toneMapping !== undefined) renderer.toneMapping = opts.toneMapping;
-  if (opts.toneMappingExposure !== undefined)
-    renderer.toneMappingExposure = opts.toneMappingExposure;
-  if (opts.outputColorSpace !== undefined)
-    renderer.outputColorSpace = opts.outputColorSpace;
-
-  const scene = new THREE.Scene();
-
-  const camera = new THREE.PerspectiveCamera(
-    opts.camera.fov,
-    window.innerWidth / window.innerHeight,
-    opts.camera.near,
-    opts.camera.far,
-  );
-
-  const ctx: ThreeSceneContext = {
-    scene,
-    camera,
-    renderer,
-  };
-
+export async function createThreeScene(
+  opts: ThreeSceneOptions,
+): Promise<ThreeSceneHandle> {
+  const owner = Symbol("createThreeScene");
+  let renderer: THREE.WebGLRenderer | undefined;
+  let camera: THREE.PerspectiveCamera | undefined;
+  let ctx: ThreeSceneContext | undefined;
   let orbitControls: OrbitControls | undefined;
+  let renderLoop: RenderLoopHandle | undefined;
+  let resize: (() => void) | undefined;
+  let resizeRegistered = false;
+  let canvasAppended = false;
   let initialized = false;
+  let destroyed = false;
 
-  const resize = (): void => {
-    const w = window.innerWidth;
-    const h = window.innerHeight;
-    renderer.setSize(w, h);
-    camera.aspect = w / h;
-    camera.updateProjectionMatrix();
-    if (ctx.composer) ctx.composer.setSize(w, h);
-    if (initialized && opts.onResize) {
-      opts.onResize(renderer, camera, ctx.composer);
+  const cleanup = (removeDiagnostic: boolean): void => {
+    if (destroyed) return;
+    destroyed = true;
+
+    renderLoop?.stop();
+    renderLoop = undefined;
+
+    if (resizeRegistered && resize) {
+      window.removeEventListener("resize", resize);
+      resizeRegistered = false;
     }
-  };
 
-  window.addEventListener("resize", resize);
-  resize();
+    orbitControls?.dispose();
+    orbitControls = undefined;
+
+    ctx?.composer?.dispose();
+    ctx = undefined;
+
+    renderer?.dispose();
+    if (renderer && canvasAppended) {
+      renderer.domElement.remove();
+      canvasAppended = false;
+    }
+    renderer = undefined;
+
+    if (removeDiagnostic) removeDiagnosticOverlay(owner);
+  };
 
   try {
+    renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      alpha: true,
+      ...(opts.premultipliedAlpha !== undefined
+        ? { premultipliedAlpha: opts.premultipliedAlpha }
+        : {}),
+    });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setClearColor(0x000000, 0);
+    applyDefaultBodyStyles();
+    document.body.appendChild(renderer.domElement);
+    canvasAppended = true;
+
+    if (opts.shadowMap !== undefined) {
+      if (opts.shadowMap === false) {
+        renderer.shadowMap.enabled = false;
+      } else {
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type =
+          opts.shadowMap === "PCF"
+            ? THREE.PCFShadowMap
+            : THREE.PCFSoftShadowMap;
+      }
+    }
+    if (opts.toneMapping !== undefined) renderer.toneMapping = opts.toneMapping;
+    if (opts.toneMappingExposure !== undefined)
+      renderer.toneMappingExposure = opts.toneMappingExposure;
+    if (opts.outputColorSpace !== undefined)
+      renderer.outputColorSpace = opts.outputColorSpace;
+
+    const scene = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera(
+      opts.camera.fov,
+      window.innerWidth / window.innerHeight,
+      opts.camera.near,
+      opts.camera.far,
+    );
+
+    ctx = {
+      scene,
+      camera,
+      renderer,
+    };
+
+    resize = (): void => {
+      if (!renderer || !camera || !ctx) return;
+
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      renderer.setSize(w, h);
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      if (ctx.composer) ctx.composer.setSize(w, h);
+      if (initialized && opts.onResize) {
+        opts.onResize(renderer, camera, ctx.composer);
+      }
+    };
+
+    window.addEventListener("resize", resize);
+    resizeRegistered = true;
+    resize();
+
     if (opts.controls === "orbit") {
       orbitControls = await createOrbitControls(
         camera,
@@ -268,13 +345,19 @@ export async function createThreeScene(opts: ThreeSceneOptions): Promise<void> {
 
     if (opts.onInit) await opts.onInit(ctx);
 
-    if (opts.audio) void obsAudio.connect();
-
     initialized = true;
     resize();
-    startRenderLoop(opts, ctx, orbitControls);
+    if (opts.audio) void obsAudio.connect();
+    renderLoop = startRenderLoop(opts, ctx, orbitControls, owner);
+
+    return {
+      destroy(): void {
+        cleanup(true);
+      },
+    };
   } catch (error) {
-    reportInitFailure(error);
+    reportInitFailure(error, owner);
+    cleanup(false);
     throw error;
   }
 }
