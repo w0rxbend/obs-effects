@@ -1,5 +1,6 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
+import { obsAudio } from "../../lib/obsAudio";
 
 const TAU = Math.PI * 2;
 
@@ -163,13 +164,6 @@ export class GreenFireballScreen extends Container {
   private cy = 540;
   private time = 0;
 
-  private analyser: AnalyserNode | null = null;
-  private freqData: Uint8Array<ArrayBuffer> | null = null;
-
-  private bass = 0;
-  private mid = 0;
-  private high = 0;
-
   private particles: FireParticle[] = [];
   private emitAccum = 0;
 
@@ -187,42 +181,7 @@ export class GreenFireballScreen extends Container {
     this.addChild(this.gfxMagic);
     this.addChild(this.gfxLightning);
     this.addChild(this.gfxSpark);
-    void this.initAudio();
-  }
-
-  private async initAudio(): Promise<void> {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: true,
-        video: false,
-      });
-      const ctx = new AudioContext();
-      const src = ctx.createMediaStreamSource(stream);
-      this.analyser = ctx.createAnalyser();
-      this.analyser.fftSize = 1024;
-      this.analyser.smoothingTimeConstant = 0.8;
-      src.connect(this.analyser);
-      this.freqData = new Uint8Array(
-        this.analyser.frequencyBinCount,
-      ) as Uint8Array<ArrayBuffer>;
-    } catch {
-      // no mic — fire still animates from idle breath
-    }
-  }
-
-  private readBands(): { bass: number; mid: number; high: number } {
-    if (!this.analyser || !this.freqData) return { bass: 0, mid: 0, high: 0 };
-    this.analyser.getByteFrequencyData(this.freqData);
-    let bass = 0;
-    for (let i = 0; i <= 6; i++) bass += this.freqData[i];
-    bass /= 7 * 255;
-    let mid = 0;
-    for (let i = 7; i <= 92; i++) mid += this.freqData[i];
-    mid /= 86 * 255;
-    let high = 0;
-    for (let i = 93; i <= 324; i++) high += this.freqData[i];
-    high /= 232 * 255;
-    return { bass, mid, high };
+    void obsAudio.connect();
   }
 
   public async show(): Promise<void> {
@@ -307,24 +266,16 @@ export class GreenFireballScreen extends Container {
   public update(ticker: Ticker): void {
     const dt = clamp(ticker.deltaMS * 0.001, 0, 0.05);
     this.time += dt;
-
-    const raw = this.readBands();
-    const br = clamp((raw.bass - 0.01) / 0.99, 0, 1);
-    const mr = clamp(raw.mid * 3.5, 0, 1);
-    const hr = clamp(raw.high * 5.5, 0, 1);
-
-    this.bass += (br - this.bass) * (br > this.bass ? 0.75 : 0.05);
-    this.mid += (mr - this.mid) * (mr > this.mid ? 0.55 : 0.08);
-    this.high += (hr - this.high) * (hr > this.high ? 0.85 : 0.14);
+    obsAudio.update(dt);
 
     const breath = 0.28 + 0.09 * Math.sin(this.time * 1.85);
-    const intensity = clamp(breath + this.bass * 0.72, 0, 1);
+    const intensity = clamp(breath + obsAudio.bass * 0.72, 0, 1);
 
     const hoverY = this.cy + Math.sin(this.time * 1.1) * 12;
     const hoverX = this.cx + Math.sin(this.time * 0.67) * 5;
 
     // ── Fire particles ─────────────────────────────────────────────────────
-    const sparkBoost = 1 + this.high * 2.5;
+    const sparkBoost = 1 + obsAudio.high * 2.5;
     const emitRate = 175 * (0.6 + intensity * 1.4) * sparkBoost;
     this.emitAccum += emitRate * dt;
     while (this.emitAccum >= 1) {
@@ -336,7 +287,7 @@ export class GreenFireballScreen extends Container {
       else this.spawnParticle("spark", intensity, hoverX, hoverY);
     }
 
-    const turbScale = 1 + this.mid * 1.8;
+    const turbScale = 1 + obsAudio.mid * 1.8;
     for (let i = this.particles.length - 1; i >= 0; i--) {
       const p = this.particles[i];
       p.age += dt * p.invLife;
@@ -371,10 +322,11 @@ export class GreenFireballScreen extends Container {
 
     // ── Lightning ──────────────────────────────────────────────────────────
     // Spawn rate speeds up with bass; high-freq adds extra bolts
-    const boltInterval = 0.38 - this.bass * 0.28 - this.high * 0.08;
+    const boltInterval = 0.38 - obsAudio.bass * 0.28 - obsAudio.high * 0.08;
     this.boltTimer -= dt;
     if (this.boltTimer <= 0 && this.bolts.length < MAX_BOLTS) {
-      const count = 1 + (this.bass > 0.55 ? Math.floor(this.high * 3) : 0);
+      const count =
+        1 + (obsAudio.bass > 0.55 ? Math.floor(obsAudio.high * 3) : 0);
       for (let k = 0; k < count && this.bolts.length < MAX_BOLTS; k++) {
         this.bolts.push(spawnBolt(hoverX, hoverY, intensity));
       }
@@ -408,15 +360,15 @@ export class GreenFireballScreen extends Container {
     const hr = 50 + intensity * 80;
     gf.circle(ox, oy, hr * 2.8).fill({
       color: 0x003300,
-      alpha: 0.025 + this.bass * 0.04,
+      alpha: 0.025 + obsAudio.bass * 0.04,
     });
     gf.circle(ox, oy, hr * 1.7).fill({
       color: 0x00aa00,
-      alpha: 0.045 + this.bass * 0.07,
+      alpha: 0.045 + obsAudio.bass * 0.07,
     });
     gf.circle(ox, oy, hr).fill({
       color: 0x44ff00,
-      alpha: 0.035 + this.bass * 0.05,
+      alpha: 0.035 + obsAudio.bass * 0.05,
     });
 
     for (const p of this.particles) {
@@ -451,23 +403,23 @@ export class GreenFireballScreen extends Container {
     const orbR = (14 + intensity * 20) * pulse;
     gf.circle(ox, oy, orbR * 4.2).fill({
       color: 0x001100,
-      alpha: 0.04 + this.bass * 0.08,
+      alpha: 0.04 + obsAudio.bass * 0.08,
     });
     gf.circle(ox, oy, orbR * 2.6).fill({
       color: 0x005500,
-      alpha: 0.09 + this.bass * 0.13,
+      alpha: 0.09 + obsAudio.bass * 0.13,
     });
     gf.circle(ox, oy, orbR * 1.5).fill({
       color: 0x00aa00,
-      alpha: 0.22 + this.bass * 0.26,
+      alpha: 0.22 + obsAudio.bass * 0.26,
     });
     gf.circle(ox, oy, orbR).fill({
       color: 0xaaff44,
-      alpha: 0.58 + this.bass * 0.28,
+      alpha: 0.58 + obsAudio.bass * 0.28,
     });
     gf.circle(ox, oy, orbR * 0.5).fill({
       color: 0xffffff,
-      alpha: 0.9 + this.bass * 0.08,
+      alpha: 0.9 + obsAudio.bass * 0.08,
     });
   }
 
@@ -476,7 +428,7 @@ export class GreenFireballScreen extends Container {
     gm.clear();
 
     const t = this.time;
-    const midBoost = 1 + this.mid * 0.8;
+    const midBoost = 1 + obsAudio.mid * 0.8;
 
     // ── Outer hexagon ring ─────────────────────────────────────────────────
     const R1 = (95 + intensity * 45) * 1;
@@ -493,7 +445,7 @@ export class GreenFireballScreen extends Container {
         .stroke({
           color: 0x00ff66,
           width: 1.2,
-          alpha: 0.35 + this.bass * 0.4,
+          alpha: 0.35 + obsAudio.bass * 0.4,
         });
     }
     // Hexagram diagonals (every-other vertex across)
@@ -505,7 +457,7 @@ export class GreenFireballScreen extends Container {
           .stroke({
             color: 0x00ff44,
             width: 0.6,
-            alpha: 0.15 + this.bass * 0.2,
+            alpha: 0.15 + obsAudio.bass * 0.2,
           });
       }
     }
@@ -525,7 +477,7 @@ export class GreenFireballScreen extends Container {
         .stroke({
           color: 0x44ffaa,
           width: 1.0,
-          alpha: 0.32 + this.bass * 0.38,
+          alpha: 0.32 + obsAudio.bass * 0.38,
         });
     }
 
@@ -543,7 +495,7 @@ export class GreenFireballScreen extends Container {
         .stroke({
           color: 0x44ffaa,
           width: 1.0,
-          alpha: 0.28 + this.bass * 0.35,
+          alpha: 0.28 + obsAudio.bass * 0.35,
         });
     }
 
@@ -552,16 +504,16 @@ export class GreenFireballScreen extends Container {
     for (let i = 0; i < 8; i++) {
       const a = (i / 8) * TAU + t * 0.55 * midBoost;
       const pulse = 0.7 + 0.3 * Math.sin(t * 2.8 + i * 0.78);
-      const r = (2.5 + intensity * 2.0 + this.high * 3) * pulse;
+      const r = (2.5 + intensity * 2.0 + obsAudio.high * 3) * pulse;
       const px = ox + Math.cos(a) * R3;
       const py = oy + Math.sin(a) * R3;
       gm.circle(px, py, r * 4).fill({
         color: 0x00ff44,
-        alpha: (0.06 + this.bass * 0.09) * pulse,
+        alpha: (0.06 + obsAudio.bass * 0.09) * pulse,
       });
       gm.circle(px, py, r).fill({
         color: 0xccffaa,
-        alpha: 0.65 + this.bass * 0.3,
+        alpha: 0.65 + obsAudio.bass * 0.3,
       });
     }
 
@@ -569,29 +521,29 @@ export class GreenFireballScreen extends Container {
     for (let i = 0; i < 6; i++) {
       const a = (i / 6) * TAU - t * 0.7 * midBoost;
       const pulse = 0.65 + 0.35 * Math.sin(t * 3.5 + i * 1.05);
-      const r = (2.0 + intensity * 1.5 + this.high * 2) * pulse;
+      const r = (2.0 + intensity * 1.5 + obsAudio.high * 2) * pulse;
       const px = ox + Math.cos(a) * R2;
       const py = oy + Math.sin(a) * R2;
       gm.circle(px, py, r * 3).fill({
         color: 0x44ffaa,
-        alpha: (0.05 + this.bass * 0.08) * pulse,
+        alpha: (0.05 + obsAudio.bass * 0.08) * pulse,
       });
       gm.circle(px, py, r).fill({
         color: 0xeeffcc,
-        alpha: 0.6 + this.bass * 0.35,
+        alpha: 0.6 + obsAudio.bass * 0.35,
       });
     }
 
     // ── Vertex glows on hexagon ────────────────────────────────────────────
     for (const pt of hexPts) {
       const pulse = 0.6 + 0.4 * Math.sin(t * 4 + pt.x * 0.01);
-      gm.circle(pt.x, pt.y, 8 + this.bass * 6).fill({
+      gm.circle(pt.x, pt.y, 8 + obsAudio.bass * 6).fill({
         color: 0x00ff44,
-        alpha: (0.08 + this.bass * 0.12) * pulse,
+        alpha: (0.08 + obsAudio.bass * 0.12) * pulse,
       });
-      gm.circle(pt.x, pt.y, 2.5 + this.high * 2).fill({
+      gm.circle(pt.x, pt.y, 2.5 + obsAudio.high * 2).fill({
         color: 0xbbffcc,
-        alpha: 0.7 + this.bass * 0.28,
+        alpha: 0.7 + obsAudio.bass * 0.28,
       });
     }
 
@@ -605,7 +557,7 @@ export class GreenFireballScreen extends Container {
       const py = oy + Math.sin(a) * R3;
       gm.circle(px, py, 1.2).fill({
         color: 0x00cc44,
-        alpha: 0.3 + this.bass * 0.35,
+        alpha: 0.3 + obsAudio.bass * 0.35,
       });
     }
   }

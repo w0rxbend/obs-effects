@@ -1,10 +1,10 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
+import { obsAudio } from "../../lib/obsAudio";
 
 const TAU = Math.PI * 2;
 
 const WEBCAM_R = 220;
-const MIC_THRESHOLD = 0.15;
 const N_PTS = 128;
 
 // ── Plasma palette ─────────────────────────────────────────────────────────────
@@ -161,10 +161,6 @@ export class AccretionDiskCamScreen extends Container {
 
   private time = 0;
   private diskTime = 0;
-  private volume = 0;
-
-  private analyser: AnalyserNode | null = null;
-  private audioData: Uint8Array<ArrayBuffer> | null = null;
 
   private readonly particles: Particle[] = [];
 
@@ -182,7 +178,7 @@ export class AccretionDiskCamScreen extends Container {
       this.world.addChild(g);
     }
     this._initParticles();
-    void this._initAudio();
+    void obsAudio.connect();
   }
 
   private _initParticles(): void {
@@ -201,37 +197,6 @@ export class AccretionDiskCamScreen extends Container {
     }
   }
 
-  private async _initAudio(): Promise<void> {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: true,
-        video: false,
-      });
-      const ctx = new AudioContext();
-      const src = ctx.createMediaStreamSource(stream);
-      this.analyser = ctx.createAnalyser();
-      this.analyser.fftSize = 512;
-      this.analyser.smoothingTimeConstant = 0.6;
-      src.connect(this.analyser);
-      this.audioData = new Uint8Array(
-        this.analyser.frequencyBinCount,
-      ) as Uint8Array<ArrayBuffer>;
-    } catch {
-      // No mic — idle animation runs at low volume
-    }
-  }
-
-  private _readRMS(): number {
-    if (!this.analyser || !this.audioData) return 0;
-    this.analyser.getByteTimeDomainData(this.audioData);
-    let sum = 0;
-    for (const v of this.audioData) {
-      const n = (v - 128) / 128;
-      sum += n * n;
-    }
-    return Math.sqrt(sum / this.audioData.length);
-  }
-
   public async show(): Promise<void> {
     this.resize(window.innerWidth || 1920, window.innerHeight || 1080);
   }
@@ -246,17 +211,10 @@ export class AccretionDiskCamScreen extends Container {
   public update(ticker: Ticker): void {
     const dt = Math.min(ticker.deltaMS * 0.001, 0.05);
     this.time += dt;
-
-    const rms = this._readRMS() * 4;
-    const raw = Math.min(
-      1,
-      rms < MIC_THRESHOLD ? 0 : (rms - MIC_THRESHOLD) / (1 - MIC_THRESHOLD),
-    );
-    const rate = raw > this.volume ? 0.7 : 0.04;
-    this.volume += (raw - this.volume) * rate;
+    obsAudio.update(dt);
 
     // disk clock accelerates with volume — drives Keplerian rotation feel
-    this.diskTime += dt * (0.4 + this.volume * 2.0);
+    this.diskTime += dt * (0.4 + obsAudio.level * 2.0);
 
     this._drawBackDisk();
     this._drawHole();
@@ -274,7 +232,7 @@ export class AccretionDiskCamScreen extends Container {
     skipCam: boolean,
   ): Array<{ x: number; y: number } | null> {
     const camR2 = (WEBCAM_R - 2) * (WEBCAM_R - 2);
-    const vol = this.volume;
+    const vol = obsAudio.level;
     const scaledTime = this.diskTime * ring.rotSpeed;
     const pts: Array<{ x: number; y: number } | null> = [];
 
@@ -317,7 +275,7 @@ export class AccretionDiskCamScreen extends Container {
     ring: RingDef,
     scale: number,
   ): void {
-    const boost = 1 + this.volume * 0.55;
+    const boost = 1 + obsAudio.level * 0.55;
     this._strokePts(
       g,
       pts,
@@ -366,7 +324,7 @@ export class AccretionDiskCamScreen extends Container {
   private _drawPhotonRing(): void {
     const g = this.photonGfx;
     g.clear();
-    const vol = this.volume;
+    const vol = obsAudio.level;
     const pulse = 0.5 + 0.5 * Math.sin(this.time * 3.2) + vol * 0.4;
     const lr = WEBCAM_R + 4;
     const SEG = 160;
@@ -427,7 +385,7 @@ export class AccretionDiskCamScreen extends Container {
     const g = this.particleGfx;
     g.clear();
     const camR2 = WEBCAM_R * WEBCAM_R;
-    const vol = this.volume;
+    const vol = obsAudio.level;
     const spdMul = 1 + vol * 2.2;
 
     for (const p of this.particles) {

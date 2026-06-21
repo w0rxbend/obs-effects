@@ -15,3 +15,7 @@
 [pattern] When doing mass file migrations, first categorize exclusions by root cause (custom logic, unsupported options, wrong tech stack) so the next iteration knows exactly what gap to close.
 [anti-pattern] Spreading named undefined fields after `extra` silently defeats the escape hatch: `{ ...extra, background: undefined }` overrides `extra.background`; filter undefined named fields before spreading.
 [learning] `document.fonts.load()` for a specific font is sufficient — adding `document.fonts.ready` afterward is defensive but redundant; `fonts?: string[]` in the factory correctly drops the extra wait.
+[anti-pattern] Creating a barrel export (`src/lib/index.ts`) without migrating existing deep imports (`from "../../lib/obsAudio"`) leaves the barrel unused; the barrel only compresses if callers adopt it.
+[anti-pattern] Audit-only tasks can silently expand into full migrations when agents see obviously-related work nearby; planner constraints ("no implementation this iteration") are not enforced without explicit scope gates in the task description.
+[learning] A shared audio bridge singleton (obsAudio.ts) with an idle simulation fallback is a cleaner pattern than per-screen private AudioAnalyser classes — it eliminates duplicate simulation code and enforces a single OBS protocol integration point.
+[pattern] When committing a new shared library (obsAudio.ts) and all its consumers together, a single conventional commit with a broad scope keeps the git history coherent: `refactor(audio): migrate all screens to shared obsAudio bridge`.

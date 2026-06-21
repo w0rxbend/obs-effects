@@ -33,11 +33,22 @@ Shared code should own: - PixiJS app/bootstrap logic. - OBS/browser-source helpe
 - [x] Build passes (`npm run lint`, `npm run build`) with all migrated files
 
 ### Iteration 7 (2026-06-21): Extended factory + final PixiJS migration (H1+H2)
-- [x] Committed iteration 6 baseline (H2) — `src/lib/createPage.ts` and 179 entries committed
-- [x] Extended `CreatePageOptions` with `fonts?: string[]`, `antialias?: boolean`, `extra?: Partial<ApplicationOptions>` (H1 part A)
-- [x] Migrated remaining 18 entries (17 font-preloading + `retro-screen-filter.ts`) to `createPage()` (H1 part B)
+- [x] Committed iteration 6 baseline — `src/lib/createPage.ts` and 179 entries committed
+- [x] Extended `CreatePageOptions` with `fonts?: string[]`, `antialias?: boolean`, `extra?: Partial<ApplicationOptions>`
+- [x] Migrated remaining 18 entries (17 font-preloading + `retro-screen-filter.ts`) to `createPage()`
 - [x] All PixiJS entry files are now on `createPage()` except intentional exclusions
 - [x] Build and lint pass
+
+### Iteration 8 (2026-06-21): Barrel export + Three.js audit + obsAudio migration
+- [x] Created `src/lib/index.ts` barrel re-exporting `createPage` and `obsAudio`
+- [x] Created `src/lib/obsAudio.ts` — shared OBS WebSocket v5 audio bridge (singleton)
+- [x] Audited all 13 Three.js entries; variance matrix and factory interface written to `AGENT.md`
+- [x] Migrated 14 PixiJS screens from getUserMedia/AudioContext to `obsAudio`
+- [x] Migrated 5 Three.js entries (dji-fpv, gunan-skeleton, zombie-fbx, jelly-blob-face, cyclops-avatar) to `obsAudio`
+- [x] Updated 7 HTML-only files (cyberpunk-spectrum, 6 ink-dissolve-\*) with OBS WebSocket v5 inline protocol
+- [x] Added `obs-websocket-js` package dependency
+- [x] CLAUDE.md: added mandatory quality gate section
+- [~] **All changes are uncommitted — must be committed before next iteration**
 
 ---
 
@@ -52,42 +63,85 @@ Shared code should own: - PixiJS app/bootstrap logic. - OBS/browser-source helpe
 - `animated-lines.ts` — GSAP/SVG
 - `life-webgpu.ts` — raw WebGPU
 - `plasma-wave.ts` — raw Canvas2D
-- All Three.js entries (`dji-fpv.ts`, `energy-orb.ts`, `ai-character-*.ts`, `hex-water-island.ts`, `discord-robot.ts`, `drone-visualization.ts`, `gunan-skeleton.ts`, `meshy-post1-avatar.ts`, `city-view.ts`) — separate stack
+- All Three.js entries — separate stack (no `createPage()` migration; factory deferred)
 
 ---
 
-## Known Factory Design Notes
+## Known Design Notes
 
-- **`undefined` override risk**: In `createPage()`, `engine.init()` receives `background: opts.background` even when undefined. This silently overrides any `extra.background` value. In practice harmless since `extra` is for options not already covered, but callers should never duplicate named fields in `extra`.
-- **`fonts` vs `waitForFonts`**: These are independent branches in the factory. Entries that combined `document.fonts.load()` + `document.fonts.ready` defensively are correctly migrated with `fonts` alone (the `.load()` promise already resolves when the font is ready).
-- **`resizeOptions` default is always applied**: `opts.resizeOptions ?? { minWidth: 1920, minHeight: 1080, letterbox: false }` — there is no way to opt out of `resizeOptions` via `extra`; the 1920×1080 default is always applied.
+- **`undefined` override risk**: In `createPage()`, `engine.init()` receives `background: opts.background` and `antialias: opts.antialias` even when undefined. This silently overrides any `extra.background` or `extra.antialias` value. Use `Object.fromEntries(…filter(([,v]) => v !== undefined))` to fix.
+- **`fonts` vs `waitForFonts`**: Independent sequential branches; `fonts?: string[]` is sufficient for font-preloading entries.
+- **`resizeOptions` default always applied**: No way to opt out of the 1920×1080 default via `extra`.
+- **Barrel import not yet adopted**: All 19+ obsAudio consumers still use deep imports (`from "../../lib/obsAudio"`). The barrel provides zero benefit until callers migrate to `from "../../lib"`.
 
 ---
 
 ## Pending Tasks
 
+### Critical (blocker for next iteration)
+
+**C1 — Commit iteration 8 work**
+
+All iter 8 changes are uncommitted. Stage and commit:
+- `src/lib/index.ts`, `src/lib/obsAudio.ts` (new untracked files)
+- `AGENT.md` (new untracked file — Three.js audit matrix)
+- 14 PixiJS screen files (audio migration, modified)
+- 5 Three.js entry files (audio migration, modified)
+- 7 HTML files (OBS WebSocket inline protocol, modified)
+- `CLAUDE.md`, `package.json`, `package-lock.json`
+
+Use conventional commit: `refactor(audio): migrate all screens to obsAudio shared bridge`
+
 ### High priority
 
-**H1 — `createThreeScene()` factory for Three.js entries** _(formerly M1)_
+**H1 — `createThreeScene()` factory for Three.js entries**
 
-Analogous to `createPage()` but for Three.js pages. Target files:
+Audit matrix is in `AGENT.md` — factory interface already designed. Target files:
 `dji-fpv.ts`, `energy-orb.ts`, `ai-character-*.ts`, `hex-water-island.ts`, `discord-robot.ts`, `drone-visualization.ts`, `gunan-skeleton.ts`, `meshy-post1-avatar.ts`, `city-view.ts`.
 
-Before designing, audit all Three.js entries to enumerate their unique init patterns (renderer options, camera setup, resize behavior) so the factory interface covers all cases on the first pass.
+Factory interface (from audit):
+- `shadowMap?: false | "PCF" | "PCFSoft"` (default: PCFSoft)
+- `toneMapping?: THREE.ToneMapping` + `toneMappingExposure?: number`
+- `outputColorSpace?: THREE.ColorSpace`
+- `premultipliedAlpha?: boolean`
+- `camera: { fov, near, far }`
+- `controls?: "orbit" | "none"` + orbit sub-options
+- `onResize?: (renderer, camera, composer?) => void`
+- `loop?: "performance" | "clock"`
+- `postProcessing?: boolean`
+- `ibl?: boolean`
+- `audio?: boolean`
+
+Note: `discord-robot` needs `onResize` to also resize the EffectComposer RT.
+
+**H2 — Fix `undefined` override in `createPage()`**
+
+Filter out `undefined` named fields before spreading so `extra` can override named factory options:
+
+```typescript
+const named = Object.fromEntries(
+  Object.entries({
+    background: opts.background,
+    backgroundAlpha: opts.backgroundAlpha,
+    antialias: opts.antialias,
+  }).filter(([, v]) => v !== undefined)
+);
+await engine.init({ ...opts.extra, resizeOptions: ..., ...named });
+```
+
+**H3 — Migrate existing imports to barrel (`from "../../lib"`)**
+
+19+ files import `from "../../lib/obsAudio"` or `from "../../lib/createPage"` directly. Migrate all to `from "../../lib"` so the barrel is the single entry point and deep paths are never referenced by consumers.
 
 ### Medium priority
 
-**M1 — `src/lib/index.ts` barrel export** _(formerly M3)_
-
-Add `src/lib/index.ts` re-exporting `createPage` (and future utilities) so imports are `from "../lib"` not `from "../lib/createPage"`.
-
-**M2 — Shared HTML boilerplate** _(formerly M2)_
-
-All `*.html` Vite entrypoints share an identical 8-line shell. Consider a Vite plugin or HTML template to eliminate repetition. Defer until Two.js factory is done.
-
-**M3 — Handle `trapnation.ts` custom DOM pattern** _(formerly M4)_
+**M1 — Handle `trapnation.ts` custom DOM pattern**
 
 `trapnation.ts` creates `#pixi-container` dynamically. Either add the div to the HTML or handle the missing container in the engine. Investigate before migrating.
+
+**M2 — Shared HTML boilerplate**
+
+All `*.html` Vite entrypoints share an identical 8-line shell. Consider a Vite plugin or HTML template to eliminate repetition. Defer until Three.js factory is done.
 
 ### Low priority
 
@@ -98,31 +152,3 @@ Many HTMLs embed identical `<style>` blocks. Extract to a shared CSS file.
 **L2 — Metadata coverage and taxonomy**
 
 227 of 251 generated records still have empty descriptions. Consider a batch-fill pass.
-
-### Medium priority
-
-**M1 — createThreeScene() factory for Three.js entries**
-
-Analogous to `createPage()` but for Three.js pages (`dji-fpv.ts`, `energy-orb.ts`, `ai-character-*.ts`, `hex-water-island.ts`, `discord-robot.ts`, `drone-visualization.ts`, `gunan-skeleton.ts`, `meshy-post1-avatar.ts`, `city-view.ts`). Deferred per plan — address after H1 closes.
-
-**M2 — Shared HTML boilerplate**
-
-All `*.html` Vite entrypoints share an identical 8-line shell (body, pixi-container div, script module). Consider a Vite plugin or HTML template to eliminate this repetition. Low risk but deferred until entry-TS standardization is complete.
-
-**M3 — `src/lib/index.ts` barrel export**
-
-Once more shared utilities land in `src/lib/`, add an index barrel so imports are `from "../lib"` not `from "../lib/createPage"`.
-
-**M4 — Handle `trapnation.ts` custom DOM pattern**
-
-`trapnation.ts` creates `#pixi-container` dynamically if it doesn't exist. Either the HTML for trapnation should include the div, or the engine should handle the missing container gracefully. Investigate before migrating.
-
-### Low priority
-
-**L1 — CSS reset / theme variables deduplication**
-
-Many HTMLs embed identical `<style>` blocks (body reset, `#pixi-container` fill). Extract to a shared CSS file referenced from each HTML.
-
-**L2 — Metadata coverage and taxonomy**
-
-227 of 251 generated records still have empty descriptions. Consider a batch-fill pass or tooling to surface coverage gaps more visibly.

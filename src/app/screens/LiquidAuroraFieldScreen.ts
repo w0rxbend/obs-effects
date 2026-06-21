@@ -1,5 +1,6 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
+import { obsAudio } from "../../lib/obsAudio";
 
 const BG = 0x030508;
 const TAU = Math.PI * 2;
@@ -73,70 +74,10 @@ export class LiquidAuroraFieldScreen extends Container {
   private time = 0;
   private ribbons: Ribbon[] = [];
 
-  private analyser: AnalyserNode | null = null;
-  private freqData: Uint8Array<ArrayBuffer> | null = null;
-  private bass = 0;
-  private mid = 0;
-  private high = 0;
-
   constructor() {
     super();
     this.addChild(this.gfx);
-    void this.initAudio();
-  }
-
-  private async initAudio(): Promise<void> {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: true,
-        video: false,
-      });
-      const ctx = new AudioContext();
-      const src = ctx.createMediaStreamSource(stream);
-      this.analyser = ctx.createAnalyser();
-      this.analyser.fftSize = 2048;
-      this.analyser.smoothingTimeConstant = 0.8;
-      src.connect(this.analyser);
-      this.freqData = new Uint8Array(this.analyser.frequencyBinCount);
-    } catch {
-      // No mic — runs as ambient animation
-    }
-  }
-
-  private readBands(): void {
-    if (!this.analyser || !this.freqData) return;
-    this.analyser.getByteFrequencyData(this.freqData);
-
-    // fftSize 2048 → 1024 bins, ~21.5 Hz each at 44100 Hz
-    // Bass: bins 0-11 (~20-237 Hz)
-    let rawBass = 0;
-    for (let i = 0; i < 12; i++) rawBass += this.freqData[i];
-    rawBass /= 12 * 255;
-
-    // Mid: bins 12-116 (~258-2497 Hz)
-    let rawMid = 0;
-    for (let i = 12; i <= 116; i++) rawMid += this.freqData[i];
-    rawMid /= 105 * 255;
-
-    // High: bins 117-464 (~2518-9991 Hz)
-    let rawHigh = 0;
-    for (let i = 117; i <= 464; i++) rawHigh += this.freqData[i];
-    rawHigh /= 348 * 255;
-
-    const smooth = (
-      prev: number,
-      raw: number,
-      boost: number,
-      attack: number,
-      decay: number,
-    ) => {
-      const r = clamp(raw * boost, 0, 1);
-      return prev + (r - prev) * (r > prev ? attack : decay);
-    };
-
-    this.bass = smooth(this.bass, rawBass, 3.0, 0.6, 0.06);
-    this.mid = smooth(this.mid, rawMid, 2.5, 0.5, 0.07);
-    this.high = smooth(this.high, rawHigh, 3.5, 0.7, 0.1);
+    void obsAudio.connect();
   }
 
   public async show(): Promise<void> {
@@ -200,11 +141,10 @@ export class LiquidAuroraFieldScreen extends Container {
   public update(ticker: Ticker): void {
     const dt = Math.min(ticker.deltaMS * 0.001, 0.05);
     this.time += dt;
-
-    this.readBands();
+    obsAudio.update(dt);
 
     // Mid drives lateral drift speed
-    const driftMul = 1 + this.mid * 2.5;
+    const driftMul = 1 + obsAudio.mid * 2.5;
 
     for (const r of this.ribbons) {
       for (const c of r.comps) c.phase += c.speed * driftMul * dt;
@@ -225,8 +165,8 @@ export class LiquidAuroraFieldScreen extends Container {
     const W = this.w;
     const H = this.h;
     const t = this.time;
-    const bass = this.bass;
-    const high = this.high;
+    const bass = obsAudio.bass;
+    const high = obsAudio.high;
 
     // Bass widens and amplifies ribbons
     const ampMul = 1 + bass * 1.8;

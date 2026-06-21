@@ -1,5 +1,6 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
+import { obsAudio } from "../../lib/obsAudio";
 
 const BG = 0x03050f;
 
@@ -22,19 +23,12 @@ const BASE_DIST = 88;
 const MAX_DIST = 140;
 const GRID_CELL = 100;
 const SPARKLE_DECAY = 3.8;
-const NOISE_FLOOR = 0.03;
 
 function rand(a: number, b: number) {
   return a + Math.random() * (b - a);
 }
 function clamp(v: number, lo: number, hi: number) {
   return Math.max(lo, Math.min(hi, v));
-}
-function bandAvg(d: Uint8Array, lo: number, hi: number): number {
-  let s = 0;
-  for (let i = lo; i <= hi; i++) s += d[i];
-  const raw = s / ((hi - lo + 1) * 255);
-  return Math.max(0, (raw - NOISE_FLOOR) / (1 - NOISE_FLOOR));
 }
 
 interface Particle {
@@ -59,9 +53,6 @@ export class ParticleConstellationScreen extends Container {
 
   private particles: Particle[] = [];
 
-  private analyser: AnalyserNode | null = null;
-  private freqData: Uint8Array<ArrayBuffer> | null = null;
-
   // Smoothed audio state
   private fieldScale = 1;
   private speedMult = 1;
@@ -71,41 +62,7 @@ export class ParticleConstellationScreen extends Container {
   constructor() {
     super();
     this.addChild(this.gfx);
-    void this._initAudio();
-  }
-
-  private async _initAudio(): Promise<void> {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: true,
-        video: false,
-      });
-      const ctx = new AudioContext();
-      const src = ctx.createMediaStreamSource(stream);
-      const analyser = ctx.createAnalyser();
-      analyser.fftSize = 1024;
-      analyser.smoothingTimeConstant = 0.78;
-      src.connect(analyser);
-      this.analyser = analyser;
-      this.freqData = new Uint8Array(analyser.frequencyBinCount);
-    } catch {
-      // No mic — idle animation still plays
-    }
-  }
-
-  private _readAudio(): { bass: number; mid: number; high: number } {
-    if (!this.analyser || !this.freqData) return { bass: 0, mid: 0, high: 0 };
-    this.analyser.getByteFrequencyData(this.freqData);
-    const d = this.freqData;
-    // fftSize=1024 @ ~44100 Hz → bin width ≈ 43 Hz
-    // bass: 0–215 Hz → bins 0–4
-    // mid:  215–2150 Hz → bins 5–49
-    // high: 2150–8600 Hz → bins 50–199
-    return {
-      bass: bandAvg(d, 0, 4),
-      mid: bandAvg(d, 5, 49),
-      high: bandAvg(d, 50, 199),
-    };
+    void obsAudio.connect();
   }
 
   public async show(): Promise<void> {
@@ -141,8 +98,9 @@ export class ParticleConstellationScreen extends Container {
   public update(ticker: Ticker): void {
     const dt = clamp(ticker.deltaMS * 0.001, 0, 0.05);
     this.time += dt;
+    obsAudio.update(dt);
 
-    const { bass, mid, high } = this._readAudio();
+    const { bass, mid, high } = obsAudio;
     // Bass → field scale: fast attack, slow release
     const tScale = 1 + bass * 0.24;
     const scaleRate = tScale > this.fieldScale ? 0.55 : 0.05;

@@ -1,5 +1,6 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
+import { obsAudio } from "../../lib/obsAudio";
 
 // ─── Palette ─────────────────────────────────────────────────────────────────
 const BG = 0x020508;
@@ -129,13 +130,7 @@ export class AudioFlowTurbulenceScreen extends Container {
   private readonly vortices: Vortex[] = [];
   private readonly attractors: Attractor[] = [];
 
-  // ── Audio ─────────────────────────────────────────────────────────────────────
-  private analyser: AnalyserNode | null = null;
-  private freqData: Uint8Array<ArrayBuffer> | null = null;
-  private bass = 0;
-  private mid = 0;
-  private high = 0;
-  private loudness = 0;
+  // ── Audio state ───────────────────────────────────────────────────────────────
   private prevBass = 0;
   private transCD = 0;
   private midPhase = 0; // slowly rotating directional current angle
@@ -152,7 +147,7 @@ export class AudioFlowTurbulenceScreen extends Container {
     super();
     this.addChild(this.gfx);
     this.initPools();
-    void this.initAudio();
+    void obsAudio.connect();
   }
 
   // ── Initialisation ───────────────────────────────────────────────────────────
@@ -176,24 +171,6 @@ export class AudioFlowTurbulenceScreen extends Container {
     }
     for (let i = 0; i < MAX_A; i++) {
       this.attractors.push({ x: 0, y: 0, vx: 0, vy: 0, str: 0, active: false });
-    }
-  }
-
-  private async initAudio(): Promise<void> {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: true,
-        video: false,
-      });
-      const ctx = new AudioContext();
-      const src = ctx.createMediaStreamSource(stream);
-      this.analyser = ctx.createAnalyser();
-      this.analyser.fftSize = 1024;
-      this.analyser.smoothingTimeConstant = 0.8;
-      src.connect(this.analyser);
-      this.freqData = new Uint8Array(this.analyser.frequencyBinCount);
-    } catch {
-      // Passive animation at neutral levels when no mic is available
     }
   }
 
@@ -257,7 +234,8 @@ export class AudioFlowTurbulenceScreen extends Container {
     const dt = Math.min(ticker.deltaMS * 0.001, 0.05);
     this.time += dt;
     this.transCD = Math.max(0, this.transCD - dt);
-    this.midPhase += dt * (0.07 + this.mid * 0.22);
+    obsAudio.update(dt);
+    this.midPhase += dt * (0.07 + obsAudio.mid * 0.22);
 
     this.readAudio(dt);
     this.adaptPerf(dt);
@@ -270,56 +248,16 @@ export class AudioFlowTurbulenceScreen extends Container {
 
   // ── Audio ─────────────────────────────────────────────────────────────────────
   private readAudio(dt: number): void {
-    if (!this.analyser || !this.freqData) {
-      // Passive breath so the field is never completely dead
-      this.bass = 0.08 + Math.sin(this.time * 0.31) * 0.04;
-      this.mid = 0.06 + Math.sin(this.time * 0.19) * 0.03;
-      this.high = 0.04 + Math.sin(this.time * 0.57) * 0.02;
-      this.loudness = 0.05;
-      return;
-    }
-
-    this.analyser.getByteFrequencyData(this.freqData);
-    const fd = this.freqData;
-    const len = fd.length;
-
-    // Bin width ≈ 43 Hz at 44100 Hz / fftSize 1024
-    // Bass  0–200 Hz   → bins  0–4
-    // Mid   200–2500   → bins  5–57
-    // High  2500–10000 → bins 58–231
-    let b = 0;
-    for (let i = 0; i < 5; i++) b += fd[i];
-    const rawBass = Math.min(b / 5 / 255, 1);
-
-    let m = 0;
-    for (let i = 5; i < 58; i++) m += fd[i];
-    const rawMid = Math.min(m / 53 / 255, 1);
-
-    let hi = 0;
-    for (let i = 58; i < Math.min(232, len); i++) hi += fd[i];
-    const rawHigh = Math.min(hi / 174 / 255, 1);
-
-    let ls = 0;
-    for (let i = 0; i < len; i++) ls += fd[i];
-    const rawLoud = Math.min(ls / len / 255, 1);
-
-    // Fast attack, slow decay envelopes
-    this.bass += (rawBass - this.bass) * (rawBass > this.bass ? 0.7 : 0.04);
-    this.mid += (rawMid - this.mid) * (rawMid > this.mid ? 0.55 : 0.05);
-    this.high += (rawHigh - this.high) * (rawHigh > this.high ? 0.75 : 0.06);
-    this.loudness +=
-      (rawLoud - this.loudness) * (rawLoud > this.loudness ? 0.5 : 0.05);
-
     // Bass transient → spawn vortex
-    const delta = this.bass - this.prevBass;
+    const delta = obsAudio.bass - this.prevBass;
     if (delta > TRANSIENT_T && this.transCD <= 0) {
       this.spawnVortex(false);
       this.transCD = TRANSIENT_CD;
     }
-    this.prevBass = this.bass;
+    this.prevBass = obsAudio.bass;
 
     // High energy → spawn small turbulence pockets
-    if (this.high > 0.5 && Math.random() < this.high * 1.8 * dt) {
+    if (obsAudio.high > 0.5 && Math.random() < obsAudio.high * 1.8 * dt) {
       this.spawnVortex(true);
     }
   }
@@ -332,12 +270,12 @@ export class AudioFlowTurbulenceScreen extends Container {
       v.spin = Math.random() < 0.5 ? 1 : -1;
       v.age = 0;
       if (micro) {
-        v.str = 45 + this.high * 85;
+        v.str = 45 + obsAudio.high * 85;
         v.r = 50 + Math.random() * 80;
         v.life = 0.6 + Math.random() * 0.9;
       } else {
-        v.str = 90 + this.bass * 190;
-        v.r = 120 + this.bass * 240;
+        v.str = 90 + obsAudio.bass * 190;
+        v.r = 120 + obsAudio.bass * 240;
         v.life = VORTEX_LIFE * (0.55 + Math.random() * 0.85);
       }
       v.active = true;
@@ -405,12 +343,12 @@ export class AudioFlowTurbulenceScreen extends Container {
   private buildField(): void {
     const { gcols, grows, time } = this;
     const EPS = 1.5;
-    const loud = 1 + this.loudness * 2.0;
-    const aB = (1 + this.bass * 2.8) * loud;
-    const aM = (1 + this.mid * 1.8) * loud;
-    const aH = (1 + this.high * 2.2) * loud;
-    const midDx = Math.cos(this.midPhase) * this.mid * MID_DRIFT;
-    const midDy = Math.sin(this.midPhase) * this.mid * MID_DRIFT;
+    const loud = 1 + obsAudio.level * 2.0;
+    const aB = (1 + obsAudio.bass * 2.8) * loud;
+    const aM = (1 + obsAudio.mid * 1.8) * loud;
+    const aH = (1 + obsAudio.high * 2.2) * loud;
+    const midDx = Math.cos(this.midPhase) * obsAudio.mid * MID_DRIFT;
+    const midDy = Math.sin(this.midPhase) * obsAudio.mid * MID_DRIFT;
 
     for (let row = 0; row < grows; row++) {
       for (let col = 0; col < gcols; col++) {
@@ -432,7 +370,7 @@ export class AudioFlowTurbulenceScreen extends Container {
     const { w, h, gcols, grows, fieldX, fieldY, vortices, attractors } = this;
     const GC = GRID_CELL;
     const drag = Math.pow(DRAG_60, dt * 60);
-    const loud = this.loudness;
+    const loud = obsAudio.level;
 
     // Life ramp (full pool)
     for (let i = 0; i < MAX_P; i++) {

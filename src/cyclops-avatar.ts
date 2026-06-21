@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
+import { obsAudio } from "./lib/obsAudio";
 
 // ── Renderer ──────────────────────────────────────────────────────────────────
 const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
@@ -243,69 +244,7 @@ loader.load(
 );
 
 // ── Microphone ────────────────────────────────────────────────────────────────
-let micLevel = 0;
-let micReady = false;
-let sampleMic: (() => void) | null = null;
-let micContext: AudioContext | null = null;
-
-async function initMicrophone(): Promise<void> {
-  if (sampleMic || !navigator.mediaDevices?.getUserMedia) return;
-
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      audio: {
-        channelCount: 1,
-        echoCancellation: false,
-        noiseSuppression: false,
-        autoGainControl: false,
-      },
-      video: false,
-    });
-
-    micContext = new AudioContext();
-    const src = micContext.createMediaStreamSource(stream);
-    const analyser = micContext.createAnalyser();
-    analyser.fftSize = 512;
-    analyser.smoothingTimeConstant = 0.35;
-    src.connect(analyser);
-    const buf = new Uint8Array(analyser.frequencyBinCount);
-    let noiseFloor = 0.018;
-
-    sampleMic = () => {
-      analyser.getByteTimeDomainData(buf);
-      let sum = 0;
-      for (let i = 0; i < buf.length; i++) {
-        const v = (buf[i] - 128) / 128;
-        sum += v * v;
-      }
-      const rms = Math.sqrt(sum / buf.length);
-      if (rms < noiseFloor * 1.8) {
-        noiseFloor += (rms - noiseFloor) * 0.04;
-      } else {
-        noiseFloor += (0.018 - noiseFloor) * 0.002;
-      }
-
-      const gatedRms = Math.max(0, rms - noiseFloor * 1.35);
-      const target = Math.min(1, gatedRms * 22);
-      const rate = target > micLevel ? 0.5 : 0.12;
-      micLevel += (target - micLevel) * rate;
-    };
-
-    micReady = true;
-    if (micContext.state === "suspended") {
-      window.addEventListener("pointerdown", () => void micContext?.resume(), {
-        once: true,
-      });
-    }
-  } catch (e) {
-    console.warn("[cyclops] microphone unavailable:", e);
-  }
-}
-
-void initMicrophone();
-window.addEventListener("pointerdown", () => void initMicrophone(), {
-  once: true,
-});
+void obsAudio.connect();
 
 // ── Render loop ───────────────────────────────────────────────────────────────
 const clock = new THREE.Clock();
@@ -330,7 +269,7 @@ function animate(): void {
   // ── Eye — center focus when talking, slow random wander when silent ─────
   // smoothstep threshold: below 0.15 = fully silent, above 0.4 = talking
   // This ignores mic background noise and only reacts to real speech
-  const silence = 1 - THREE.MathUtils.smoothstep(micLevel, 0.15, 0.4);
+  const silence = 1 - THREE.MathUtils.smoothstep(obsAudio.level, 0.15, 0.4);
 
   const eyeY =
     Math.sin(t * 0.11) * 0.38 +
@@ -364,15 +303,10 @@ function animate(): void {
   pose("ForearmL_22", lElbow, 0, 0);
   pose("HandL_20", 0.08 + lFwd * 0.3, 0, 0);
 
-  // Jaw — driven only by microphone input. No browser-audio or synthetic speech.
-  let jaw = 0;
-  if (sampleMic) {
-    sampleMic();
-    const syllable = (Math.sin(t * 8.5) * 0.3 + 0.7) * micLevel;
-    jaw = syllable * 0.35;
-  } else if (!micReady) {
-    micLevel += (0 - micLevel) * 0.08;
-  }
+  // Jaw — driven only by audio input.
+  obsAudio.update(dt);
+  const syllable = (Math.sin(t * 8.5) * 0.3 + 0.7) * obsAudio.level;
+  const jaw = syllable * 0.35;
   pose("Jaw_5", jaw, 0, 0);
 
   renderer.render(scene, camera);

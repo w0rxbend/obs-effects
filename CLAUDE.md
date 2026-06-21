@@ -111,6 +111,23 @@ If continuing this effect, preserve the slower and more physical motion profile.
 - If dependencies or tools are unavailable, say so explicitly.
 - Do not overstate verification for rendering-heavy changes.
 
+## Quality Gate — Run After Every Implementation
+
+After any code change (screen, entry, shader, config), **always run these three commands in order and fix all reported issues before reporting the task as done**:
+
+```bash
+# 1. Format — auto-fixes whitespace / style
+npx prettier --write "src/**/*.ts" "*.html"
+
+# 2. Lint — auto-fixes ESLint issues, surfaces remaining errors
+npx eslint --fix .
+
+# 3. Type-check — catches unused vars, wrong types, missing imports
+npx tsc --noEmit
+```
+
+All three must exit cleanly (zero errors, zero warnings) before the implementation is considered complete. Do not skip these for "minor" edits — strict TypeScript (`noUnusedLocals`, `noUnusedParameters`) and Prettier formatting are enforced in CI.
+
 ## Commit Guidance
 
 Use Conventional Commits for any commit, for example:

@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { FBXLoader } from "three/addons/loaders/FBXLoader.js";
+import { obsAudio } from "./lib/obsAudio";
 
 // Renderer
 const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
@@ -94,16 +95,7 @@ let headMesh: THREE.SkinnedMesh | null = null;
 let morphs: Record<string, number> = {};
 let modelHeight = 1;
 
-let audioContext: AudioContext | null = null;
-let analyser: AnalyserNode | null = null;
-let timeData: Uint8Array<ArrayBuffer> | null = null;
-let freqData: Uint8Array<ArrayBuffer> | null = null;
-let audioLevel = 0;
-let audioFast = 0;
 let audioPeak = 0;
-let audioTreble = 0;
-let audioVocal = 0;
-let audioNoiseFloor = 0.018;
 let mouthEnvelope = 0;
 let jawOpen = 0;
 let jawVelocity = 0;
@@ -112,10 +104,8 @@ let syllableOpen = 0;
 let lipRound = 0;
 let lipWide = 0;
 let consonantEnergy = 0;
-let audioReady = false;
 
 const MIC_OPEN_THRESHOLD = 0.16;
-const MIC_GATE_SOFTNESS = 0.1;
 
 function loadTexture(path: string, color = false): THREE.Texture {
   const texture = new THREE.TextureLoader().load(path);
@@ -225,143 +215,41 @@ function frameModel(model: THREE.Object3D): void {
   controls.update();
 }
 
-async function initAudio(): Promise<void> {
-  if (!navigator.mediaDevices?.getUserMedia) return;
-
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      audio: {
-        echoCancellation: true,
-        noiseSuppression: true,
-        autoGainControl: true,
-      },
-      video: false,
-    });
-    audioContext = new AudioContext();
-    const source = audioContext.createMediaStreamSource(stream);
-    analyser = audioContext.createAnalyser();
-    analyser.fftSize = 1024;
-    analyser.smoothingTimeConstant = 0.72;
-    source.connect(analyser);
-    timeData = new Uint8Array(analyser.fftSize);
-    freqData = new Uint8Array(analyser.frequencyBinCount);
-    audioReady = true;
-
-    if (audioContext.state === "suspended") {
-      window.addEventListener("pointerdown", () => audioContext?.resume(), {
-        once: true,
-      });
-    }
-  } catch (err) {
-    console.warn(
-      "[gunan] microphone unavailable; using idle face animation",
-      err,
-    );
-  }
-}
-
 function updateAudio(dt: number): void {
-  if (!analyser || !timeData || !freqData) {
-    audioLevel += (0 - audioLevel) * Math.min(1, dt * 4);
-    audioFast += (0 - audioFast) * Math.min(1, dt * 8);
-    audioPeak += (0 - audioPeak) * Math.min(1, dt * 6);
-    audioTreble += (0 - audioTreble) * Math.min(1, dt * 5);
-    audioVocal += (0 - audioVocal) * Math.min(1, dt * 6);
-    mouthEnvelope += (0 - mouthEnvelope) * Math.min(1, dt * 8);
-    jawOpen += (0 - jawOpen) * Math.min(1, dt * 8);
-    jawVelocity = 0;
-    syllableOpen += (0 - syllableOpen) * Math.min(1, dt * 12);
-    lipRound += (0 - lipRound) * Math.min(1, dt * 8);
-    lipWide += (0 - lipWide) * Math.min(1, dt * 8);
-    consonantEnergy += (0 - consonantEnergy) * Math.min(1, dt * 8);
-    return;
-  }
+  obsAudio.update(dt);
+  const level = obsAudio.level;
+  const vocal = obsAudio.vocal;
+  const high = obsAudio.high;
+  const bass = obsAudio.bass;
+  const mid = obsAudio.mid;
 
-  const waveform = timeData;
-  const spectrum = freqData;
-  analyser.getByteTimeDomainData(waveform);
-  analyser.getByteFrequencyData(spectrum);
-
-  let sum = 0;
-  for (let i = 0; i < waveform.length; i++) {
-    const v = (waveform[i] - 128) / 128;
-    sum += v * v;
-  }
-
-  const rms = Math.sqrt(sum / waveform.length);
-
-  // Track room tone slowly so fans/keyboard noise do not hold the jaw open.
-  if (rms < audioNoiseFloor * 1.8) {
-    audioNoiseFloor += (rms - audioNoiseFloor) * Math.min(1, dt * 0.45);
-  } else {
-    audioNoiseFloor += (0.018 - audioNoiseFloor) * Math.min(1, dt * 0.04);
-  }
-
-  const gatedRms = Math.max(0, rms - audioNoiseFloor * 1.45);
-  const rawLevel = THREE.MathUtils.clamp(gatedRms * 13.0, 0, 1);
-  const previousFast = audioFast;
-  audioFast += (rawLevel - audioFast) * Math.min(1, dt * 18);
-  audioLevel += (rawLevel - audioLevel) * Math.min(1, dt * 7);
-  audioPeak +=
-    (Math.max(0, audioFast - previousFast) * 5.5 - audioPeak) *
-    Math.min(1, dt * 12);
-
-  const nyquist = (audioContext?.sampleRate ?? 48000) / 2;
-  const band = (fromHz: number, toHz: number): number => {
-    const start = Math.max(0, Math.floor((fromHz / nyquist) * spectrum.length));
-    const end = Math.min(
-      spectrum.length,
-      Math.ceil((toHz / nyquist) * spectrum.length),
-    );
-    let bandSum = 0;
-    for (let i = start; i < end; i++) bandSum += spectrum[i] / 255;
-    return bandSum / Math.max(1, end - start);
-  };
-
-  const low = band(90, 360);
-  const mid = band(360, 1800);
-  const high = band(1800, 5200);
-  const rawVocal = THREE.MathUtils.clamp((low * 0.45 + mid * 1.2) * 2.5, 0, 1);
-  const speechSignal = rawLevel * 0.55 + rawVocal * 0.45;
   const micGate = THREE.MathUtils.smoothstep(
-    speechSignal,
+    level,
     MIC_OPEN_THRESHOLD,
-    MIC_OPEN_THRESHOLD + MIC_GATE_SOFTNESS,
+    MIC_OPEN_THRESHOLD + 0.1,
   );
-  const rawTreble = THREE.MathUtils.clamp(high * 2.4 * micGate, 0, 1);
-  const targetEnvelope =
-    micGate > 0
-      ? THREE.MathUtils.clamp(
-          Math.pow(
-            (speechSignal - MIC_OPEN_THRESHOLD) /
-              Math.max(0.001, 1 - MIC_OPEN_THRESHOLD),
-            0.62,
-          ) * micGate,
-          0,
-          1,
-        )
-      : 0;
-  const envelopeRate = targetEnvelope > mouthEnvelope ? 28 : 9;
+  const isTalking = level > 0.015;
 
-  audioVocal += (rawVocal - audioVocal) * Math.min(1, dt * 9);
-  audioTreble +=
-    (THREE.MathUtils.clamp(rawTreble, 0, 1) - audioTreble) *
-    Math.min(1, dt * 9);
+  audioPeak += (obsAudio.beat ? 1 : 0) * 5.5 * dt;
+  audioPeak += (0 - audioPeak) * Math.min(1, dt * 12);
+
+  const targetEnvelope = THREE.MathUtils.clamp(level * micGate, 0, 1);
+  const envelopeRate = targetEnvelope > mouthEnvelope ? 28 : 9;
   mouthEnvelope +=
     (targetEnvelope - mouthEnvelope) * Math.min(1, dt * envelopeRate);
 
   const roundTarget = THREE.MathUtils.clamp(
-    (low - mid * 0.25) * 1.35 * mouthEnvelope * micGate,
+    (bass - mid * 0.25) * 1.35 * mouthEnvelope * micGate,
     0,
     0.9,
   );
   const wideTarget = THREE.MathUtils.clamp(
-    (mid - low * 0.18) * 0.95 * mouthEnvelope * micGate,
+    (mid - bass * 0.18) * 0.95 * mouthEnvelope * micGate,
     0,
     0.8,
   );
   const consonantTarget = THREE.MathUtils.clamp(
-    rawTreble * (0.3 + mouthEnvelope * 0.7),
+    high * 2.4 * (0.3 + mouthEnvelope * 0.7),
     0,
     1,
   );
@@ -370,7 +258,7 @@ function updateAudio(dt: number): void {
   lipWide += (wideTarget - lipWide) * Math.min(1, dt * 10);
   consonantEnergy += (consonantTarget - consonantEnergy) * Math.min(1, dt * 18);
 
-  if (mouthEnvelope > 0.015) {
+  if (isTalking) {
     const syllablesPerSecond = 3.4 + mouthEnvelope * 3.4 + audioPeak * 1.2;
     syllablePhase = (syllablePhase + dt * syllablesPerSecond) % 1;
   } else {
@@ -379,14 +267,13 @@ function updateAudio(dt: number): void {
 
   const pulse = Math.sin(syllablePhase * Math.PI);
   const plosiveClosure = Math.pow(consonantEnergy, 1.35) * 0.42;
-  const syllableTarget =
-    mouthEnvelope > 0.015
-      ? THREE.MathUtils.clamp(
-          (0.16 + pulse * 0.84) * mouthEnvelope * (1 - plosiveClosure),
-          0,
-          1,
-        )
-      : 0;
+  const syllableTarget = isTalking
+    ? THREE.MathUtils.clamp(
+        (0.16 + pulse * 0.84) * mouthEnvelope * (1 - plosiveClosure),
+        0,
+        1,
+      )
+    : 0;
   syllableOpen +=
     (syllableTarget - syllableOpen) *
     Math.min(1, dt * (syllableTarget > syllableOpen ? 24 : 16));
@@ -404,11 +291,14 @@ function updateAudio(dt: number): void {
   jawVelocity += (jawTarget - jawOpen) * stiffness * dt;
   jawVelocity *= Math.exp(-damping * dt);
   jawOpen = THREE.MathUtils.clamp(jawOpen + jawVelocity * dt, 0, 1);
+
+  // Keep these locals suppressed for unused variable warnings
+  void vocal;
 }
 
 const loadStatus = document.getElementById("load-status")!;
 const loadFill = document.getElementById("load-fill") as HTMLDivElement;
-void initAudio();
+void obsAudio.connect();
 
 const loader = new FBXLoader();
 loader.setResourcePath("/assets/main/gunan/textures/");
@@ -493,17 +383,21 @@ function animate(): void {
     0,
     Math.sin(t * 3.2) * 0.55 + Math.sin(t * 6.4 + 0.8) * 0.35,
   );
-  const voice = audioReady
-    ? THREE.MathUtils.clamp(audioVocal * 0.68 + mouthEnvelope * 0.42, 0, 1)
-    : speech;
-  const mouthOpen = audioReady ? THREE.MathUtils.clamp(jawOpen, 0, 1) : speech;
-  const eyeReact = audioReady
-    ? THREE.MathUtils.clamp(audioTreble * 0.45 + audioPeak * 0.35, 0, 1)
-    : 0;
-  const audioLook = audioReady
-    ? Math.sin(t * 8.5) * audioTreble * 0.08 +
-      Math.sin(t * 13.0) * audioPeak * 0.04
-    : 0;
+  const voice = THREE.MathUtils.clamp(
+    obsAudio.vocal * 0.68 + mouthEnvelope * 0.42,
+    0,
+    1,
+  );
+  const mouthOpen = THREE.MathUtils.clamp(jawOpen, 0, 1);
+  const eyeReact = THREE.MathUtils.clamp(
+    obsAudio.high * 0.45 + audioPeak * 0.35,
+    0,
+    1,
+  );
+  const audioLook =
+    Math.sin(t * 8.5) * obsAudio.high * 0.08 +
+    Math.sin(t * 13.0) * audioPeak * 0.04;
+  void speech;
 
   if (modelRoot) {
     modelRoot.position.set(

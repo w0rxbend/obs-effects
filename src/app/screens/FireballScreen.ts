@@ -1,5 +1,6 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
+import { obsAudio } from "../../lib/obsAudio";
 
 function clamp(v: number, lo: number, hi: number): number {
   return v < lo ? lo : v > hi ? hi : v;
@@ -83,13 +84,6 @@ export class FireballScreen extends Container {
   private cy = 540;
   private time = 0;
 
-  private analyser: AnalyserNode | null = null;
-  private freqData: Uint8Array<ArrayBuffer> | null = null;
-
-  private bass = 0;
-  private mid = 0;
-  private high = 0;
-
   private particles: FireParticle[] = [];
   private emitAccum = 0;
 
@@ -100,43 +94,7 @@ export class FireballScreen extends Container {
     this.addChild(this.gfxEmber);
     this.addChild(this.gfxFlame);
     this.addChild(this.gfxSpark);
-    void this.initAudio();
-  }
-
-  private async initAudio(): Promise<void> {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: true,
-        video: false,
-      });
-      const ctx = new AudioContext();
-      const src = ctx.createMediaStreamSource(stream);
-      this.analyser = ctx.createAnalyser();
-      this.analyser.fftSize = 1024;
-      this.analyser.smoothingTimeConstant = 0.8;
-      src.connect(this.analyser);
-      this.freqData = new Uint8Array(
-        this.analyser.frequencyBinCount,
-      ) as Uint8Array<ArrayBuffer>;
-    } catch {
-      // no mic — fire still animates from idle breath
-    }
-  }
-
-  private readBands(): { bass: number; mid: number; high: number } {
-    if (!this.analyser || !this.freqData) return { bass: 0, mid: 0, high: 0 };
-    this.analyser.getByteFrequencyData(this.freqData);
-    // fftSize=1024 → binCount=512, bin ≈ 43 Hz @ 44100 Hz
-    let bass = 0;
-    for (let i = 0; i <= 6; i++) bass += this.freqData[i];
-    bass /= 7 * 255;
-    let mid = 0;
-    for (let i = 7; i <= 92; i++) mid += this.freqData[i];
-    mid /= 86 * 255;
-    let high = 0;
-    for (let i = 93; i <= 324; i++) high += this.freqData[i];
-    high /= 232 * 255;
-    return { bass, mid, high };
+    void obsAudio.connect();
   }
 
   public async show(): Promise<void> {
@@ -218,25 +176,17 @@ export class FireballScreen extends Container {
   public update(ticker: Ticker): void {
     const dt = clamp(ticker.deltaMS * 0.001, 0, 0.05);
     this.time += dt;
-
-    const raw = this.readBands();
-    const br = clamp((raw.bass - 0.01) / 0.99, 0, 1);
-    const mr = clamp(raw.mid * 3.5, 0, 1);
-    const hr = clamp(raw.high * 5.5, 0, 1);
-
-    this.bass += (br - this.bass) * (br > this.bass ? 0.75 : 0.05);
-    this.mid += (mr - this.mid) * (mr > this.mid ? 0.55 : 0.08);
-    this.high += (hr - this.high) * (hr > this.high ? 0.85 : 0.14);
+    obsAudio.update(dt);
 
     // Slow breath keeps fire alive even without audio
     const breath = 0.28 + 0.09 * Math.sin(this.time * 1.85);
-    const intensity = clamp(breath + this.bass * 0.72, 0, 1);
+    const intensity = clamp(breath + obsAudio.bass * 0.72, 0, 1);
 
     // Fireball origin gently hovers
     const hoverY = this.cy + Math.sin(this.time * 1.1) * 12;
     const hoverX = this.cx + Math.sin(this.time * 0.67) * 5;
 
-    const sparkBoost = 1 + this.high * 2.5;
+    const sparkBoost = 1 + obsAudio.high * 2.5;
     const emitRate = 175 * (0.6 + intensity * 1.4) * sparkBoost;
     this.emitAccum += emitRate * dt;
     while (this.emitAccum >= 1) {
@@ -248,7 +198,7 @@ export class FireballScreen extends Container {
       else this.spawnParticle("spark", intensity, hoverX, hoverY);
     }
 
-    const turbScale = 1 + this.mid * 1.8;
+    const turbScale = 1 + obsAudio.mid * 1.8;
     for (let i = this.particles.length - 1; i >= 0; i--) {
       const p = this.particles[i];
       p.age += dt * p.invLife;
@@ -303,15 +253,15 @@ export class FireballScreen extends Container {
     const hr = 50 + intensity * 80;
     gf.circle(ox, oy, hr * 2.8).fill({
       color: 0xff1100,
-      alpha: 0.025 + this.bass * 0.04,
+      alpha: 0.025 + obsAudio.bass * 0.04,
     });
     gf.circle(ox, oy, hr * 1.7).fill({
       color: 0xff4400,
-      alpha: 0.045 + this.bass * 0.07,
+      alpha: 0.045 + obsAudio.bass * 0.07,
     });
     gf.circle(ox, oy, hr).fill({
       color: 0xffaa00,
-      alpha: 0.035 + this.bass * 0.05,
+      alpha: 0.035 + obsAudio.bass * 0.05,
     });
 
     for (const p of this.particles) {
@@ -348,23 +298,23 @@ export class FireballScreen extends Container {
     const orbR = (14 + intensity * 20) * pulse;
     gf.circle(ox, oy, orbR * 4.2).fill({
       color: 0xff1100,
-      alpha: 0.04 + this.bass * 0.08,
+      alpha: 0.04 + obsAudio.bass * 0.08,
     });
     gf.circle(ox, oy, orbR * 2.6).fill({
       color: 0xff5500,
-      alpha: 0.09 + this.bass * 0.13,
+      alpha: 0.09 + obsAudio.bass * 0.13,
     });
     gf.circle(ox, oy, orbR * 1.5).fill({
       color: 0xffaa00,
-      alpha: 0.22 + this.bass * 0.26,
+      alpha: 0.22 + obsAudio.bass * 0.26,
     });
     gf.circle(ox, oy, orbR).fill({
       color: 0xffee88,
-      alpha: 0.58 + this.bass * 0.28,
+      alpha: 0.58 + obsAudio.bass * 0.28,
     });
     gf.circle(ox, oy, orbR * 0.5).fill({
       color: 0xffffff,
-      alpha: 0.9 + this.bass * 0.08,
+      alpha: 0.9 + obsAudio.bass * 0.08,
     });
   }
 }

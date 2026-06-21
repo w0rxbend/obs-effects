@@ -7,6 +7,7 @@ import {
   TextStyle,
   Texture,
 } from "pixi.js";
+import { obsAudio } from "../../../lib/obsAudio";
 
 // ── Palette ───────────────────────────────────────────────────────────────────
 // Razer signature greens + LoL blues/purples + toxic black-green-violet
@@ -605,14 +606,6 @@ export class AudioActivatedCameraBorder extends Container {
   private readonly ringSpeedDrift: number[];
   private readonly ringAmpDrift: number[];
 
-  // ── Mic audio ────────────────────────────────────────────────────────────────
-  private audioContext: AudioContext | null = null;
-  private analyser: AnalyserNode | null = null;
-  private audioData: Uint8Array<ArrayBuffer> | null = null;
-  private audioVol = 0; // smoothed audio level 0..1
-
-  private static readonly MIC_THRESHOLD = 0.15;
-
   private static readonly BRUSH_INTERVAL = 0.09;
   private static readonly SPARKLE_INTERVAL = 0.28;
   private static readonly SPARK_INTERVAL = 0.15;
@@ -668,7 +661,7 @@ export class AudioActivatedCameraBorder extends Container {
     this.initSurfaceLines();
     this.initGraffitiTags();
 
-    void this.initAudio();
+    void obsAudio.connect();
   }
 
   // ── Logo API ───────────────────────────────────────────────────────────────
@@ -798,21 +791,21 @@ export class AudioActivatedCameraBorder extends Container {
 
     for (const s of this.splatSprites) {
       // ── Orbit — speed scales with audio ───────────────────────────────────
-      s.orbitAngle += s.orbitSpeed * dt * (1 + this.audioVol * 3.5);
+      s.orbitAngle += s.orbitSpeed * dt * (1 + obsAudio.level * 3.5);
       const orbitR = s.orbitRadius * breathe;
       s.x = Math.cos(s.orbitAngle) * orbitR;
       s.y = Math.sin(s.orbitAngle) * orbitR;
 
       // ── Zoom-in / zoom-out: |sin| gives a symmetric expand-contract pulse ──
       // Speed and depth both scale with audio so at silence scaleF ≈ baseScale
-      const zoomSpeed = s.pulseSpeed * (1 + this.audioVol * 3.0);
-      const zoomDepth = 0.1 + this.audioVol * 1.4;
+      const zoomSpeed = s.pulseSpeed * (1 + obsAudio.level * 3.0);
+      const zoomDepth = 0.1 + obsAudio.level * 1.4;
       const scaleF =
         1 + zoomDepth * Math.abs(Math.sin(t * zoomSpeed + s.phase));
 
       s.sprite.x = s.x;
       s.sprite.y = s.y;
-      s.sprite.rotation += s.rotSpeed * dt * (1 + this.audioVol * 2.0);
+      s.sprite.rotation += s.rotSpeed * dt * (1 + obsAudio.level * 2.0);
       s.sprite.scale.set(s.baseScale * scaleF);
 
       // ── Swap lifecycle (unchanged) ─────────────────────────────────────────
@@ -844,7 +837,7 @@ export class AudioActivatedCameraBorder extends Container {
         }
       }
       // Gate alpha to mic: invisible when silent, pop in as audio rises
-      s.sprite.alpha = s.fadeAlpha * Math.min(1.0, this.audioVol * 4.0);
+      s.sprite.alpha = s.fadeAlpha * Math.min(1.0, obsAudio.level * 4.0);
     }
   }
 
@@ -1047,42 +1040,12 @@ export class AudioActivatedCameraBorder extends Container {
 
   // ── Mic audio ────────────────────────────────────────────────────────────────
 
-  private async initAudio(): Promise<void> {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: true,
-        video: false,
-      });
-      this.audioContext = new AudioContext();
-      const src = this.audioContext.createMediaStreamSource(stream);
-      this.analyser = this.audioContext.createAnalyser();
-      this.analyser.fftSize = 256;
-      this.analyser.smoothingTimeConstant = 0.8;
-      src.connect(this.analyser);
-      this.audioData = new Uint8Array(
-        this.analyser.frequencyBinCount,
-      ) as Uint8Array<ArrayBuffer>;
-    } catch {
-      // No mic available — audioVol stays 0
-    }
-  }
-
-  private readRMS(): number {
-    if (!this.analyser || !this.audioData) return 0;
-    this.analyser.getByteTimeDomainData(this.audioData);
-    let sum = 0;
-    for (let i = 0; i < this.audioData.length; i++) {
-      const v = (this.audioData[i] - 128) / 128;
-      sum += v * v;
-    }
-    return Math.sqrt(sum / this.audioData.length);
-  }
-
   // ── Public update ──────────────────────────────────────────────────────────
 
   public update(): void {
     const dt = 1 / 60;
     this.time += dt;
+    obsAudio.update(dt);
 
     this.tickBeat(dt);
 
@@ -1150,24 +1113,24 @@ export class AudioActivatedCameraBorder extends Container {
     });
 
     // Particles
-    const particleBoost = 1 + this.audioVol * 3.0;
+    const particleBoost = 1 + obsAudio.level * 3.0;
     for (const p of this.particles) {
       p.angle += p.orbitSpeed * particleBoost;
     }
 
     // Fluid stains — advance orbit + self-rotation + Fourier mode phases
-    const stainBoost = 1 + this.audioVol * 3.5;
+    const stainBoost = 1 + obsAudio.level * 3.5;
     for (const stain of this.fluidStains) {
       stain.angle += stain.speed * dt * stainBoost;
-      stain.rotation += stain.rotSpeed * dt * (1 + this.audioVol * 2.5);
+      stain.rotation += stain.rotSpeed * dt * (1 + obsAudio.level * 2.5);
       for (const m of stain.modes) m.phase += m.speed * dt * stainBoost;
     }
 
     // Floating symbols — orbital + vibration phases advance each frame
-    const symBoost = 1 + this.audioVol * 2.5;
+    const symBoost = 1 + obsAudio.level * 2.5;
     for (const s of this.floatingSymbols) {
       s.angle += s.orbitSpeed * dt * symBoost;
-      s.vibePhase += s.vibeSpeed * dt * (1 + this.audioVol * 3.5);
+      s.vibePhase += s.vibeSpeed * dt * (1 + obsAudio.level * 3.5);
       s.alphaPhase += s.alphaSpeed * dt;
       s.jitterPhase += 1.7 * dt * symBoost;
     }
@@ -1178,24 +1141,16 @@ export class AudioActivatedCameraBorder extends Container {
   // ── Audio-driven beat ─────────────────────────────────────────────────────
 
   private tickBeat(dt: number): void {
-    const rms = this.readRMS() * 4;
-    const threshold = AudioActivatedCameraBorder.MIC_THRESHOLD;
-    const raw = rms < threshold ? 0 : (rms - threshold) / (1 - threshold);
-    const vol = Math.max(0, Math.min(1, raw));
-
-    // Smooth audioVol towards current reading
-    this.audioVol += (vol - this.audioVol) * Math.min(1, dt * 8);
-
     // activityLevel: ambient floor at 0.3, driven up by audio
-    this.activityLevel = 0.3 + this.audioVol * 0.7;
+    this.activityLevel = 0.3 + obsAudio.level * 0.7;
 
     // beatAmplitude tracks audio level with smooth interpolation
-    const targetBeat = 1.0 + this.audioVol * 2.8;
+    const targetBeat = 1.0 + obsAudio.level * 2.8;
     this.beatAmplitude +=
       (targetBeat - this.beatAmplitude) * Math.min(1, dt * 6);
 
     // jitterAmp scales with audio
-    this.jitterAmp = this.audioVol * 0.7;
+    this.jitterAmp = obsAudio.level * 0.7;
 
     // Beat-triggered events — fire periodically, intensity gated by audio
     if (this.time >= this.nextBeatTime) {
@@ -1203,16 +1158,16 @@ export class AudioActivatedCameraBorder extends Container {
       const baseInterval = (0.4 + Math.random() * 0.4) * restStretch;
       this.nextBeatTime = this.time + baseInterval;
 
-      if (this.audioVol > 0.25) {
+      if (obsAudio.level > 0.25) {
         this.spawnSparks(true);
-        if (Math.random() < 0.4 * this.audioVol) this.spawnLightning();
+        if (Math.random() < 0.4 * obsAudio.level) this.spawnLightning();
       }
 
       // Glitch: only during loud audio
       if (
         !this.glitchActive &&
         this.time >= this.glitchNextTime &&
-        Math.random() < 0.1 * this.audioVol
+        Math.random() < 0.1 * obsAudio.level
       ) {
         this.glitchActive = true;
         this.glitchEndTime = this.time + 0.05 + Math.random() * 0.1;
@@ -1382,14 +1337,14 @@ export class AudioActivatedCameraBorder extends Container {
     for (let ci = 0; ci < WAVE_CONFIGS.length; ci++) {
       const cfg = WAVE_CONFIGS[ci];
       // Per-ring drift — audio accelerates each ring's phase wander
-      const driftBoost = 1 + this.audioVol * 4.0;
+      const driftBoost = 1 + obsAudio.level * 4.0;
       this.ringSpeedDrift[ci] +=
         dt * (0.008 + ci * 0.0005) * (ci % 2 === 0 ? 1 : -1) * driftBoost;
       this.ringAmpDrift[ci] += dt * (0.019 + ci * 0.002) * driftBoost;
       const speedMod = 1 + 0.28 * Math.sin(this.ringSpeedDrift[ci]);
       const ampEnv = 0.45 + 0.55 * Math.abs(Math.sin(this.ringAmpDrift[ci]));
       const phase =
-        this.time * cfg.speed * speedMod * (1 + this.audioVol * 2.0) +
+        this.time * cfg.speed * speedMod * (1 + obsAudio.level * 2.0) +
         cfg.phaseOffset;
       const amplitude = cfg.baseAmplitude * this.beatAmplitude * ampEnv;
       this.drawGlowWaveRing(
@@ -1524,19 +1479,19 @@ export class AudioActivatedCameraBorder extends Container {
     const gfx = this.graffGfx;
 
     // 8 static cross marks at fixed angular positions
-    const markSpinRate = 0.008 + this.audioVol * 0.07;
+    const markSpinRate = 0.008 + obsAudio.level * 0.07;
     for (let i = 0; i < 8; i++) {
       const ang = (i / 8) * Math.PI * 2 + this.time * markSpinRate;
       const rOff = (i % 2 === 0 ? 1 : -1) * 28;
       const cx = Math.cos(ang) * (r + rOff);
       const cy = Math.sin(ang) * (r + rOff);
       const sz =
-        (5 + 2 * Math.sin(this.time * 0.35 + i)) * (1 + this.audioVol * 2.0);
+        (5 + 2 * Math.sin(this.time * 0.35 + i)) * (1 + obsAudio.level * 2.0);
       const col =
         i % 3 === 0 ? TOXIC_GREEN : i % 3 === 1 ? TOXIC_VIOLET : RAZER_GREEN;
       const alpha =
         (0.4 + 0.3 * Math.sin(this.time * 0.25 + i * 0.9)) *
-        (1 + this.audioVol * 0.7);
+        (1 + obsAudio.level * 0.7);
 
       if (i % 2 === 0) {
         // Regular cross +
@@ -1577,23 +1532,23 @@ export class AudioActivatedCameraBorder extends Container {
 
   private updateGraffitiTags(breathe: number): void {
     const dt = 1 / 60;
-    const swingBoost = 1 + this.audioVol * 2.5;
+    const swingBoost = 1 + obsAudio.level * 2.5;
     for (const tag of this.graffitiTags) {
       tag.oscPhase += tag.oscSpeed * dt * swingBoost;
-      const swingAmp = tag.orbitSwing * (1 + this.audioVol * 1.8);
+      const swingAmp = tag.orbitSwing * (1 + obsAudio.level * 1.8);
       tag.orbitAngle = tag.orbitBase + Math.sin(tag.oscPhase) * swingAmp;
       const r = tag.orbitRadius * breathe;
       const bob =
         Math.sin(this.time * tag.bobSpeed + tag.bobPhase) *
         tag.bobAmp *
-        (1 + this.audioVol * 3.0);
+        (1 + obsAudio.level * 3.0);
       tag.node.x = Math.cos(tag.orbitAngle) * r;
       tag.node.y = Math.sin(tag.orbitAngle) * r + bob;
       tag.node.rotation = tag.orbitAngle + Math.PI / 2 + tag.baseRot;
       // Scale: small when silent (0.55×), grows to 1.6× at full volume
-      tag.node.scale.set(0.55 + this.audioVol * 1.05);
+      tag.node.scale.set(0.55 + obsAudio.level * 1.05);
       // Alpha: fully transparent at silence, fully opaque when mic activates
-      tag.node.alpha = Math.min(1.0, this.audioVol * 3.0);
+      tag.node.alpha = Math.min(1.0, obsAudio.level * 3.0);
     }
   }
 
@@ -1603,7 +1558,7 @@ export class AudioActivatedCameraBorder extends Container {
     const dt = 1 / 60;
     for (let i = this.surfaceLines.length - 1; i >= 0; i--) {
       const ln = this.surfaceLines[i];
-      ln.life += ln.fadeDir * ln.fadeSpeed * dt * (1 + this.audioVol * 2.5);
+      ln.life += ln.fadeDir * ln.fadeSpeed * dt * (1 + obsAudio.level * 2.5);
 
       if (ln.life >= 1.0) {
         ln.life = 1.0;
@@ -1626,7 +1581,7 @@ export class AudioActivatedCameraBorder extends Container {
         .stroke({
           color: INK_BLACK,
           alpha: ln.alpha * ln.life,
-          width: ln.width * (1 + this.audioVol * 2.0),
+          width: ln.width * (1 + obsAudio.level * 2.0),
           cap: "round",
         });
     }
@@ -1881,7 +1836,7 @@ export class AudioActivatedCameraBorder extends Container {
       // Advance angle — beat + audio makes dots surge
       const beatBoost = dot.speed > 0 ? this.beatAmplitude * 0.18 : 1.0;
       dot.angle +=
-        dot.speed * dt * (1 + beatBoost * 0.15) * (1 + this.audioVol * 3.5);
+        dot.speed * dt * (1 + beatBoost * 0.15) * (1 + obsAudio.level * 3.5);
 
       const r = (this.baseRadius + dot.radiusOffset) * breathe;
       const x = Math.cos(dot.angle) * r;
@@ -1892,10 +1847,10 @@ export class AudioActivatedCameraBorder extends Container {
         0.55 + 0.45 * Math.sin(this.time * dot.alphaSpeed + dot.alphaPhase);
       const kickAlpha = Math.min(
         1.0,
-        baseAlpha + (this.beatAmplitude - 1.0) * 0.35 + this.audioVol * 0.4,
+        baseAlpha + (this.beatAmplitude - 1.0) * 0.35 + obsAudio.level * 0.4,
       );
       const size =
-        dot.size * (1 + (this.beatAmplitude - 1) * 0.25 + this.audioVol * 1.0);
+        dot.size * (1 + (this.beatAmplitude - 1) * 0.25 + obsAudio.level * 1.0);
 
       // Soft glow halo
       this.orbitDotGfx
@@ -2002,11 +1957,11 @@ export class AudioActivatedCameraBorder extends Container {
 
   private updateFloatingSymbols(breathe: number): void {
     // Gate: symbols only appear when mic is active
-    const audioGate = Math.min(1.0, this.audioVol * 3.0);
-    const beatBoost = 1 + (this.beatAmplitude - 1) * 0.4 + this.audioVol * 1.4;
+    const audioGate = Math.min(1.0, obsAudio.level * 3.0);
+    const beatBoost = 1 + (this.beatAmplitude - 1) * 0.4 + obsAudio.level * 1.4;
 
     for (const s of this.floatingSymbols) {
-      const jitterMul = 1 + this.audioVol * 3.0;
+      const jitterMul = 1 + obsAudio.level * 3.0;
       const r = s.orbitRadius * breathe;
       const jx = Math.sin(s.jitterPhase * 1.3) * s.jitterAmp * jitterMul;
       const jy = Math.cos(s.jitterPhase * 0.9) * s.jitterAmp * jitterMul;
@@ -2021,7 +1976,7 @@ export class AudioActivatedCameraBorder extends Container {
       const baseA = s.alphaBase + s.alphaAmp * Math.sin(s.alphaPhase);
       const beatA = Math.min(
         1.0,
-        baseA + (this.beatAmplitude - 1) * 0.25 + this.audioVol * 0.35,
+        baseA + (this.beatAmplitude - 1) * 0.25 + obsAudio.level * 0.35,
       );
       // Fully invisible when silent, smoothly revealed as audio rises
       s.node.alpha = Math.max(0, beatA) * audioGate;
@@ -2110,13 +2065,13 @@ export class AudioActivatedCameraBorder extends Container {
     const gfx = this.logoGfx!;
     const x = AudioActivatedCameraBorder.LOGO_X;
     const baseY = AudioActivatedCameraBorder.LOGO_Y;
-    const float = Math.sin(this.time * 0.5) * (7 + this.audioVol * 18);
+    const float = Math.sin(this.time * 0.5) * (7 + obsAudio.level * 18);
     const y = baseY + float;
 
     // Slow breathe + persistent high-freq tremor + audio size boost
     const breathe =
-      1 + 0.055 * Math.sin(this.time * 0.6) + this.audioVol * 0.55;
-    const tremorAmp = 1 + this.audioVol * 3.0;
+      1 + 0.055 * Math.sin(this.time * 0.6) + obsAudio.level * 0.55;
+    const tremorAmp = 1 + obsAudio.level * 3.0;
     const tremor =
       1 +
       0.013 * tremorAmp * Math.sin(this.time * 19.4) +
@@ -2125,7 +2080,7 @@ export class AudioActivatedCameraBorder extends Container {
     sprite.scale.set(this.logoBaseScale * breathe * tremor);
 
     // Micro position quake — amplified by audio
-    const quakeMul = 1 + this.audioVol * 3.5;
+    const quakeMul = 1 + obsAudio.level * 3.5;
     const qx =
       Math.sin(this.time * 17.3) * 1.8 * quakeMul +
       Math.sin(this.time * 31.1) * 1.0 * quakeMul;
@@ -2136,11 +2091,11 @@ export class AudioActivatedCameraBorder extends Container {
     sprite.y = y + qy;
     sprite.alpha = Math.min(
       1.0,
-      0.9 + Math.sin(this.time * 0.75) * 0.1 + this.audioVol * 0.1,
+      0.9 + Math.sin(this.time * 0.75) * 0.1 + obsAudio.level * 0.1,
     );
 
-    const aura = 32 + 4 * Math.sin(this.time * 0.5) + this.audioVol * 28;
-    const auraAlphaMul = 1 + this.audioVol * 3.5;
+    const aura = 32 + 4 * Math.sin(this.time * 0.5) + obsAudio.level * 28;
+    const auraAlphaMul = 1 + obsAudio.level * 3.5;
 
     gfx.clear();
     gfx
@@ -2153,7 +2108,7 @@ export class AudioActivatedCameraBorder extends Container {
       .circle(x, y, aura * 0.9)
       .fill({ color: LOL_VIOLET, alpha: 0.07 * auraAlphaMul });
 
-    const ringSpeed = 1 + this.audioVol * 4.0;
+    const ringSpeed = 1 + obsAudio.level * 4.0;
     const r0 = aura + 4,
       a0 = this.time * 0.75 * ringSpeed;
     gfx
@@ -2161,8 +2116,8 @@ export class AudioActivatedCameraBorder extends Container {
       .arc(x, y, r0, a0, a0 + Math.PI * 1.4)
       .stroke({
         color: RAZER_GREEN,
-        alpha: Math.min(1.0, 0.9 + this.audioVol * 0.1),
-        width: 1.5 + this.audioVol * 2.5,
+        alpha: Math.min(1.0, 0.9 + obsAudio.level * 0.1),
+        width: 1.5 + obsAudio.level * 2.5,
         cap: "round",
       });
 
@@ -2173,8 +2128,8 @@ export class AudioActivatedCameraBorder extends Container {
       .arc(x, y, r1, a1, a1 + Math.PI * 0.8)
       .stroke({
         color: LOL_VIOLET,
-        alpha: Math.min(1.0, 0.65 + this.audioVol * 0.35),
-        width: 1.0 + this.audioVol * 2.0,
+        alpha: Math.min(1.0, 0.65 + obsAudio.level * 0.35),
+        width: 1.0 + obsAudio.level * 2.0,
         cap: "round",
       });
   }

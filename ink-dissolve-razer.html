@@ -43,6 +43,117 @@
         var SPREAD_SPEED = 0.4;
         var TENDRIL_DETAIL = 1.0;
 
+        // ── OBS WebSocket audio ──────────────────────────────────────────────
+        var obsLevel = 0; // raw linear magnitude (0-1)
+        var audioLevel = 0; // smoothed overall level
+        var audioBass = 0; // slow-following bass envelope
+        var audioHigh = 0; // fast-following transient envelope
+        var audioBeatCd = 0; // beat cooldown (seconds)
+        var audioBeat = false;
+        var audioSimT = 0; // fallback simulation clock
+        var obsConnected = false;
+
+        function connectOBS(url, password) {
+          url = url || "ws://127.0.0.1:4455";
+          password = password || "";
+          var ws;
+          try {
+            ws = new WebSocket(url);
+          } catch (e) {
+            return;
+          }
+
+          ws.onmessage = function (e) {
+            var msg = JSON.parse(e.data);
+            if (msg.op === 0) {
+              // Hello — send Identify with high-volume event subscription
+              var auth = msg.d.authentication;
+              var identify = function (authStr) {
+                var d = { rpcVersion: 1, eventSubscriptions: 65536 };
+                if (authStr) d.authentication = authStr;
+                ws.send(JSON.stringify({ op: 1, d: d }));
+              };
+              if (auth && password) {
+                var enc = new TextEncoder();
+                var digest = function (str) {
+                  return crypto.subtle.digest("SHA-256", enc.encode(str));
+                };
+                digest(password + auth.salt)
+                  .then(function (h1) {
+                    var s = btoa(
+                      String.fromCharCode.apply(null, new Uint8Array(h1)),
+                    );
+                    return digest(s + auth.challenge);
+                  })
+                  .then(function (h2) {
+                    identify(
+                      btoa(String.fromCharCode.apply(null, new Uint8Array(h2))),
+                    );
+                  });
+              } else {
+                identify(null);
+              }
+            } else if (msg.op === 2) {
+              obsConnected = true;
+            } else if (
+              msg.op === 5 &&
+              msg.d.eventType === "InputVolumeMeters"
+            ) {
+              var max = 0;
+              var inputs = msg.d.eventData.inputs;
+              for (var i = 0; i < inputs.length; i++) {
+                var levels = inputs[i].inputLevelsMul;
+                if (!Array.isArray(levels)) continue;
+                for (var c = 0; c < levels.length; c++) {
+                  var mag = Array.isArray(levels[c]) ? levels[c][0] : 0;
+                  if (mag > max) max = mag;
+                }
+              }
+              obsLevel = max;
+            }
+          };
+          ws.onclose = function () {
+            obsConnected = false;
+            setTimeout(function () {
+              connectOBS(url, password);
+            }, 3000);
+          };
+        }
+
+        connectOBS();
+
+        // Advance audio state — called each frame with dt in seconds
+        function updateAudio(dt) {
+          audioBeat = false;
+          audioBeatCd = Math.max(0, audioBeatCd - dt);
+
+          var raw;
+          if (!obsConnected) {
+            audioSimT += dt;
+            var t = audioSimT;
+            raw =
+              0.08 +
+              Math.abs(Math.sin(t * 0.29)) * 0.12 +
+              Math.abs(Math.sin(t * 1.1)) * 0.06;
+          } else {
+            raw = Math.sqrt(Math.min(1, obsLevel));
+          }
+
+          // Bass: slow following
+          audioBass +=
+            (raw - audioBass) * Math.min(1, dt * (raw > audioBass ? 7 : 2.5));
+          // High: fast transient
+          audioHigh +=
+            (raw - audioHigh) * Math.min(1, dt * (raw > audioHigh ? 28 : 6));
+          // Level: balanced
+          audioLevel += (raw - audioLevel) * Math.min(1, dt * 10);
+
+          if (audioBass > 0.22 && audioBeatCd <= 0) {
+            audioBeat = true;
+            audioBeatCd = 0.25;
+          }
+        }
+
         var vertSrc = [
           "attribute vec2 a_pos;",
           "void main() { gl_Position = vec4(a_pos, 0.0, 1.0); }",
@@ -215,81 +326,140 @@
 
         var buf = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1,3,-1,-1,3]), gl.STATIC_DRAW);
+        gl.bufferData(
+          gl.ARRAY_BUFFER,
+          new Float32Array([-1, -1, 3, -1, -1, 3]),
+          gl.STATIC_DRAW,
+        );
         var aPos = gl.getAttribLocation(prog, "a_pos");
         gl.enableVertexAttribArray(aPos);
         gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
 
         var uTime = gl.getUniformLocation(prog, "u_time");
-        var uRes  = gl.getUniformLocation(prog, "u_res");
+        var uRes = gl.getUniformLocation(prog, "u_res");
         var uSpread = gl.getUniformLocation(prog, "u_spread");
         var uDetail = gl.getUniformLocation(prog, "u_detail");
         var uMouse = gl.getUniformLocation(prog, "u_mouse");
 
-        var mouseX=-1, mouseY=-1, smoothMouseX=-1, smoothMouseY=-1, mouseActive=false;
+        var mouseX = -1,
+          mouseY = -1,
+          smoothMouseX = -1,
+          smoothMouseY = -1,
+          mouseActive = false;
 
-        canvas.addEventListener("mousemove", function(e) {
-          mouseX = e.clientX * Math.min(window.devicePixelRatio||1,2);
-          mouseY = (canvas.clientHeight - e.clientY) * Math.min(window.devicePixelRatio||1,2);
+        canvas.addEventListener("mousemove", function (e) {
+          mouseX = e.clientX * Math.min(window.devicePixelRatio || 1, 2);
+          mouseY =
+            (canvas.clientHeight - e.clientY) *
+            Math.min(window.devicePixelRatio || 1, 2);
           mouseActive = true;
         });
-        canvas.addEventListener("mouseleave", function() { mouseActive=false; });
-        canvas.addEventListener("touchstart", function(e) {
-          var t=e.touches[0];
-          mouseX=t.clientX*Math.min(window.devicePixelRatio||1,2);
-          mouseY=(canvas.clientHeight-t.clientY)*Math.min(window.devicePixelRatio||1,2);
-          mouseActive=true;
-        },{passive:true});
-        canvas.addEventListener("touchmove", function(e) {
-          e.preventDefault();
-          var t=e.touches[0];
-          mouseX=t.clientX*Math.min(window.devicePixelRatio||1,2);
-          mouseY=(canvas.clientHeight-t.clientY)*Math.min(window.devicePixelRatio||1,2);
-          mouseActive=true;
-        },{passive:false});
-        canvas.addEventListener("touchend", function() { mouseActive=false; });
+        canvas.addEventListener("mouseleave", function () {
+          mouseActive = false;
+        });
+        canvas.addEventListener(
+          "touchstart",
+          function (e) {
+            var t = e.touches[0];
+            mouseX = t.clientX * Math.min(window.devicePixelRatio || 1, 2);
+            mouseY =
+              (canvas.clientHeight - t.clientY) *
+              Math.min(window.devicePixelRatio || 1, 2);
+            mouseActive = true;
+          },
+          { passive: true },
+        );
+        canvas.addEventListener(
+          "touchmove",
+          function (e) {
+            e.preventDefault();
+            var t = e.touches[0];
+            mouseX = t.clientX * Math.min(window.devicePixelRatio || 1, 2);
+            mouseY =
+              (canvas.clientHeight - t.clientY) *
+              Math.min(window.devicePixelRatio || 1, 2);
+            mouseActive = true;
+          },
+          { passive: false },
+        );
+        canvas.addEventListener("touchend", function () {
+          mouseActive = false;
+        });
 
-        var dpr=Math.min(window.devicePixelRatio||1,2), needsResize=true;
+        var dpr = Math.min(window.devicePixelRatio || 1, 2),
+          needsResize = true;
 
         function resize() {
-          needsResize=false;
-          var w=Math.round(canvas.clientWidth*dpr), h=Math.round(canvas.clientHeight*dpr);
-          if(canvas.width!==w||canvas.height!==h){
-            canvas.width=w; canvas.height=h;
-            gl.viewport(0,0,w,h);
-            gl.uniform2f(uRes,w,h);
+          needsResize = false;
+          var w = Math.round(canvas.clientWidth * dpr),
+            h = Math.round(canvas.clientHeight * dpr);
+          if (canvas.width !== w || canvas.height !== h) {
+            canvas.width = w;
+            canvas.height = h;
+            gl.viewport(0, 0, w, h);
+            gl.uniform2f(uRes, w, h);
           }
         }
 
-        var lastTime=0, paused=false;
+        var lastTime = 0,
+          paused = false;
+        // Beat flash — spreads ink burst on audio transient
+        var beatFlash = 0;
+
         function render(now) {
-          if(paused){requestAnimationFrame(render);return;}
-          if(lastTime===0) lastTime=now;
-          lastTime=now;
-          if(needsResize) resize();
-          if(mouseActive){
-            if(smoothMouseX<0){smoothMouseX=mouseX;smoothMouseY=mouseY;}
-            smoothMouseX+=(mouseX-smoothMouseX)*0.08;
-            smoothMouseY+=(mouseY-smoothMouseY)*0.08;
-          } else { smoothMouseX=-1; smoothMouseY=-1; }
-          gl.uniform1f(uTime, prefersReduced?0.0:now*0.001);
-          gl.uniform1f(uSpread, SPREAD_SPEED);
-          gl.uniform1f(uDetail, TENDRIL_DETAIL);
+          if (paused) {
+            requestAnimationFrame(render);
+            return;
+          }
+          if (lastTime === 0) lastTime = now;
+          var dt = Math.min((now - lastTime) * 0.001, 0.05);
+          lastTime = now;
+          if (needsResize) resize();
+          if (mouseActive) {
+            if (smoothMouseX < 0) {
+              smoothMouseX = mouseX;
+              smoothMouseY = mouseY;
+            }
+            smoothMouseX += (mouseX - smoothMouseX) * 0.08;
+            smoothMouseY += (mouseY - smoothMouseY) * 0.08;
+          } else {
+            smoothMouseX = -1;
+            smoothMouseY = -1;
+          }
+
+          if (!prefersReduced) updateAudio(dt);
+
+          // Audio drives spread speed and tendril detail
+          var audioSpread =
+            SPREAD_SPEED * (1.0 + audioLevel * 1.8 + audioBass * 0.8);
+          var audioDetail = TENDRIL_DETAIL * (1.0 + audioHigh * 0.6);
+
+          // Beat flash briefly spikes spread
+          if (audioBeat) beatFlash = 1.0;
+          beatFlash *= 0.85;
+          audioSpread += beatFlash * SPREAD_SPEED * 2.0;
+
+          gl.uniform1f(uTime, prefersReduced ? 0.0 : now * 0.001);
+          gl.uniform1f(uSpread, audioSpread);
+          gl.uniform1f(uDetail, audioDetail);
           gl.uniform2f(uMouse, smoothMouseX, smoothMouseY);
           gl.drawArrays(gl.TRIANGLES, 0, 3);
           requestAnimationFrame(render);
         }
 
-        window.addEventListener("resize", function(){needsResize=true;});
+        window.addEventListener("resize", function () {
+          needsResize = true;
+        });
         resize();
         requestAnimationFrame(render);
-        document.addEventListener("visibilitychange", function(){
-          paused=document.hidden; if(!paused) lastTime=0;
+        document.addEventListener("visibilitychange", function () {
+          paused = document.hidden;
+          if (!paused) lastTime = 0;
         });
-        window.addEventListener("message", function(e){
-          if(e.data&&e.data.type==="param"){
-            if(e.data.name==="SPREAD_SPEED") SPREAD_SPEED=e.data.value;
-            if(e.data.name==="TENDRIL_DETAIL") TENDRIL_DETAIL=e.data.value;
+        window.addEventListener("message", function (e) {
+          if (e.data && e.data.type === "param") {
+            if (e.data.name === "SPREAD_SPEED") SPREAD_SPEED = e.data.value;
+            if (e.data.name === "TENDRIL_DETAIL") TENDRIL_DETAIL = e.data.value;
           }
         });
       })();

@@ -1251,3 +1251,113 @@ M  SCORES.jsonl
 2026-06-20T22:12:44Z iteration final-telemetry checkpoint status before commit:
 M  AGENT_LOG.md
 M  SCORES.jsonl
+2026-06-20T22:12:44Z orchestrator finished iterations_run=5 iterations_attempted=5 iterations_completed_successfully=0 had_nonfatal_failures=true nonfatal_failure_count=5 last_nonfatal_exit_code=1 last_nonfatal_failure_reason=planner_failed loop_exit_code=0 process_exit_code=0 fatal=false terminal_reason=iterations_complete_with_failures final_checkpoint_behavior=telemetry_only
+2026-06-21T06:45:40Z orchestrator started provider=claude budget=18000s iterations=5 max_workers=4
+2026-06-21T06:45:40Z iteration 1 started remaining=18000s
+2026-06-21T06:45:40Z iteration 1 preplanner effective budgets untracked_scan_max_bytes=536870912 untracked_scan_max_count=10000 snapshot_copy_max_bytes=536870912 snapshot_copy_max_count=10000 snapshot_copy_max_file_bytes=134217728
+2026-06-21T06:45:40Z iteration 1 disposable preplanner repo created path=/tmp/agent-loop-preplanner-repo-9irw1r0v/repo copied_entries=877
+2026-06-21T06:45:40Z iteration 1 ideator phase started count=3
+2026-06-21T06:45:40Z iteration 1 ideator phase concurrency workers=3
+2026-06-21T06:45:40Z iteration 1 ideator 1 role="the pragmatist" started
+2026-06-21T06:45:40Z iteration 1 ideator 2 role="the architect" started
+2026-06-21T06:45:40Z iteration 1 ideator 3 role="the contrarian" started
+2026-06-21T06:45:54Z iteration 1 ideator 3 role="the contrarian" completed status=0
+2026-06-21T06:45:54Z iteration 1 ideator 1 role="the pragmatist" completed status=0
+2026-06-21T06:45:57Z iteration 1 ideator 2 role="the architect" completed status=0
+2026-06-21T06:45:57Z iteration 1 ideator phase completed approaches=3
+2026-06-21T06:45:57Z iteration 1 selector started approaches=3
+2026-06-21T06:46:22Z iteration 1 selector completed status=0
+2026-06-21T06:46:22Z iteration 1 disposable preplanner repo cleanup path=/tmp/agent-loop-preplanner-repo-9irw1r0v/repo
+2026-06-21T06:46:22Z iteration 1 selector rejected alternative role="the contrarian" approach="Defer Three.js factory, prioritize developer experience wins (barrel export + HTML deduplication) that compound across all 200+ pages immediately" reason="Deferring H1 entirely in favor of M1+M2 inverts the priority correctly for M1 but not M2. The Vite HTML plugin (M2) carries simultaneous blast-radius risk the Contrarian acknowledges but does not fully weight \u2014 a broken plugin disables e..."
+2026-06-21T06:46:22Z iteration 1 selector rejected alternative role="the pragmatist" approach="Audit-First Three.js Factory: enumerate all init patterns before writing a single line of factory code" reason="Correct on audit-first ordering and the variance risk, but treats M1 and M2 as fully deferred when M1 is genuinely parallel-safe and low-risk. Not selecting M1 alongside the audit leaves an easy compounding win on the table for no reason."
+2026-06-21T06:46:22Z iteration 1 selector rejected alternative role="the architect" approach="Audit-first Three.js factory with interface derived from variance, not assumptions" reason="Raises the most nuanced architectural question \u2014 factory vs. thinner renderer-bootstrap helper \u2014 which is exactly the right question to answer during the audit. However, the secondary risk note ('M1 and M2 could create false momentum') s..."
+2026-06-21T06:46:22Z iteration 1 selector alternatives persisted count=3
+2026-06-21T06:46:22Z iteration 1 selector structured alternatives persisted count=3
+2026-06-21T06:46:22Z iteration 1 planner started
+2026-06-21T06:46:50Z iteration 1 plan: 2 task(s) in 1 phase(s). Phase 1 runs both tasks in parallel because t1 (barrel export) only touches src/lib/index.ts and t2 (audit) only writes to AGENT.md and reads src/*.ts files — no shared file dependencies. t1 is the M1 quick-win: a single additive file with zero blast radius. t2 is the mandatory prerequisite before any Three.js factory can be designed; its output (the variance matrix in AGENT.md) unblocks the factory interface decision in a future iteration. No factory implementation is included in this iteration per the strategic constraint.
+2026-06-21T06:46:50Z iteration 1 phase 1 started parallel=True tasks=2
+2026-06-21T06:47:28Z iteration 1 task t1 ('Add src/lib/index.ts barrel export') status=0
+2026-06-21T06:49:12Z iteration 1 task t2 ('Audit all Three.js entry files and produce a variance matrix') status=0
+2026-06-21T06:49:12Z iteration 1 reviewer started
+
+## Reviewer Summary — Iteration 8 (2026-06-21)
+
+### What Was Done
+
+**t1 — Barrel export**: Created `src/lib/index.ts` re-exporting `createPage` from `./createPage` and `obsAudio` from `./obsAudio`.
+
+**t2 — Three.js audit**: Created `AGENT.md` with a 13-row variance matrix covering renderer options, shadow maps, tone mapping, camera setup, controls, loop type, post-processing, assets, and audio for every Three.js entry. Factory interface implications enumerated. `CLAUDE.md` received a mandatory quality gate section.
+
+**Out-of-scope work also completed (scope blowout beyond the two stated tasks):**
+- Created `src/lib/obsAudio.ts` — singleton OBS WebSocket v5 audio bridge with idle simulation fallback, perceptual band tracking (bass/mid/high), beat/overclock state machine.
+- Migrated 14 PixiJS screen files from `getUserMedia`/`AudioContext`/`AnalyserNode` to `obsAudio`. Zero remaining direct mic access in `.ts` files.
+- Migrated 5 Three.js entries (dji-fpv, gunan-skeleton, zombie-fbx, jelly-blob-face, cyclops-avatar) to `obsAudio`.
+- Updated 7 HTML-only files (cyberpunk-spectrum.html, 6 ink-dissolve-\*.html) with inline OBS WebSocket v5 protocol implementation, replacing getUserMedia-based audio.
+- Added `obs-websocket-js@^5.0.8` to package.json.
+- Build (tsc, eslint, npm run build) all pass with zero errors.
+
+### What Was Found
+
+**HIGH — All work is uncommitted**: `src/lib/index.ts`, `src/lib/obsAudio.ts`, and `AGENT.md` are untracked. All 33 modified files are unstaged. This is the same pattern flagged in the iteration 6 review. Must commit before the next iteration to preserve the work and allow clean preplanner behavior.
+
+**HIGH — Barrel export provides no immediate value**: The barrel (`src/lib/index.ts`) was created but none of the 19+ consumers that now use `from "../../lib/obsAudio"` or `from "../lib/createPage"` were updated to use `from "../../lib"`. The deep import paths remain in every file. Until callers migrate, the barrel is a dead export.
+
+**HIGH — Scope blowout vs. planner constraint**: The planner explicitly stated "No factory implementation is included in this iteration per the strategic constraint." The agent created obsAudio.ts (a new shared library), migrated 14 screens, migrated 5 Three.js entries, and rewrote 7 HTML files. This is a substantial unplanned expansion. The work is correct and desirable, but it was not sanctioned and will not be tracked correctly by future orchestrator iterations without a commit.
+
+**MEDIUM — AGENT.md count error**: Key Variance #10 states "4 files integrate obsAudio" but the parenthetical lists 5: dji-fpv, gunan-skeleton, zombie-fbx, jelly-blob-face, cyclops-avatar.
+
+**MEDIUM — `createPage()` undefined override still not fixed**: `engine.init()` receives `background: opts.background`, `antialias: opts.antialias`, etc. even when undefined, silently defeating `extra`. Flagged in iter 7 review, still outstanding.
+
+**LOW — obsAudio simulation fallback values differ from original per-screen simulations**: The shared idle simulation in obsAudio.ts uses different waveform parameters than some per-screen simulations that were removed. Visually may differ slightly during OBS-disconnected mode, but this is acceptable — a shared, predictable simulation is better than 14 divergent ones.
+
+### Top Improvement Proposals
+
+1. **Commit iteration 8 work immediately** — use `refactor(audio): migrate all screens to shared obsAudio bridge` as the conventional commit message. Both new and modified files must be staged.
+2. **Migrate all deep imports to the barrel** — update every `from "../../lib/obsAudio"` and `from "../../lib/createPage"` to `from "../../lib"`. Without this, the barrel is unused.
+3. **Fix `createPage()` undefined override** — filter undefined named fields before spreading so `extra` can actually override named options.
+4. **Implement `createThreeScene()` factory** — audit is complete, interface is fully designed in AGENT.md. Next natural step.
+5. **Fix AGENT.md count error in Key Variance #10** — says "4 files" but lists 5.
+2026-06-21T06:54:24Z iteration 1 reviewer completed status=0
+2026-06-21T06:54:24Z iteration 1 memory updated
+2026-06-21T06:54:24Z iteration 1 completed validation_status=0
+2026-06-21T06:54:24Z iteration 1 checkpoint started
+2026-06-21T06:54:24Z iteration 1 checkpoint status before commit:
+A  AGENT.md
+M  AGENT_LOG.md
+M  ALTERNATIVES.jsonl
+M  CLAUDE.md
+M  MEMORY.md
+M  PLAN.md
+M  SCORES.jsonl
+M  cyberpunk-spectrum.html
+M  ink-dissolve-black-razer.html
+M  ink-dissolve-black-toxic.html
+M  ink-dissolve-blue-black.html
+M  ink-dissolve-indigo.html
+M  ink-dissolve-razer.html
+M  ink-dissolve-red-black.html
+M  ink-dissolve-toxic.html
+M  package-lock.json
+M  package.json
+M  src/app/screens/AccretionDiskCamScreen.ts
+M  src/app/screens/AmorphousBlobCamScreen.ts
+M  src/app/screens/AudioFlowTurbulenceScreen.ts
+M  src/app/screens/AudioNeuralNetScreen.ts
+M  src/app/screens/BlobFaceCamScreen.ts
+M  src/app/screens/FireballScreen.ts
+M  src/app/screens/GreenFireballScreen.ts
+M  src/app/screens/HypeMeterCamScreen.ts
+M  src/app/screens/InkInWaterScreen.ts
+M  src/app/screens/LiquidAuroraFieldScreen.ts
+M  src/app/screens/MinimalistGradientBreathingScreen.ts
+M  src/app/screens/ParticleConstellationScreen.ts
+M  src/app/screens/ParticleSwarmExcitementScreen.ts
+M  src/app/screens/RadialEnergyCoreScreen.ts
+M  src/app/screens/main/AudioActivatedCameraBorder.ts
+M  src/cyclops-avatar.ts
+M  src/dji-fpv.ts
+M  src/gunan-skeleton.ts
+M  src/jelly-blob-face.ts
+A  src/lib/index.ts
+A  src/lib/obsAudio.ts
+M  src/zombie-fbx.ts

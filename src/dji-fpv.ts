@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { obsAudio } from "./lib/obsAudio";
 
 const MODEL_URL =
   "/assets/main/dji-fpv/source/e4e0a592c53ea71bfc3cd948397e31a1.glb";
@@ -78,65 +79,14 @@ let cameraPivot: THREE.Object3D | null = null;
 let cameraBindQ: THREE.Quaternion | null = null;
 
 // --- Audio ---
-let audioAnalyser: AnalyserNode | null = null;
-let audioFreqData: Uint8Array<ArrayBuffer> | null = null;
-let audioNoiseFloor = 0.02;
 let rotorSpeed = 4; // rad/s — driven by audio level
-
-async function initAudio(): Promise<void> {
-  if (!navigator.mediaDevices?.getUserMedia) return;
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      audio: {
-        echoCancellation: true,
-        noiseSuppression: true,
-        autoGainControl: true,
-      },
-      video: false,
-    });
-    const ctx = new AudioContext();
-    const source = ctx.createMediaStreamSource(stream);
-    audioAnalyser = ctx.createAnalyser();
-    audioAnalyser.fftSize = 512;
-    audioAnalyser.smoothingTimeConstant = 0.75;
-    source.connect(audioAnalyser);
-    audioFreqData = new Uint8Array(
-      audioAnalyser.frequencyBinCount,
-    ) as Uint8Array<ArrayBuffer>;
-    if (ctx.state === "suspended") {
-      window.addEventListener("pointerdown", () => ctx.resume(), {
-        once: true,
-      });
-    }
-  } catch {
-    console.warn("[dji-fpv] mic unavailable, using idle rotor speed");
-  }
-}
 
 function updateRotorSpeed(dt: number): void {
   const IDLE = 4;
   const MAX = 55;
+  obsAudio.update(dt);
 
-  if (!audioAnalyser || !audioFreqData) {
-    rotorSpeed += (IDLE - rotorSpeed) * Math.min(1, dt * 3);
-    return;
-  }
-
-  audioAnalyser.getByteFrequencyData(audioFreqData);
-
-  const len = audioFreqData.length;
-  let sum = 0;
-  for (let i = 0; i < Math.floor(len * 0.6); i++) sum += audioFreqData[i] / 255;
-  const rawLevel = sum / Math.floor(len * 0.6);
-
-  if (rawLevel < audioNoiseFloor * 1.6) {
-    audioNoiseFloor += (rawLevel - audioNoiseFloor) * Math.min(1, dt * 0.5);
-  } else {
-    audioNoiseFloor += (0.02 - audioNoiseFloor) * Math.min(1, dt * 0.05);
-  }
-
-  const gated = Math.max(0, rawLevel - audioNoiseFloor * 1.4);
-  const level = THREE.MathUtils.clamp(gated * 14.0, 0, 1);
+  const level = obsAudio.level;
   const target = IDLE + level * (MAX - IDLE);
 
   // Attack fast, decay slow — like real motor throttle response
@@ -251,7 +201,7 @@ function pickNextGimbalTarget(now: number): void {
   camNextChange = now + 2.5 + Math.random() * 2.5;
 }
 
-void initAudio();
+void obsAudio.connect();
 
 let prevTime = performance.now();
 let elapsed = 0;

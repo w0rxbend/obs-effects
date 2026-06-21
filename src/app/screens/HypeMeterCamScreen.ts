@@ -1,15 +1,12 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
+import { obsAudio } from "../../lib/obsAudio";
 
 const TAU = Math.PI * 2;
 const RING_STEPS = 240;
 const SIZE = 600;
 const HOLE_R = 240;
 const RING_R = 294;
-
-// Fraction of full-scale RMS below which audio is treated as silence.
-// Raise this if background noise triggers the effect unintentionally.
-const MIC_THRESHOLD = 0.22;
 
 // Catppuccin Mocha Teal (inactive gray-green) → toxic neon green (active)
 const C_INACTIVE = { r: 0x94, g: 0xe2, b: 0xd5 };
@@ -190,11 +187,7 @@ export class HypeMeterCamScreen extends Container {
   private readonly gfxParticles = new Graphics();
 
   private time = 0;
-  private volume = 0;
   private prevVolume = 0;
-
-  private analyser: AnalyserNode | null = null;
-  private audioData: Uint8Array<ArrayBuffer> | null = null;
 
   private readonly particles: Spark[] = [];
 
@@ -206,38 +199,7 @@ export class HypeMeterCamScreen extends Container {
     this.world.addChild(this.gfxCore);
     this.world.addChild(this.gfxParticles);
     this.addChild(this.world);
-    void this.initAudio();
-  }
-
-  private async initAudio(): Promise<void> {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: true,
-        video: false,
-      });
-      const ctx = new AudioContext();
-      const src = ctx.createMediaStreamSource(stream);
-      this.analyser = ctx.createAnalyser();
-      this.analyser.fftSize = 512;
-      this.analyser.smoothingTimeConstant = 0.5;
-      src.connect(this.analyser);
-      this.audioData = new Uint8Array(
-        this.analyser.frequencyBinCount,
-      ) as Uint8Array<ArrayBuffer>;
-    } catch {
-      // No mic — idle animation runs at low volume
-    }
-  }
-
-  private readRMS(): number {
-    if (!this.analyser || !this.audioData) return 0;
-    this.analyser.getByteTimeDomainData(this.audioData);
-    let sum = 0;
-    for (const v of this.audioData) {
-      const n = (v - 128) / 128;
-      sum += n * n;
-    }
-    return Math.sqrt(sum / this.audioData.length);
+    void obsAudio.connect();
   }
 
   public async show(): Promise<void> {}
@@ -245,16 +207,8 @@ export class HypeMeterCamScreen extends Container {
   public update(ticker: Ticker): void {
     const dt = Math.min(ticker.deltaMS, 50) / 1000;
     this.time += dt;
-
-    this.prevVolume = this.volume;
-    const rms = this.readRMS() * 4;
-    const raw = clamp(
-      rms < MIC_THRESHOLD ? 0 : (rms - MIC_THRESHOLD) / (1 - MIC_THRESHOLD),
-      0,
-      1,
-    );
-    const rate = raw > this.volume ? 0.6 : 0.055;
-    this.volume += (raw - this.volume) * rate;
+    this.prevVolume = obsAudio.level;
+    obsAudio.update(dt);
 
     this.tickParticles(dt);
     this.draw();
@@ -263,7 +217,7 @@ export class HypeMeterCamScreen extends Container {
   // ── Ring geometry ──────────────────────────────────────────────────────────
 
   private buildRing(def: RingDef): { x: number; y: number }[] {
-    const vol = this.volume;
+    const vol = obsAudio.level;
     const pts: { x: number; y: number }[] = [];
 
     const ampMul = def.ampScale * (1 + vol * 5.5);
@@ -333,7 +287,7 @@ export class HypeMeterCamScreen extends Container {
   }
 
   private tickParticles(dt: number): void {
-    const vol = this.volume;
+    const vol = obsAudio.level;
 
     // Continuous spark stream — scales aggressively with volume
     if (vol > 0.12) {
@@ -343,7 +297,7 @@ export class HypeMeterCamScreen extends Container {
     }
 
     // Burst on volume peak (transient attack)
-    const attack = this.volume - this.prevVolume;
+    const attack = obsAudio.level - this.prevVolume;
     if (attack > 0.04 && vol > 0.25) {
       const burstCount = 1 + Math.floor(attack * 12);
       for (let b = 0; b < burstCount; b++) {
@@ -372,7 +326,7 @@ export class HypeMeterCamScreen extends Container {
   // ── Draw ───────────────────────────────────────────────────────────────────
 
   private draw(): void {
-    const vol = this.volume;
+    const vol = obsAudio.level;
     const gc = this.gfxGlow;
     const gn = this.gfxCore;
     const gp = this.gfxParticles;

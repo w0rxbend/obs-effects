@@ -245,30 +245,50 @@
         var uDetail = gl.getUniformLocation(prog, "u_detail");
         var uMouse = gl.getUniformLocation(prog, "u_mouse");
 
-        var mouseX = -1, mouseY = -1;
-        var smoothMouseX = -1, smoothMouseY = -1;
+        var mouseX = -1,
+          mouseY = -1;
+        var smoothMouseX = -1,
+          smoothMouseY = -1;
         var mouseActive = false;
 
         canvas.addEventListener("mousemove", function (e) {
           mouseX = e.clientX * Math.min(window.devicePixelRatio || 1, 2);
-          mouseY = (canvas.clientHeight - e.clientY) * Math.min(window.devicePixelRatio || 1, 2);
+          mouseY =
+            (canvas.clientHeight - e.clientY) *
+            Math.min(window.devicePixelRatio || 1, 2);
           mouseActive = true;
         });
-        canvas.addEventListener("mouseleave", function () { mouseActive = false; });
-        canvas.addEventListener("touchstart", function (e) {
-          var t = e.touches[0];
-          mouseX = t.clientX * Math.min(window.devicePixelRatio || 1, 2);
-          mouseY = (canvas.clientHeight - t.clientY) * Math.min(window.devicePixelRatio || 1, 2);
-          mouseActive = true;
-        }, { passive: true });
-        canvas.addEventListener("touchmove", function (e) {
-          e.preventDefault();
-          var t = e.touches[0];
-          mouseX = t.clientX * Math.min(window.devicePixelRatio || 1, 2);
-          mouseY = (canvas.clientHeight - t.clientY) * Math.min(window.devicePixelRatio || 1, 2);
-          mouseActive = true;
-        }, { passive: false });
-        canvas.addEventListener("touchend", function () { mouseActive = false; });
+        canvas.addEventListener("mouseleave", function () {
+          mouseActive = false;
+        });
+        canvas.addEventListener(
+          "touchstart",
+          function (e) {
+            var t = e.touches[0];
+            mouseX = t.clientX * Math.min(window.devicePixelRatio || 1, 2);
+            mouseY =
+              (canvas.clientHeight - t.clientY) *
+              Math.min(window.devicePixelRatio || 1, 2);
+            mouseActive = true;
+          },
+          { passive: true },
+        );
+        canvas.addEventListener(
+          "touchmove",
+          function (e) {
+            e.preventDefault();
+            var t = e.touches[0];
+            mouseX = t.clientX * Math.min(window.devicePixelRatio || 1, 2);
+            mouseY =
+              (canvas.clientHeight - t.clientY) *
+              Math.min(window.devicePixelRatio || 1, 2);
+            mouseActive = true;
+          },
+          { passive: false },
+        );
+        canvas.addEventListener("touchend", function () {
+          mouseActive = false;
+        });
 
         var dpr = Math.min(window.devicePixelRatio || 1, 2);
         var needsResize = true;
@@ -289,17 +309,24 @@
         var paused = false;
 
         function render(now) {
-          if (paused) { requestAnimationFrame(render); return; }
+          if (paused) {
+            requestAnimationFrame(render);
+            return;
+          }
           if (lastTime === 0) lastTime = now;
           lastTime = now;
           if (needsResize) resize();
 
           if (mouseActive) {
-            if (smoothMouseX < 0) { smoothMouseX = mouseX; smoothMouseY = mouseY; }
+            if (smoothMouseX < 0) {
+              smoothMouseX = mouseX;
+              smoothMouseY = mouseY;
+            }
             smoothMouseX += (mouseX - smoothMouseX) * 0.08;
             smoothMouseY += (mouseY - smoothMouseY) * 0.08;
           } else {
-            smoothMouseX = -1; smoothMouseY = -1;
+            smoothMouseX = -1;
+            smoothMouseY = -1;
           }
 
           gl.uniform1f(uTime, prefersReduced ? 0.0 : now * 0.001);
@@ -310,7 +337,9 @@
           requestAnimationFrame(render);
         }
 
-        window.addEventListener("resize", function () { needsResize = true; });
+        window.addEventListener("resize", function () {
+          needsResize = true;
+        });
         resize();
         requestAnimationFrame(render);
 
@@ -322,8 +351,12 @@
         window.addEventListener("message", function (e) {
           if (e.data && e.data.type === "param") {
             switch (e.data.name) {
-              case "SPREAD_SPEED": SPREAD_SPEED = e.data.value; break;
-              case "TENDRIL_DETAIL": TENDRIL_DETAIL = e.data.value; break;
+              case "SPREAD_SPEED":
+                SPREAD_SPEED = e.data.value;
+                break;
+              case "TENDRIL_DETAIL":
+                TENDRIL_DETAIL = e.data.value;
+                break;
             }
           }
         });

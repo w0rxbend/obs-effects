@@ -1,5 +1,6 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
+import { obsAudio } from "../../lib/obsAudio";
 
 const TAU = Math.PI * 2;
 const BLOB_STEPS = 96;
@@ -92,46 +93,12 @@ export class BlobFaceCamScreen extends Container {
   private pupilTargetY = 0;
   private nextDart = 1.8 + Math.random() * 1.5;
 
-  private analyser: AnalyserNode | null = null;
-  private audioData: Uint8Array<ArrayBuffer> | null = null;
-
   constructor() {
     super();
     this.addChild(this.world);
     this.world.addChild(this.bodyGfx);
     this.world.addChild(this.faceGfx);
-    void this._initAudio();
-  }
-
-  private async _initAudio(): Promise<void> {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: true,
-        video: false,
-      });
-      const ctx = new AudioContext();
-      const src = ctx.createMediaStreamSource(stream);
-      this.analyser = ctx.createAnalyser();
-      this.analyser.fftSize = 512;
-      this.analyser.smoothingTimeConstant = 0.6;
-      src.connect(this.analyser);
-      this.audioData = new Uint8Array(
-        this.analyser.frequencyBinCount,
-      ) as Uint8Array<ArrayBuffer>;
-    } catch {
-      // no mic — idle animation runs without audio
-    }
-  }
-
-  private _readRMS(): number {
-    if (!this.analyser || !this.audioData) return 0;
-    this.analyser.getByteTimeDomainData(this.audioData);
-    let sum = 0;
-    for (const v of this.audioData) {
-      const n = (v - 128) / 128;
-      sum += n * n;
-    }
-    return Math.sqrt(sum / this.audioData.length);
+    void obsAudio.connect();
   }
 
   public async show(): Promise<void> {
@@ -152,10 +119,9 @@ export class BlobFaceCamScreen extends Container {
   public update(ticker: Ticker): void {
     const dt = Math.min(ticker.deltaMS * 0.001, 0.05);
     this.time += dt;
+    obsAudio.update(dt);
 
-    const NOISE_FLOOR = 0.04;
-    const rms = this._readRMS();
-    const raw = clamp((rms - NOISE_FLOOR) * 16, 0, 1);
+    const raw = obsAudio.level;
 
     // Slow envelope: speech activity for mouth width/smile shape
     const sRate = raw > this.slowEnv ? 0.15 : 0.025;

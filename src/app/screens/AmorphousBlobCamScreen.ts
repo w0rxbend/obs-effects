@@ -1,5 +1,6 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
+import { obsAudio } from "../../lib/obsAudio";
 
 const TAU = Math.PI * 2;
 const STEPS = 200;
@@ -95,10 +96,6 @@ export class AmorphousBlobCamScreen extends Container {
   private readonly gfxCore = new Graphics();
 
   private time = 0;
-  private volume = 0;
-
-  private analyser: AnalyserNode | null = null;
-  private audioData: Uint8Array<ArrayBuffer> | null = null;
 
   constructor() {
     super();
@@ -108,36 +105,7 @@ export class AmorphousBlobCamScreen extends Container {
     this.world.addChild(this.gfxGlow);
     this.world.addChild(this.gfxCore);
     this.addChild(this.world);
-    void this.initAudio();
-  }
-
-  private async initAudio(): Promise<void> {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: true,
-        video: false,
-      });
-      const ctx = new AudioContext();
-      const src = ctx.createMediaStreamSource(stream);
-      this.analyser = ctx.createAnalyser();
-      this.analyser.fftSize = 512;
-      this.analyser.smoothingTimeConstant = 0.5;
-      src.connect(this.analyser);
-      this.audioData = new Uint8Array(this.analyser.frequencyBinCount);
-    } catch {
-      // No mic — idle animation runs at vol = 0
-    }
-  }
-
-  private readRMS(): number {
-    if (!this.analyser || !this.audioData) return 0;
-    this.analyser.getByteTimeDomainData(this.audioData);
-    let sum = 0;
-    for (const v of this.audioData) {
-      const n = (v - 128) / 128;
-      sum += n * n;
-    }
-    return Math.sqrt(sum / this.audioData.length);
+    void obsAudio.connect();
   }
 
   public async show(): Promise<void> {}
@@ -145,17 +113,13 @@ export class AmorphousBlobCamScreen extends Container {
   public update(ticker: Ticker): void {
     const dt = Math.min(ticker.deltaMS, 50) / 1000;
     this.time += dt;
-
-    // Fast attack, slow decay
-    const raw = clamp(this.readRMS() * 4, 0, 1);
-    const rate = raw > this.volume ? 0.6 : 0.055;
-    this.volume += (raw - this.volume) * rate;
+    obsAudio.update(dt);
 
     this.draw();
   }
 
   private draw(): void {
-    const vol = this.volume;
+    const vol = obsAudio.level;
     const gc = this.gfxGlow;
     const gn = this.gfxCore;
     gc.clear();

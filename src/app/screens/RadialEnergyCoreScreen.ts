@@ -1,10 +1,10 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
+import { obsAudio } from "../../lib/obsAudio";
 
 const TAU = Math.PI * 2;
 const RING_STEPS = 200;
 const MAX_RINGS = 60;
-const MIC_THRESHOLD = 0.015;
 const BASE_EMIT_INTERVAL = 0.5;
 const MIN_EMIT_INTERVAL = 0.07;
 
@@ -53,62 +53,13 @@ export class RadialEnergyCoreScreen extends Container {
   private cy = 540;
   private time = 0;
 
-  private analyser: AnalyserNode | null = null;
-  private freqData: Uint8Array<ArrayBuffer> | null = null;
-
-  private bass = 0;
-  private mid = 0;
-  private high = 0;
-
   private rings: Ring[] = [];
   private emitTimer = 0;
 
   constructor() {
     super();
     this.addChild(this.gfx);
-    void this.initAudio();
-  }
-
-  private async initAudio(): Promise<void> {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: true,
-        video: false,
-      });
-      const ctx = new AudioContext();
-      const src = ctx.createMediaStreamSource(stream);
-      this.analyser = ctx.createAnalyser();
-      this.analyser.fftSize = 1024;
-      this.analyser.smoothingTimeConstant = 0.75;
-      src.connect(this.analyser);
-      this.freqData = new Uint8Array(
-        this.analyser.frequencyBinCount,
-      ) as Uint8Array<ArrayBuffer>;
-    } catch {
-      // no mic — idle animation runs at bass/mid/high = 0
-    }
-  }
-
-  private readBands(): { bass: number; mid: number; high: number } {
-    if (!this.analyser || !this.freqData) return { bass: 0, mid: 0, high: 0 };
-    this.analyser.getByteFrequencyData(this.freqData);
-    // fftSize=1024 → frequencyBinCount=512, bin_width ≈ 43 Hz @ 44100 Hz
-    // Bass  20–300 Hz  → bins 0–6
-    // Mid  300–4000 Hz → bins 7–92
-    // High  4k–14k Hz  → bins 93–324
-    let bass = 0;
-    for (let i = 0; i <= 6; i++) bass += this.freqData[i];
-    bass /= 7 * 255;
-
-    let mid = 0;
-    for (let i = 7; i <= 92; i++) mid += this.freqData[i];
-    mid /= 86 * 255;
-
-    let high = 0;
-    for (let i = 93; i <= 324; i++) high += this.freqData[i];
-    high /= 232 * 255;
-
-    return { bass, mid, high };
+    void obsAudio.connect();
   }
 
   public async show(): Promise<void> {
@@ -125,26 +76,18 @@ export class RadialEnergyCoreScreen extends Container {
   public update(ticker: Ticker): void {
     const dt = clamp(ticker.deltaMS * 0.001, 0, 0.05);
     this.time += dt;
-
-    const raw = this.readBands();
-    const br = clamp((raw.bass - MIC_THRESHOLD) / (1 - MIC_THRESHOLD), 0, 1);
-    const mr = clamp(raw.mid * 4 - MIC_THRESHOLD, 0, 1);
-    const hr = clamp(raw.high * 5, 0, 1);
-
-    this.bass += (br - this.bass) * (br > this.bass ? 0.75 : 0.06);
-    this.mid += (mr - this.mid) * (mr > this.mid ? 0.5 : 0.08);
-    this.high += (hr - this.high) * (hr > this.high ? 0.8 : 0.12);
+    obsAudio.update(dt);
 
     const maxR = Math.hypot(this.cx, this.cy) * 1.15;
     const emitInterval = Math.max(
       MIN_EMIT_INTERVAL,
-      BASE_EMIT_INTERVAL * (1 - this.bass * 0.86),
+      BASE_EMIT_INTERVAL * (1 - obsAudio.bass * 0.86),
     );
 
     this.emitTimer -= dt;
     if (this.emitTimer <= 0 && this.rings.length < MAX_RINGS) {
-      const birthR = 10 + this.bass * 50;
-      const speed = 140 + this.bass * 200;
+      const birthR = 10 + obsAudio.bass * 50;
+      const speed = 140 + obsAudio.bass * 200;
       this.rings.push({
         radius: birthR,
         birthRadius: birthR,
@@ -169,7 +112,7 @@ export class RadialEnergyCoreScreen extends Container {
 
   private buildRingPts(ring: Ring): { x: number; y: number }[] {
     const pts: { x: number; y: number }[] = [];
-    const distAmp = ring.distAmp * this.mid;
+    const distAmp = ring.distAmp * obsAudio.mid;
     const t = this.time;
     for (let i = 0; i < RING_STEPS; i++) {
       const a = (i / RING_STEPS) * TAU;
@@ -211,7 +154,7 @@ export class RadialEnergyCoreScreen extends Container {
       const pts = this.buildRingPts(ring);
 
       // Outer glow driven by high-freq sharpness
-      const glowW = 2 + this.high * 22;
+      const glowW = 2 + obsAudio.high * 22;
       this.strokeLoop(g, pts, color, glowW * 2.5, alpha * 0.07);
       this.strokeLoop(g, pts, color, glowW, alpha * 0.2);
       // Core ring
@@ -222,29 +165,29 @@ export class RadialEnergyCoreScreen extends Container {
         pts,
         0xffffff,
         1,
-        alpha * 0.55 * (0.2 + this.high * 0.8),
+        alpha * 0.55 * (0.2 + obsAudio.high * 0.8),
       );
     }
 
     // Central orb — pulses with bass, glow sharpness from high
     const pulse = Math.sin(this.time * 2.2) * 0.5 + 0.5;
-    const orbR = 6 + this.bass * 28 + pulse * 4;
-    const glowScale = 3 + this.high * 3;
+    const orbR = 6 + obsAudio.bass * 28 + pulse * 4;
+    const glowScale = 3 + obsAudio.high * 3;
     g.circle(this.cx, this.cy, orbR * glowScale * 1.5).fill({
       color: 0x004ccc,
-      alpha: 0.04 + this.bass * 0.1,
+      alpha: 0.04 + obsAudio.bass * 0.1,
     });
     g.circle(this.cx, this.cy, orbR * glowScale).fill({
       color: 0x0088ff,
-      alpha: 0.1 + this.bass * 0.18,
+      alpha: 0.1 + obsAudio.bass * 0.18,
     });
     g.circle(this.cx, this.cy, orbR * 1.8).fill({
       color: 0x00d4ff,
-      alpha: 0.4 + this.bass * 0.35,
+      alpha: 0.4 + obsAudio.bass * 0.35,
     });
     g.circle(this.cx, this.cy, orbR).fill({
       color: 0xaaeeff,
-      alpha: 0.8 + this.bass * 0.2,
+      alpha: 0.8 + obsAudio.bass * 0.2,
     });
     g.circle(this.cx, this.cy, orbR * 0.4).fill({
       color: 0xffffff,

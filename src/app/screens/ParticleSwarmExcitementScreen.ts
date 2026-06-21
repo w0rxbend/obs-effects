@@ -1,9 +1,9 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
+import { obsAudio } from "../../lib/obsAudio";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const N = 700;
-const MIC_THRESHOLD = 0.015;
 const GRID_CELL = 150;
 
 const R_SEP = 30;
@@ -124,11 +124,6 @@ export class ParticleSwarmExcitementScreen extends Container {
   private h = 1080;
   private time = 0;
 
-  private analyser: AnalyserNode | null = null;
-  private freqData: Uint8Array<ArrayBuffer> | null = null;
-  private bass = 0;
-  private mid = 0;
-  private high = 0;
   private prevBass = 0;
   private intensity = 0;
 
@@ -142,50 +137,8 @@ export class ParticleSwarmExcitementScreen extends Container {
   constructor() {
     super();
     this.addChild(this.gfx);
-    void this.initAudio();
+    void obsAudio.connect();
     this.initParticles();
-  }
-
-  private async initAudio(): Promise<void> {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: true,
-        video: false,
-      });
-      const ctx = new AudioContext();
-      const src = ctx.createMediaStreamSource(stream);
-      this.analyser = ctx.createAnalyser();
-      this.analyser.fftSize = 1024;
-      this.analyser.smoothingTimeConstant = 0.7;
-      src.connect(this.analyser);
-      this.freqData = new Uint8Array(
-        this.analyser.frequencyBinCount,
-      ) as Uint8Array<ArrayBuffer>;
-    } catch {
-      // no mic; idle flocking animation runs normally
-    }
-  }
-
-  private readBands(): { bass: number; mid: number; high: number } {
-    if (!this.analyser || !this.freqData) return { bass: 0, mid: 0, high: 0 };
-    this.analyser.getByteFrequencyData(this.freqData);
-    // fftSize=1024 → 512 bins; bin_width ≈ 43 Hz @ 44100 Hz
-    // Bass  20–300 Hz  → bins 0–6
-    // Mid  300–4k Hz   → bins 7–92
-    // High  4k–14k Hz  → bins 93–324
-    let bass = 0;
-    for (let i = 0; i <= 6; i++) bass += this.freqData[i];
-    bass /= 7 * 255;
-
-    let mid = 0;
-    for (let i = 7; i <= 92; i++) mid += this.freqData[i];
-    mid /= 86 * 255;
-
-    let high = 0;
-    for (let i = 93; i <= 324; i++) high += this.freqData[i];
-    high /= 232 * 255;
-
-    return { bass, mid, high };
   }
 
   private initParticles(): void {
@@ -220,7 +173,9 @@ export class ParticleSwarmExcitementScreen extends Container {
   public update(ticker: Ticker): void {
     const dt = Math.min(ticker.deltaMS * 0.001, 0.05);
     this.time += dt;
-    this.updateAudio(dt);
+    this.prevBass = obsAudio.bass;
+    obsAudio.update(dt);
+    this.updateAudio();
     this.updatePhysics(dt);
     this.draw();
   }
@@ -237,37 +192,22 @@ export class ParticleSwarmExcitementScreen extends Container {
     }
   }
 
-  private updateAudio(dt: number): void {
-    const raw = this.readBands();
-    const bassR = Math.max(0, raw.bass - MIC_THRESHOLD) / (1 - MIC_THRESHOLD);
-    const midR = Math.max(0, raw.mid - MIC_THRESHOLD) / (1 - MIC_THRESHOLD);
-    const highR = Math.max(0, raw.high - MIC_THRESHOLD) / (1 - MIC_THRESHOLD);
-
-    const bassAtk = 1 - Math.exp(-20 * dt);
-    const bassDcy = 1 - Math.exp(-4 * dt);
-    const midAtk = 1 - Math.exp(-15 * dt);
-    const midDcy = 1 - Math.exp(-5 * dt);
-    const highAtk = 1 - Math.exp(-30 * dt);
-    const highDcy = 1 - Math.exp(-8 * dt);
-
-    this.prevBass = this.bass;
-    this.bass += (bassR - this.bass) * (bassR > this.bass ? bassAtk : bassDcy);
-    this.mid += (midR - this.mid) * (midR > this.mid ? midAtk : midDcy);
-    this.high += (highR - this.high) * (highR > this.high ? highAtk : highDcy);
-    this.intensity = this.bass * 0.5 + this.mid * 0.3 + this.high * 0.2;
+  private updateAudio(): void {
+    this.intensity =
+      obsAudio.bass * 0.5 + obsAudio.mid * 0.3 + obsAudio.high * 0.2;
   }
 
   private updatePhysics(dt: number): void {
     const { w, h, particles } = this;
     const drag = Math.pow(DRAG_60, dt * 60);
-    const bassSpike = Math.max(0, this.bass - this.prevBass);
+    const bassSpike = Math.max(0, obsAudio.bass - this.prevBass);
 
     // Bass shrinks cohesion radius → swarm fragments into sub-flocks
-    const cohRadius = R_COH * Math.max(0.38, 1 - this.bass * 0.58);
+    const cohRadius = R_COH * Math.max(0.38, 1 - obsAudio.bass * 0.58);
     const cohRadius2 = cohRadius * cohRadius;
-    const cohStr = F_COH_BASE * (1 + this.bass * 2.2);
-    const aliStr = F_ALI_BASE * (1 + this.mid * 1.8);
-    const jitter = this.high * F_JITTER;
+    const cohStr = F_COH_BASE * (1 + obsAudio.bass * 2.2);
+    const aliStr = F_ALI_BASE * (1 + obsAudio.mid * 1.8);
+    const jitter = obsAudio.high * F_JITTER;
     const maxSpd =
       MAX_SPEED_BASE + this.intensity * (MAX_SPEED_PEAK - MAX_SPEED_BASE);
 
@@ -486,17 +426,17 @@ export class ParticleSwarmExcitementScreen extends Container {
     }
 
     // Bass pulse rings at swarm centroid
-    if (this.bass > 0.08) {
-      const r1 = 38 + this.bass * 95;
+    if (obsAudio.bass > 0.08) {
+      const r1 = 38 + obsAudio.bass * 95;
       const r2 = r1 * 1.55 + Math.sin(time * 6) * 8;
       g.circle(this.swarmCX, this.swarmCY, r1).stroke({
         color: C_CYAN,
-        alpha: this.bass * 0.18,
+        alpha: obsAudio.bass * 0.18,
         width: 1.5,
       });
       g.circle(this.swarmCX, this.swarmCY, r2).stroke({
         color: C_CYAN,
-        alpha: this.bass * 0.08,
+        alpha: obsAudio.bass * 0.08,
         width: 1.0,
       });
     }

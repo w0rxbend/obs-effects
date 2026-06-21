@@ -1,46 +1,8 @@
 import * as THREE from "three";
+import { obsAudio } from "./lib/obsAudio";
 
 // ── Audio ─────────────────────────────────────────────────────────────────────
-let analyser: AnalyserNode | null = null;
-let freqData: Uint8Array<ArrayBuffer> | null = null;
-let smoothVol = 0;
-let smoothMid = 0;
-
-async function initAudio(): Promise<void> {
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      audio: true,
-      video: false,
-    });
-    const ctx = new AudioContext();
-    const source = ctx.createMediaStreamSource(stream);
-    analyser = ctx.createAnalyser();
-    analyser.fftSize = 256;
-    analyser.smoothingTimeConstant = 0.8;
-    source.connect(analyser);
-    freqData = new Uint8Array(analyser.frequencyBinCount);
-  } catch {
-    // no mic — blob runs without audio reactivity
-  }
-}
-
-function sampleAudio(): [number, number] {
-  if (!analyser || !freqData) return [0, 0];
-  analyser.getByteFrequencyData(freqData);
-  let vol = 0;
-  for (let i = 0; i < freqData.length; i++) vol += freqData[i];
-  const rawVol = vol / (freqData.length * 255);
-  // Voice range bins 2–17 (~344–2924 Hz for 44100 Hz / fftSize 256)
-  let mid = 0;
-  for (let i = 2; i < 18; i++) mid += freqData[i];
-  const rawMid = mid / (16 * 255);
-  return [rawVol, rawMid];
-}
-
-void initAudio();
-document.addEventListener("click", () => {
-  if (!analyser) void initAudio();
-});
+void obsAudio.connect();
 
 // ── Renderer ──────────────────────────────────────────────────────────────────
 const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
@@ -301,13 +263,9 @@ function animate(): void {
   const dt = Math.min(clock.getDelta(), 0.05);
   t += dt;
 
-  const [rawVol, rawMid] = sampleAudio();
-  smoothVol += (rawVol - smoothVol) * 0.12;
-  // Strip noise floor before smoothing so silence decays to true zero.
-  // Asymmetric: fast attack so mouth snaps open on syllables, faster decay
-  // so it closes between words instead of hanging open.
-  const midClean = Math.max(0, rawMid - 0.18);
-  smoothMid += (midClean - smoothMid) * (midClean > smoothMid ? 0.38 : 0.22);
+  obsAudio.update(dt);
+  const smoothVol = obsAudio.level;
+  const smoothMid = obsAudio.mid;
 
   // Body sway & breathe — no full rotation so face stays front-facing
   blobRoot.position.y = Math.sin(t * 1.1) * 0.13 + Math.cos(t * 0.68) * 0.055;

@@ -1,5 +1,6 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
+import { obsAudio } from "../../lib/obsAudio";
 
 const TAU = Math.PI * 2;
 const BLOB_COUNT = 8;
@@ -88,59 +89,10 @@ export class InkInWaterScreen extends Container {
   private time = 0;
   private blobs: Blob[] = [];
 
-  private analyser: AnalyserNode | null = null;
-  private freqData: Uint8Array<ArrayBuffer> | null = null;
-  private bass = 0;
-  private mid = 0;
-  private high = 0;
-
   constructor() {
     super();
     this.addChild(this.gfx);
-    void this.initAudio();
-  }
-
-  private async initAudio(): Promise<void> {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: true,
-        video: false,
-      });
-      const ctx = new AudioContext();
-      const src = ctx.createMediaStreamSource(stream);
-      this.analyser = ctx.createAnalyser();
-      this.analyser.fftSize = 512;
-      this.analyser.smoothingTimeConstant = 0.75;
-      src.connect(this.analyser);
-      this.freqData = new Uint8Array(this.analyser.frequencyBinCount);
-    } catch {
-      // No mic — passive animation continues at neutral audio levels
-    }
-  }
-
-  private readBands(): void {
-    if (!this.analyser || !this.freqData) return;
-    this.analyser.getByteFrequencyData(this.freqData);
-
-    // Bass: bins 0–5 (~0–490 Hz)
-    let bassSum = 0;
-    for (let i = 0; i < 6; i++) bassSum += this.freqData[i];
-    const rawBass = clamp(bassSum / 6 / 255, 0, 1);
-
-    // Mid: bins 6–39 (~490–3200 Hz)
-    let midSum = 0;
-    for (let i = 6; i < 40; i++) midSum += this.freqData[i];
-    const rawMid = clamp(midSum / 34 / 255, 0, 1);
-
-    // High: bins 40–99 (~3200–8100 Hz)
-    let highSum = 0;
-    for (let i = 40; i < 100; i++) highSum += this.freqData[i];
-    const rawHigh = clamp(highSum / 60 / 255, 0, 1);
-
-    // Fast attack, slow decay envelopes
-    this.bass += (rawBass - this.bass) * (rawBass > this.bass ? 0.65 : 0.05);
-    this.mid += (rawMid - this.mid) * (rawMid > this.mid ? 0.5 : 0.07);
-    this.high += (rawHigh - this.high) * (rawHigh > this.high ? 0.75 : 0.09);
+    void obsAudio.connect();
   }
 
   public async show(): Promise<void> {
@@ -176,13 +128,15 @@ export class InkInWaterScreen extends Container {
   public update(ticker: Ticker): void {
     const dt = clamp(ticker.deltaMS * 0.001, 0, 0.05);
     this.time += dt;
-    this.readBands();
+    obsAudio.update(dt);
     this.updateBlobs(dt);
     this.draw();
   }
 
   private updateBlobs(dt: number): void {
-    const { w, h, bass, mid } = this;
+    const { w, h } = this;
+    const bass = obsAudio.bass;
+    const mid = obsAudio.mid;
 
     // Mid → each blob's flow angle rotates faster when mids are present
     for (const b of this.blobs) {
@@ -274,7 +228,7 @@ export class InkInWaterScreen extends Container {
 
     const t = this.time;
     // High → edge turbulence intensity; always has a small ambient amount
-    const turb = this.high * 1.2 + 0.18;
+    const turb = obsAudio.high * 1.2 + 0.18;
 
     for (const b of this.blobs) {
       const r = b.r + b.rBoost;

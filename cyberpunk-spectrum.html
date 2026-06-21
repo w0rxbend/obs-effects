@@ -23,118 +23,155 @@
         width: 100%;
         height: 100%;
       }
-      #tap {
-        position: fixed;
-        inset: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        transition: opacity 0.5s;
-      }
-      #tap.hidden {
-        opacity: 0;
-        pointer-events: none;
-      }
-      .ring {
-        width: 72px;
-        height: 72px;
-        border-radius: 50%;
-        border: 1.5px solid rgba(0, 229, 255, 0.55);
-        box-shadow: 0 0 18px rgba(0, 229, 255, 0.3);
-        animation: breathe 2.2s ease-in-out infinite;
-      }
-      @keyframes breathe {
-        0%,
-        100% {
-          transform: scale(1);
-          opacity: 0.45;
-        }
-        50% {
-          transform: scale(1.2);
-          opacity: 1;
-        }
-      }
     </style>
   </head>
   <body>
     <canvas id="c"></canvas>
-    <div id="tap"><div class="ring"></div></div>
     <script>
       "use strict";
 
       const canvas = document.getElementById("c");
       const ctx = canvas.getContext("2d");
-      const tapEl = document.getElementById("tap");
 
-      const BARS = 180; // bars around the circle
-      const LRSP = 0.13; // lerp speed per frame
+      const BARS = 180;
+      const LRSP = 0.13;
 
       let W, H, cx, cy, iR, oR;
-      let analyser = null,
-        rawBuf = null,
-        smooth = null;
+      let smooth = new Float32Array(BARS);
       let bassSmooth = 0;
 
-      /* ── resize ─────────────────────────────────────────── */
+      // OBS WebSocket state
+      let obsLevel = 0; // raw max magnitude from InputVolumeMeters (0-1)
+      let obsConnected = false;
+      let simT = 0; // fallback simulation time
+
+      // Pseudo-spectrum seed noise (static per bar, makes bars feel independent)
+      const barNoise = new Float32Array(BARS);
+      const barPhase = new Float32Array(BARS);
+      const barSpeed = new Float32Array(BARS);
+      for (let i = 0; i < BARS; i++) {
+        barNoise[i] = Math.random();
+        barPhase[i] = Math.random() * Math.PI * 2;
+        // Bass bars oscillate slower, highs faster
+        const t = i / BARS;
+        barSpeed[i] = 0.8 + t * 3.5 + Math.random() * 1.5;
+      }
+
+      /* ── resize ───────────────────────────────────────────── */
       function onResize() {
         W = canvas.width = window.innerWidth;
         H = canvas.height = window.innerHeight;
         cx = W / 2;
         cy = H / 2;
         const m = Math.min(W, H);
-        iR = m * 0.13; // base ring radius
-        oR = m * 0.44; // max bar tip radius
+        iR = m * 0.13;
+        oR = m * 0.44;
       }
       window.addEventListener("resize", onResize);
       onResize();
 
-      /* ── audio ───────────────────────────────────────────── */
-      async function initAudio() {
-        let stream;
-        const audioOpts = {
-          audio: {
-            echoCancellation: false,
-            noiseSuppression: false,
-            autoGainControl: false,
-          },
-          video: false,
-        };
-
-        try {
-          // OBS browser source pipes audio through getUserMedia when configured
-          stream = await navigator.mediaDevices.getUserMedia(audioOpts);
-        } catch (_) {
-          try {
-            // Fallback: screen capture with system audio
-            stream = await navigator.mediaDevices.getDisplayMedia({
-              audio: true,
-              video: { width: 1, height: 1, frameRate: 1 },
-            });
-          } catch (__) {
-            return false;
-          }
-        }
-
-        const actx = new (window.AudioContext || window.webkitAudioContext)();
-        const src = actx.createMediaStreamSource(stream);
-
-        analyser = actx.createAnalyser();
-        analyser.fftSize = 4096;
-        analyser.smoothingTimeConstant = 0.8;
-        analyser.minDecibels = -85;
-        analyser.maxDecibels = -10;
-
-        src.connect(analyser);
-        rawBuf = new Uint8Array(analyser.frequencyBinCount);
-        smooth = new Float32Array(BARS);
-        return true;
+      /* ── OBS WebSocket v5 ─────────────────────────────────── */
+      async function sha256b64(str) {
+        const buf = new TextEncoder().encode(str);
+        const hash = await crypto.subtle.digest("SHA-256", buf);
+        return btoa(String.fromCharCode(...new Uint8Array(hash)));
       }
 
-      /* ── colour ──────────────────────────────────────────── */
-      // Symmetric purple→cyan→purple sweep around the ring
+      function connectOBS(url = "ws://127.0.0.1:4455", password = "") {
+        let ws;
+        try {
+          ws = new WebSocket(url);
+        } catch {
+          return;
+        }
+
+        ws.onmessage = async (e) => {
+          const msg = JSON.parse(e.data);
+          const op = msg.op;
+
+          if (op === 0) {
+            // Hello — send Identify
+            const auth = msg.d.authentication;
+            let authStr;
+            if (auth && password) {
+              const secret = await sha256b64(password + auth.salt);
+              authStr = await sha256b64(secret + auth.challenge);
+            }
+            const identify = {
+              op: 1,
+              d: {
+                rpcVersion: 1,
+                // 1 << 16 = InputVolumeMeters (high-volume events)
+                eventSubscriptions: 65536,
+                ...(authStr ? { authentication: authStr } : {}),
+              },
+            };
+            ws.send(JSON.stringify(identify));
+          } else if (op === 2) {
+            // Identified — connected successfully
+            obsConnected = true;
+          } else if (op === 5 && msg.d.eventType === "InputVolumeMeters") {
+            // InputVolumeMeters event — take max magnitude across all inputs/channels
+            let max = 0;
+            for (const input of msg.d.eventData.inputs) {
+              const levels = input.inputLevelsMul;
+              if (!Array.isArray(levels)) continue;
+              for (const ch of levels) {
+                const mag = Array.isArray(ch) ? ch[0] : 0;
+                if (mag > max) max = mag;
+              }
+            }
+            obsLevel = max;
+          }
+        };
+
+        ws.onclose = () => {
+          obsConnected = false;
+          // Retry after 3 s
+          setTimeout(() => connectOBS(url, password), 3000);
+        };
+      }
+
+      connectOBS();
+
+      /* ── pseudo-spectrum generation ───────────────────────── */
+      // OBS only gives overall level — we distribute it into a plausible
+      // spectrum shape: bass-heavy envelope with high-freq transient variation.
+      let now = 0;
+      function updateSpectrum(dt) {
+        now += dt;
+
+        // Choose driving level: OBS when connected, idle simulation otherwise
+        let envLevel;
+        if (obsConnected) {
+          // perceptual sqrt + small noise floor so the ring never goes dead
+          envLevel = Math.sqrt(Math.min(1, obsLevel)) * 0.95 + 0.05;
+        } else {
+          simT += dt;
+          const t = simT;
+          envLevel =
+            0.12 +
+            Math.abs(Math.sin(t * 0.29)) * 0.15 +
+            Math.abs(Math.sin(t * 0.73)) * 0.08;
+        }
+
+        for (let i = 0; i < BARS; i++) {
+          const t = i / BARS; // 0 = bass, 1 = treble
+          // Bass frequencies carry more amplitude
+          const freqEnv = Math.pow(1 - t * 0.7, 1.4);
+          // Per-bar oscillation — faster at higher frequencies
+          barPhase[i] += barSpeed[i] * dt;
+          const osc = 0.5 + 0.5 * Math.sin(barPhase[i]);
+          // Noise texture variation
+          const noiseVar =
+            0.7 + 0.3 * Math.sin(barPhase[i] * 0.37 + barNoise[i] * 6.28);
+          const target = envLevel * freqEnv * osc * noiseVar;
+          smooth[i] += (target - smooth[i]) * LRSP;
+        }
+      }
+
+      /* ── colour ───────────────────────────────────────────── */
       function hueAt(t) {
-        // t: 0..1 → hue: 275 (purple) → 185 (cyan) → 275 (purple)
         return t < 0.5 ? 275 - t * 2 * 90 : 185 + (t - 0.5) * 2 * 90;
       }
 
@@ -142,37 +179,29 @@
         return `hsl(${hueAt(t) | 0},100%,${L | 0}%)`;
       }
 
-      /* ── draw ────────────────────────────────────────────── */
-      function draw() {
+      /* ── draw ─────────────────────────────────────────────── */
+      let last = performance.now();
+
+      function draw(ts) {
         requestAnimationFrame(draw);
+        const dt = Math.min((ts - last) * 0.001, 0.05);
+        last = ts;
+
+        updateSpectrum(dt);
+
         ctx.clearRect(0, 0, W, H);
 
-        /* sample + smooth frequency data */
         let avg = 0;
+        for (let i = 0; i < BARS; i++) avg += smooth[i];
+        avg /= BARS;
+
+        // Bass: first 8 bars average
         let bass = 0;
+        for (let i = 0; i < 8; i++) bass += smooth[i];
+        bass /= 8;
+        bassSmooth += (bass - bassSmooth) * 0.18;
 
-        if (analyser) {
-          analyser.getByteFrequencyData(rawBuf);
-          const bc = analyser.frequencyBinCount;
-
-          for (let i = 0; i < BARS; i++) {
-            const t = i / BARS;
-            // Power-curve index concentrates resolution toward bass
-            const idx = Math.floor(Math.pow(t, 0.62) * bc * 0.7);
-            const val = rawBuf[Math.min(idx, bc - 1)] / 255;
-            smooth[i] += (val - smooth[i]) * LRSP;
-            avg += smooth[i];
-          }
-          avg /= BARS;
-
-          // Bass: average of lowest ~4 % of bins
-          const bassEnd = Math.floor(bc * 0.04);
-          for (let i = 0; i < bassEnd; i++) bass += rawBuf[i] / 255;
-          bass /= bassEnd;
-          bassSmooth += (bass - bassSmooth) * 0.18;
-        }
-
-        /* ── bars ── two-pass: glow then sharp core */
+        /* ── bars — two-pass: glow then sharp core */
         for (let pass = 0; pass < 2; pass++) {
           ctx.save();
           if (pass === 0) {
@@ -209,7 +238,7 @@
           ctx.restore();
         }
 
-        /* ── bar-tip dots when amplitude high */
+        /* ── bar-tip dots when amplitude is high */
         ctx.save();
         ctx.shadowBlur = 10;
         for (let i = 0; i < BARS; i++) {
@@ -234,11 +263,9 @@
         }
         ctx.restore();
 
-        /* ── base ring ── */
+        /* ── base ring */
         const ringR = iR * (0.93 + avg * 0.1);
         ctx.save();
-
-        // Glow halo
         ctx.shadowBlur = 28;
         ctx.shadowColor = "rgba(0,229,255,.9)";
         ctx.strokeStyle = `rgba(0,229,255,${0.28 + avg * 0.5})`;
@@ -247,7 +274,6 @@
         ctx.arc(cx, cy, ringR, 0, Math.PI * 2);
         ctx.stroke();
 
-        // Bright white-cyan core line
         ctx.shadowBlur = 4;
         ctx.shadowColor = "rgba(200,245,255,.8)";
         ctx.strokeStyle = `rgba(200,245,255,${0.55 + avg * 0.4})`;
@@ -255,10 +281,9 @@
         ctx.beginPath();
         ctx.arc(cx, cy, ringR, 0, Math.PI * 2);
         ctx.stroke();
-
         ctx.restore();
 
-        /* ── centre dot, pulses with bass ── */
+        /* ── centre dot, pulses with bass */
         ctx.save();
         const dotR = 2.5 + bassSmooth * 9;
         const dotHue = 235 + bassSmooth * 40;
@@ -271,7 +296,7 @@
         ctx.fill();
         ctx.restore();
 
-        /* ── subtle outer boundary ring ── */
+        /* ── subtle outer boundary ring */
         ctx.save();
         ctx.shadowBlur = 0;
         ctx.strokeStyle = `rgba(160,0,255,${0.08 + avg * 0.07})`;
@@ -282,17 +307,7 @@
         ctx.restore();
       }
 
-      draw();
-
-      /* ── start / tap logic ── */
-      async function tryStart() {
-        const ok = await initAudio();
-        if (ok) tapEl.classList.add("hidden");
-      }
-
-      tapEl.addEventListener("click", tryStart);
-      // Auto-start — succeeds in OBS browser source without a user gesture
-      tryStart();
+      requestAnimationFrame(draw);
     </script>
   </body>
 </html>

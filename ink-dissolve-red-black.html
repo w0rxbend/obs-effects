@@ -5,9 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Ink Dissolve – Red & Black</title>
     <style>
-      * { margin: 0; padding: 0; box-sizing: border-box; }
-      html, body { width: 100%; height: 100%; overflow: hidden; background: #080000; }
-      canvas { display: block; width: 100vw; height: 100vh; }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #080000;
+      }
+      canvas {
+        display: block;
+        width: 100vw;
+        height: 100vh;
+      }
     </style>
   </head>
   <body>
@@ -15,14 +29,23 @@
     <script>
       (function () {
         var canvas = document.getElementById("canvas");
-        var prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-        var gl = canvas.getContext("webgl", { alpha: false, antialias: false, preserveDrawingBuffer: false });
+        var prefersReduced = window.matchMedia(
+          "(prefers-reduced-motion: reduce)",
+        ).matches;
+        var gl = canvas.getContext("webgl", {
+          alpha: false,
+          antialias: false,
+          preserveDrawingBuffer: false,
+        });
         if (!gl) return;
 
         var SPREAD_SPEED = 0.4;
         var TENDRIL_DETAIL = 1.0;
 
-        var vertSrc = ["attribute vec2 a_pos;","void main() { gl_Position = vec4(a_pos, 0.0, 1.0); }"].join("\n");
+        var vertSrc = [
+          "attribute vec2 a_pos;",
+          "void main() { gl_Position = vec4(a_pos, 0.0, 1.0); }",
+        ].join("\n");
 
         var fragSrc = [
           "precision highp float;",
@@ -104,32 +127,141 @@
           "  gl_FragColor=vec4(clamp(col,0.0,1.0),1.0);}",
         ].join("\n");
 
-        function compile(type,src){var s=gl.createShader(type);gl.shaderSource(s,src);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))console.error(gl.getShaderInfoLog(s));return s;}
-        var prog=gl.createProgram();
-        gl.attachShader(prog,compile(gl.VERTEX_SHADER,vertSrc));
-        gl.attachShader(prog,compile(gl.FRAGMENT_SHADER,fragSrc));
-        gl.linkProgram(prog);gl.useProgram(prog);
-        var buf=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,buf);
-        gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,3,-1,-1,3]),gl.STATIC_DRAW);
-        var aPos=gl.getAttribLocation(prog,"a_pos");gl.enableVertexAttribArray(aPos);gl.vertexAttribPointer(aPos,2,gl.FLOAT,false,0,0);
-        var uTime=gl.getUniformLocation(prog,"u_time"),uRes=gl.getUniformLocation(prog,"u_res"),
-            uSpread=gl.getUniformLocation(prog,"u_spread"),uDetail=gl.getUniformLocation(prog,"u_detail"),
-            uMouse=gl.getUniformLocation(prog,"u_mouse");
-        var mouseX=-1,mouseY=-1,smoothMouseX=-1,smoothMouseY=-1,mouseActive=false;
-        canvas.addEventListener("mousemove",function(e){mouseX=e.clientX*Math.min(window.devicePixelRatio||1,2);mouseY=(canvas.clientHeight-e.clientY)*Math.min(window.devicePixelRatio||1,2);mouseActive=true;});
-        canvas.addEventListener("mouseleave",function(){mouseActive=false;});
-        canvas.addEventListener("touchstart",function(e){var t=e.touches[0];mouseX=t.clientX*Math.min(window.devicePixelRatio||1,2);mouseY=(canvas.clientHeight-t.clientY)*Math.min(window.devicePixelRatio||1,2);mouseActive=true;},{passive:true});
-        canvas.addEventListener("touchmove",function(e){e.preventDefault();var t=e.touches[0];mouseX=t.clientX*Math.min(window.devicePixelRatio||1,2);mouseY=(canvas.clientHeight-t.clientY)*Math.min(window.devicePixelRatio||1,2);mouseActive=true;},{passive:false});
-        canvas.addEventListener("touchend",function(){mouseActive=false;});
-        var dpr=Math.min(window.devicePixelRatio||1,2),needsResize=true;
-        function resize(){needsResize=false;var w=Math.round(canvas.clientWidth*dpr),h=Math.round(canvas.clientHeight*dpr);if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;gl.viewport(0,0,w,h);gl.uniform2f(uRes,w,h);}}
-        var lastTime=0,paused=false;
-        function render(now){if(paused){requestAnimationFrame(render);return;}if(lastTime===0)lastTime=now;lastTime=now;if(needsResize)resize();if(mouseActive){if(smoothMouseX<0){smoothMouseX=mouseX;smoothMouseY=mouseY;}smoothMouseX+=(mouseX-smoothMouseX)*0.08;smoothMouseY+=(mouseY-smoothMouseY)*0.08;}else{smoothMouseX=-1;smoothMouseY=-1;}gl.uniform1f(uTime,prefersReduced?0.0:now*0.001);gl.uniform1f(uSpread,SPREAD_SPEED);gl.uniform1f(uDetail,TENDRIL_DETAIL);gl.uniform2f(uMouse,smoothMouseX,smoothMouseY);gl.drawArrays(gl.TRIANGLES,0,3);requestAnimationFrame(render);}
-        window.addEventListener("resize",function(){needsResize=true;});resize();requestAnimationFrame(render);
-        document.addEventListener("visibilitychange",function(){paused=document.hidden;if(!paused)lastTime=0;});
-        window.addEventListener("message",function(e){if(e.data&&e.data.type==="param"){if(e.data.name==="SPREAD_SPEED")SPREAD_SPEED=e.data.value;if(e.data.name==="TENDRIL_DETAIL")TENDRIL_DETAIL=e.data.value;}});
+        function compile(type, src) {
+          var s = gl.createShader(type);
+          gl.shaderSource(s, src);
+          gl.compileShader(s);
+          if (!gl.getShaderParameter(s, gl.COMPILE_STATUS))
+            console.error(gl.getShaderInfoLog(s));
+          return s;
+        }
+        var prog = gl.createProgram();
+        gl.attachShader(prog, compile(gl.VERTEX_SHADER, vertSrc));
+        gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, fragSrc));
+        gl.linkProgram(prog);
+        gl.useProgram(prog);
+        var buf = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+        gl.bufferData(
+          gl.ARRAY_BUFFER,
+          new Float32Array([-1, -1, 3, -1, -1, 3]),
+          gl.STATIC_DRAW,
+        );
+        var aPos = gl.getAttribLocation(prog, "a_pos");
+        gl.enableVertexAttribArray(aPos);
+        gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+        var uTime = gl.getUniformLocation(prog, "u_time"),
+          uRes = gl.getUniformLocation(prog, "u_res"),
+          uSpread = gl.getUniformLocation(prog, "u_spread"),
+          uDetail = gl.getUniformLocation(prog, "u_detail"),
+          uMouse = gl.getUniformLocation(prog, "u_mouse");
+        var mouseX = -1,
+          mouseY = -1,
+          smoothMouseX = -1,
+          smoothMouseY = -1,
+          mouseActive = false;
+        canvas.addEventListener("mousemove", function (e) {
+          mouseX = e.clientX * Math.min(window.devicePixelRatio || 1, 2);
+          mouseY =
+            (canvas.clientHeight - e.clientY) *
+            Math.min(window.devicePixelRatio || 1, 2);
+          mouseActive = true;
+        });
+        canvas.addEventListener("mouseleave", function () {
+          mouseActive = false;
+        });
+        canvas.addEventListener(
+          "touchstart",
+          function (e) {
+            var t = e.touches[0];
+            mouseX = t.clientX * Math.min(window.devicePixelRatio || 1, 2);
+            mouseY =
+              (canvas.clientHeight - t.clientY) *
+              Math.min(window.devicePixelRatio || 1, 2);
+            mouseActive = true;
+          },
+          { passive: true },
+        );
+        canvas.addEventListener(
+          "touchmove",
+          function (e) {
+            e.preventDefault();
+            var t = e.touches[0];
+            mouseX = t.clientX * Math.min(window.devicePixelRatio || 1, 2);
+            mouseY =
+              (canvas.clientHeight - t.clientY) *
+              Math.min(window.devicePixelRatio || 1, 2);
+            mouseActive = true;
+          },
+          { passive: false },
+        );
+        canvas.addEventListener("touchend", function () {
+          mouseActive = false;
+        });
+        var dpr = Math.min(window.devicePixelRatio || 1, 2),
+          needsResize = true;
+        function resize() {
+          needsResize = false;
+          var w = Math.round(canvas.clientWidth * dpr),
+            h = Math.round(canvas.clientHeight * dpr);
+          if (canvas.width !== w || canvas.height !== h) {
+            canvas.width = w;
+            canvas.height = h;
+            gl.viewport(0, 0, w, h);
+            gl.uniform2f(uRes, w, h);
+          }
+        }
+        var lastTime = 0,
+          paused = false;
+        function render(now) {
+          if (paused) {
+            requestAnimationFrame(render);
+            return;
+          }
+          if (lastTime === 0) lastTime = now;
+          lastTime = now;
+          if (needsResize) resize();
+          if (mouseActive) {
+            if (smoothMouseX < 0) {
+              smoothMouseX = mouseX;
+              smoothMouseY = mouseY;
+            }
+            smoothMouseX += (mouseX - smoothMouseX) * 0.08;
+            smoothMouseY += (mouseY - smoothMouseY) * 0.08;
+          } else {
+            smoothMouseX = -1;
+            smoothMouseY = -1;
+          }
+          gl.uniform1f(uTime, prefersReduced ? 0.0 : now * 0.001);
+          gl.uniform1f(uSpread, SPREAD_SPEED);
+          gl.uniform1f(uDetail, TENDRIL_DETAIL);
+          gl.uniform2f(uMouse, smoothMouseX, smoothMouseY);
+          gl.drawArrays(gl.TRIANGLES, 0, 3);
+          requestAnimationFrame(render);
+        }
+        window.addEventListener("resize", function () {
+          needsResize = true;
+        });
+        resize();
+        requestAnimationFrame(render);
+        document.addEventListener("visibilitychange", function () {
+          paused = document.hidden;
+          if (!paused) lastTime = 0;
+        });
+        window.addEventListener("message", function (e) {
+          if (e.data && e.data.type === "param") {
+            if (e.data.name === "SPREAD_SPEED") SPREAD_SPEED = e.data.value;
+            if (e.data.name === "TENDRIL_DETAIL") TENDRIL_DETAIL = e.data.value;
+          }
+        });
       })();
     </script>
-    <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"216c03e5eb1b42998a91f716785010f9","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+    <script
+      defer
+      src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447"
+      integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ=="
+      data-cf-beacon='{"version":"2024.11.0","token":"216c03e5eb1b42998a91f716785010f9","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}'
+      crossorigin="anonymous"
+    ></script>
   </body>
 </html>

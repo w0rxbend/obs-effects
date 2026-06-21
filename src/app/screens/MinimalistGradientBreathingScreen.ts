@@ -1,5 +1,6 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics, Sprite, Texture } from "pixi.js";
+import { obsAudio } from "../../lib/obsAudio";
 
 type RGB = [number, number, number];
 
@@ -109,70 +110,10 @@ export class MinimalistGradientBreathingScreen extends Container {
   private paletteB = 1;
   private morphT = 0;
 
-  private analyser: AnalyserNode | null = null;
-  private freqData: Uint8Array<ArrayBuffer> | null = null;
-  private bass = 0;
-  private mid = 0;
-  private high = 0;
-
   constructor() {
     super();
     this.addChild(this.grainGfx);
-    void this.initAudio();
-  }
-
-  private async initAudio(): Promise<void> {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: true,
-        video: false,
-      });
-      const actx = new AudioContext();
-      const src = actx.createMediaStreamSource(stream);
-      this.analyser = actx.createAnalyser();
-      this.analyser.fftSize = 1024;
-      this.analyser.smoothingTimeConstant = 0.88;
-      src.connect(this.analyser);
-      this.freqData = new Uint8Array(this.analyser.frequencyBinCount);
-    } catch {
-      // No mic — runs as ambient animation
-    }
-  }
-
-  private readBands(): void {
-    if (!this.analyser || !this.freqData) return;
-    this.analyser.getByteFrequencyData(this.freqData);
-
-    // fftSize 1024 → 512 bins, ~43 Hz each at 44100 Hz
-    // Bass: bins 0-5 (~0-215 Hz)
-    let rBass = 0;
-    for (let i = 0; i < 6; i++) rBass += this.freqData[i];
-    const rawBass = rBass / (6 * 255);
-
-    // Mid: bins 6-72 (~258-3096 Hz)
-    let rMid = 0;
-    for (let i = 6; i <= 72; i++) rMid += this.freqData[i];
-    const rawMid = rMid / (67 * 255);
-
-    // High: bins 73-290 (~3139-12470 Hz)
-    let rHigh = 0;
-    for (let i = 73; i <= 290; i++) rHigh += this.freqData[i];
-    const rawHigh = rHigh / (218 * 255);
-
-    const smooth = (
-      prev: number,
-      raw: number,
-      boost: number,
-      atk: number,
-      rel: number,
-    ) => {
-      const r = clamp(raw * boost, 0, 1);
-      return prev + (r - prev) * (r > prev ? atk : rel);
-    };
-
-    this.bass = smooth(this.bass, rawBass, 3.5, 0.55, 0.05);
-    this.mid = smooth(this.mid, rawMid, 2.5, 0.45, 0.07);
-    this.high = smooth(this.high, rawHigh, 3.0, 0.65, 0.1);
+    void obsAudio.connect();
   }
 
   public async show(): Promise<void> {
@@ -211,10 +152,10 @@ export class MinimalistGradientBreathingScreen extends Container {
   public update(ticker: Ticker): void {
     const dt = clamp(ticker.deltaMS * 0.001, 0, 0.05);
     this.time += dt;
-    this.readBands();
+    obsAudio.update(dt);
 
     // Mid controls how fast palettes cycle
-    const morphSpeed = 0.025 + this.mid * 0.12;
+    const morphSpeed = 0.025 + obsAudio.mid * 0.12;
     this.morphT += morphSpeed * dt;
     if (this.morphT >= 1) {
       this.morphT -= 1;
@@ -227,7 +168,9 @@ export class MinimalistGradientBreathingScreen extends Container {
   }
 
   private drawGradient(): void {
-    const { ctx, time: t, bass, mid, morphT } = this;
+    const { ctx, time: t, morphT } = this;
+    const bass = obsAudio.bass;
+    const mid = obsAudio.mid;
 
     ctx.globalCompositeOperation = "source-over";
     ctx.fillStyle = `rgb(${CRUST[0]},${CRUST[1]},${CRUST[2]})`;
@@ -282,10 +225,10 @@ export class MinimalistGradientBreathingScreen extends Container {
   private drawGrain(): void {
     const g = this.grainGfx;
     g.clear();
-    if (this.high < 0.04) return;
+    if (obsAudio.high < 0.04) return;
 
-    const count = Math.floor(120 + this.high * 550);
-    const dotAlpha = 0.028 + this.high * 0.065;
+    const count = Math.floor(120 + obsAudio.high * 550);
+    const dotAlpha = 0.028 + obsAudio.high * 0.065;
 
     for (let i = 0; i < count; i++) {
       const x = Math.random() * this.w;

@@ -1,5 +1,6 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
+import { obsAudio } from "../../lib/obsAudio";
 
 // ─── Palette ──────────────────────────────────────────────────────────────────
 const BG = 0x030810;
@@ -65,87 +66,6 @@ interface Pulse {
   active: boolean;
 }
 
-// ─── AudioAnalyser ────────────────────────────────────────────────────────────
-class AudioAnalyser {
-  private ctx: AudioContext | null = null;
-  private node: AnalyserNode | null = null;
-  private fft = new Uint8Array(0);
-  private beatCd = 0;
-  private simT = 0;
-
-  bass = 0;
-  vocal = 0;
-  harm = 0;
-  level = 0;
-  beat = false;
-  overclock = false;
-  private overclockT = 0;
-
-  async init(): Promise<void> {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: true,
-        video: false,
-      });
-      this.ctx = new AudioContext();
-      this.node = this.ctx.createAnalyser();
-      this.node.fftSize = 2048;
-      this.node.smoothingTimeConstant = 0.7;
-      this.ctx.createMediaStreamSource(stream).connect(this.node);
-      this.fft = new Uint8Array(this.node.frequencyBinCount);
-    } catch {
-      // Fallback: driven by simT
-    }
-  }
-
-  update(dt: number): void {
-    this.beat = false;
-    this.beatCd = Math.max(0, this.beatCd - dt);
-
-    if (!this.node) {
-      this.simT += dt;
-      const t = this.simT;
-      this.level = 0.1 + Math.abs(Math.sin(t * 0.29)) * 0.14;
-      this.bass = 0.06 + Math.abs(Math.sin(t * 0.73)) * 0.09;
-      this.vocal = 0.07 + Math.abs(Math.sin(t * 0.41 + 1.1)) * 0.13;
-      this.harm = 0.05 + Math.abs(Math.sin(t * 0.99 + 2.3)) * 0.08;
-      if (Math.sin(t * 1.97) > 0.91 && this.beatCd <= 0) {
-        this.beat = true;
-        this.beatCd = 0.25;
-      }
-    } else {
-      this.node.getByteFrequencyData(this.fft);
-      const bHz = this.ctx!.sampleRate / this.node.fftSize;
-      this.bass = this.band(60, 250, bHz);
-      this.vocal = this.band(500, 2000, bHz);
-      this.harm = this.band(2000, 6000, bHz);
-      this.level = Math.min(1, this.band(20, 20000, bHz) * 2.5);
-      if (this.bass > 0.28 && this.beatCd <= 0) {
-        this.beat = true;
-        this.beatCd = 0.22;
-      }
-    }
-
-    if (this.beat && this.level > 0.35 && !this.overclock) {
-      this.overclock = true;
-      this.overclockT = 1.8 + Math.random() * 1.2;
-    }
-    if (this.overclock) {
-      this.overclockT -= dt;
-      if (this.overclockT <= 0) this.overclock = false;
-    }
-  }
-
-  private band(lo: number, hi: number, bHz: number): number {
-    const i0 = Math.max(0, Math.floor(lo / bHz));
-    const i1 = Math.min(this.fft.length - 1, Math.ceil(hi / bHz));
-    if (i1 <= i0) return 0;
-    let s = 0;
-    for (let i = i0; i <= i1; i++) s += this.fft[i];
-    return s / ((i1 - i0 + 1) * 255);
-  }
-}
-
 // ─── AudioNeuralNetScreen ─────────────────────────────────────────────────────
 export class AudioNeuralNetScreen extends Container {
   public static assetBundles: string[] = [];
@@ -155,7 +75,6 @@ export class AudioNeuralNetScreen extends Container {
   private h = 1080;
   private time = 0;
 
-  private readonly audio = new AudioAnalyser();
   private nodes: NNode[] = [];
   private edges: NEdge[] = [];
   private readonly pulses: Pulse[] = [];
@@ -184,7 +103,7 @@ export class AudioNeuralNetScreen extends Container {
     this.w = window.innerWidth || 1920;
     this.h = window.innerHeight || 1080;
     this.buildGraph();
-    await this.audio.init();
+    void obsAudio.connect();
     // Seed initial hub activity so the network is live immediately
     for (let i = 0; i < 4; i++) {
       const idx = Math.floor(Math.random() * N_HUB);
@@ -203,7 +122,7 @@ export class AudioNeuralNetScreen extends Container {
   public update(ticker: Ticker): void {
     const dt = Math.min(ticker.deltaMS * 0.001, 0.05);
     this.time += dt;
-    this.audio.update(dt);
+    obsAudio.update(dt);
     this.updateNodes(dt);
     this.updatePulses(dt);
     this.updateEdges(dt);
@@ -322,9 +241,9 @@ export class AudioNeuralNetScreen extends Container {
         n.memory = Math.min(1, n.memory + 0.22);
         // Overclock triples branching; 28% chance of double-fire normally
         const branches =
-          1 + (this.audio.overclock ? 2 : Math.random() < 0.28 ? 1 : 0);
+          1 + (obsAudio.overclock ? 2 : Math.random() < 0.28 ? 1 : 0);
         for (let b = 0; b < branches; b++)
-          this.firePulse(i, this.audio.overclock);
+          this.firePulse(i, obsAudio.overclock);
       }
     }
   }
@@ -356,11 +275,9 @@ export class AudioNeuralNetScreen extends Container {
   }
 
   private injectAudio(dt: number): void {
-    const { audio } = this;
-
     // Autonomous idle signal: keeps network alive even in silence
     this.autoTimer += dt;
-    const autoPeriod = 0.7 / Math.max(0.1, audio.level * 3 + 0.15);
+    const autoPeriod = 0.7 / Math.max(0.1, obsAudio.level * 3 + 0.15);
     if (this.autoTimer >= autoPeriod) {
       this.autoTimer = 0;
       const idx = Math.floor(Math.random() * N_HUB);
@@ -371,17 +288,17 @@ export class AudioNeuralNetScreen extends Container {
     }
 
     // Vocals → hub cluster excitation
-    if (audio.vocal > 0.12) {
+    if (obsAudio.vocal > 0.12) {
       for (let i = 0; i < N_HUB; i++) {
         this.nodes[i].activation = Math.min(
           1,
-          this.nodes[i].activation + audio.vocal * 0.9 * dt * 5,
+          this.nodes[i].activation + obsAudio.vocal * 0.9 * dt * 5,
         );
       }
     }
 
     // Percussion beat → burst from random hub
-    if (audio.beat) {
+    if (obsAudio.beat) {
       const idx = Math.floor(Math.random() * N_HUB);
       this.nodes[idx].activation = Math.min(
         1,
@@ -392,8 +309,8 @@ export class AudioNeuralNetScreen extends Container {
 
     // Harmonics → radial wave propagation through mid-layer
     this.waveTimer += dt;
-    const wavePeriod = 0.4 / Math.max(0.08, audio.harm * 4);
-    if (audio.harm > 0.1 && this.waveTimer >= wavePeriod) {
+    const wavePeriod = 0.4 / Math.max(0.08, obsAudio.harm * 4);
+    if (obsAudio.harm > 0.1 && this.waveTimer >= wavePeriod) {
       this.waveTimer = 0;
       const cx = this.w * 0.5;
       const cy = this.h * 0.5;
@@ -403,15 +320,15 @@ export class AudioNeuralNetScreen extends Container {
         const d = Math.sqrt((n.x - cx) ** 2 + (n.y - cy) ** 2);
         const wv = Math.sin(phase - d * 0.018) * 0.5 + 0.5;
         if (wv > 0.65) {
-          n.activation = Math.min(1, n.activation + audio.harm * 0.7);
+          n.activation = Math.min(1, n.activation + obsAudio.harm * 0.7);
         }
       }
     }
 
     // Intensity → peripheral activity density
-    if (audio.level > 0.22) {
+    if (obsAudio.level > 0.22) {
       const perifStart = N_HUB + N_MID;
-      const count = Math.floor(audio.level * 10 * dt * 5);
+      const count = Math.floor(obsAudio.level * 10 * dt * 5);
       for (let k = 0; k < count; k++) {
         const i = perifStart + Math.floor(Math.random() * N_PERF);
         this.nodes[i].activation = Math.min(1, this.nodes[i].activation + 0.18);
@@ -460,7 +377,7 @@ export class AudioNeuralNetScreen extends Container {
     g.rect(0, 0, w, h).fill({ color: BG });
 
     // Overclock: deep-violet tint floods the background
-    if (this.audio.overclock) {
+    if (obsAudio.overclock) {
       g.rect(0, 0, w, h).fill({ color: 0x220044, alpha: 0.14 });
     }
 
@@ -546,7 +463,7 @@ export class AudioNeuralNetScreen extends Container {
       });
 
       // Overclock ring — electric white pulse ring on active nodes
-      if (this.audio.overclock && a > 0.15) {
+      if (obsAudio.overclock && a > 0.15) {
         g.circle(n.x, n.y, coreR + 10).stroke({
           color: 0xffffff,
           alpha: a * 0.38,

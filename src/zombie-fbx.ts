@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { FBXLoader } from "three/addons/loaders/FBXLoader.js";
+import { obsAudio } from "./lib/obsAudio";
 
 const MODEL_URL = "/assets/main/zombie/source/Zombie/Zombie1.FBX";
 const WALK_ANIM_URL =
@@ -90,74 +91,16 @@ const fingerBones: FingerEntry[] = [];
 let modelHeight = 1;
 
 // --- Audio ---
-let analyser: AnalyserNode | null = null;
-let freqData: Uint8Array<ArrayBuffer> | null = null;
-let audioNoiseFloor = 0.02;
-let speechEnvelope = 0; // smooth overall loudness 0-1
 let syllablePhase = 0; // oscillator phase for chatter
 let jawAngle = 0; // final jaw rotation in radians
 
-async function initAudio(): Promise<void> {
-  if (!navigator.mediaDevices?.getUserMedia) return;
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      audio: {
-        echoCancellation: true,
-        noiseSuppression: true,
-        autoGainControl: true,
-      },
-      video: false,
-    });
-    const ctx = new AudioContext();
-    const source = ctx.createMediaStreamSource(stream);
-    analyser = ctx.createAnalyser();
-    analyser.fftSize = 512;
-    analyser.smoothingTimeConstant = 0.65;
-    source.connect(analyser);
-    freqData = new Uint8Array(
-      analyser.frequencyBinCount,
-    ) as Uint8Array<ArrayBuffer>;
-    if (ctx.state === "suspended") {
-      window.addEventListener("pointerdown", () => ctx.resume(), {
-        once: true,
-      });
-    }
-  } catch (err) {
-    console.warn("[zombie-fbx] mic unavailable", err);
-  }
-}
-
 function updateAudio(dt: number): void {
-  if (!analyser || !freqData) {
-    speechEnvelope += (0 - speechEnvelope) * Math.min(1, dt * 8);
-    jawAngle += (0 - jawAngle) * Math.min(1, dt * 8);
-    return;
-  }
-
-  analyser.getByteFrequencyData(freqData);
-
-  const len = freqData.length;
-  const voiceStart = Math.floor(len * 0.04);
-  const voiceEnd = Math.floor(len * 0.35);
-  let sum = 0;
-  for (let i = voiceStart; i < voiceEnd; i++) sum += freqData[i] / 255;
-  const rawLevel = sum / (voiceEnd - voiceStart);
-
-  if (rawLevel < audioNoiseFloor * 1.6) {
-    audioNoiseFloor += (rawLevel - audioNoiseFloor) * Math.min(1, dt * 0.5);
-  } else {
-    audioNoiseFloor += (0.02 - audioNoiseFloor) * Math.min(1, dt * 0.05);
-  }
-
-  const gated = Math.max(0, rawLevel - audioNoiseFloor * 1.4);
-  const targetEnvelope = THREE.MathUtils.clamp(gated * 12.0, 0, 1);
-  const envRate = targetEnvelope > speechEnvelope ? 22 : 7;
-  speechEnvelope +=
-    (targetEnvelope - speechEnvelope) * Math.min(1, dt * envRate);
+  obsAudio.update(dt);
+  const level = obsAudio.level;
 
   // Syllable oscillator — advances only while speaking
-  if (speechEnvelope > 0.02) {
-    const rate = 3.5 + speechEnvelope * 2.0;
+  if (level > 0.02) {
+    const rate = 3.5 + level * 2.0;
     syllablePhase = (syllablePhase + dt * rate) % 1;
   } else {
     syllablePhase = 0;
@@ -166,9 +109,7 @@ function updateAudio(dt: number): void {
   // Jaw: smooth open driven by syllable pulse on top of envelope
   const syllablePulse = Math.max(0, Math.sin(syllablePhase * Math.PI * 2));
   const targetAngle =
-    speechEnvelope > 0.02
-      ? speechEnvelope * (0.4 + syllablePulse * 0.6) * 0.18
-      : 0;
+    level > 0.02 ? level * (0.4 + syllablePulse * 0.6) * 0.18 : 0;
   jawAngle += (targetAngle - jawAngle) * Math.min(1, dt * 14);
 }
 
@@ -265,7 +206,7 @@ const loadFill = document.getElementById("load-fill") as HTMLDivElement;
 let prevTime = performance.now();
 let elapsedTime = 0;
 
-void initAudio();
+void obsAudio.connect();
 
 loadFbx(MODEL_URL)
   .then(async (fbx) => {
