@@ -1528,3 +1528,141 @@ M  ALTERNATIVES.jsonl
 M  MEMORY.md
 M  PLAN.md
 M  SCORES.jsonl
+2026-06-21T07:31:33Z iteration 2 started remaining=17423s
+2026-06-21T07:31:33Z iteration 2 preplanner effective budgets untracked_scan_max_bytes=536870912 untracked_scan_max_count=10000 snapshot_copy_max_bytes=536870912 snapshot_copy_max_count=10000 snapshot_copy_max_file_bytes=134217728
+2026-06-21T07:31:34Z iteration 2 disposable preplanner repo created path=/tmp/agent-loop-preplanner-repo-0oj82rbz/repo copied_entries=879
+2026-06-21T07:31:34Z iteration 2 ideator phase started count=3
+2026-06-21T07:31:34Z iteration 2 ideator phase concurrency workers=3
+2026-06-21T07:31:34Z iteration 2 ideator 1 role="the pragmatist" started
+2026-06-21T07:31:34Z iteration 2 ideator 2 role="the architect" started
+2026-06-21T07:31:34Z iteration 2 ideator 3 role="the contrarian" started
+2026-06-21T07:31:53Z iteration 2 ideator 3 role="the contrarian" completed status=0
+2026-06-21T07:31:53Z iteration 2 ideator 2 role="the architect" completed status=0
+2026-06-21T07:31:53Z iteration 2 ideator 1 role="the pragmatist" completed status=0
+2026-06-21T07:31:53Z iteration 2 ideator phase completed approaches=3
+2026-06-21T07:31:53Z iteration 2 selector started approaches=3
+2026-06-21T07:32:05Z iteration 2 selector completed status=0
+2026-06-21T07:32:05Z iteration 2 disposable preplanner repo cleanup path=/tmp/agent-loop-preplanner-repo-0oj82rbz/repo
+2026-06-21T07:32:05Z iteration 2 selector rejected alternative role="the contrarian" approach="Contract Freeze Before Migration: treat the next iteration as an API-design checkpoint for shared page factories, prioritizing explicit contracts and documentation alignment bef..." reason="Strong on pausing expansion until the contract is stable, but too document/checkpoint-oriented if taken alone; the planner also needs to use existing migrated consumers as practical probes."
+2026-06-21T07:32:05Z iteration 2 selector rejected alternative role="the architect" approach="Contract-First Stabilization: treat the shared factories and guidance docs as the product surface before expanding migration scope. The next planner should first align documenta..." reason="Closest to the selected strategy, but slightly broad in framing; the synthesized version narrows emphasis to immediate contract stabilization plus validation through the two pilot pages."
+2026-06-21T07:32:05Z iteration 2 selector rejected alternative role="the pragmatist" approach="Contract-first stabilization: pause broad migrations until the shared factory contracts and agent guidance are made internally consistent, then use the hardened contracts as the..." reason="Correctly prioritizes consistency and avoiding sprawl, but does not emphasize enough that current pilot migrations should actively test and enforce the future Three.js factory contract."
+2026-06-21T07:32:05Z iteration 2 selector alternatives persisted count=3
+2026-06-21T07:32:05Z iteration 2 selector structured alternatives persisted count=3
+2026-06-21T07:32:05Z iteration 2 planner started
+2026-06-21T07:32:37Z iteration 2 plan: 4 task(s) in 3 phase(s). This next slice stabilizes the shared contract before more migration: first fix documentation drift and pilot barrel imports independently, then harden the factory using the two migrated Three.js pages as probes, then record the finalized semantics so later migration batches do not copy ambiguous behavior.
+2026-06-21T07:32:37Z iteration 2 phase 1 started parallel=True tasks=2
+2026-06-21T07:33:50Z iteration 2 task t2 ('Use barrel import for createThreeScene pilots') status=0
+2026-06-21T07:33:56Z iteration 2 task t1 ('Correct shared-library guidance') status=0
+2026-06-21T07:33:56Z iteration 2 phase 2 started parallel=False tasks=1
+2026-06-21T07:37:50Z iteration 2 task t3 ('Harden createThreeScene contract') status=0
+2026-06-21T07:37:50Z iteration 2 phase 3 started parallel=False tasks=1
+2026-06-21T07:39:17Z iteration 2 task t4 ('Document stabilized Three.js factory semantics') status=0
+2026-06-21T07:39:17Z iteration 2 reviewer started
+
+## Reviewer Summary — Iteration 10 / Loop Iteration 2 (2026-06-21)
+
+### What Was Done
+
+- Inspected the actual uncommitted implementation diff for `AGENT.md`, `src/lib/createThreeScene.ts`, `src/discord-robot.ts`, `src/dji-fpv.ts`, `AGENT_LOG.md`, and `ALTERNATIVES.jsonl`.
+- Confirmed `AGENT.md` now documents barrel imports for PixiJS screens, nested screens, and root entry files, and corrects the Three.js audit audio count to 5.
+- Confirmed `src/discord-robot.ts` and `src/dji-fpv.ts` now import `createThreeScene` from `"./lib"`.
+- Confirmed `src/lib/createThreeScene.ts` now dynamically imports post-processing helpers only for `postProcessing: true`, dynamically imports `RoomEnvironment` only for `ibl: true`, avoids `document.body.style.cssText` clobbering, registers factory-owned resize before async initialization, gates page-owned `onResize` until successful initialization, and reports rejecting initialization with a visible diagnostic overlay.
+- Validation run by reviewer: `npm run lint`, `npm run build`, and `git diff --check`.
+
+### What Was Found
+
+- No build or lint regression was found; the current tree passes the standard validation path.
+- The planned guidance fixes and pilot barrel-import migration are complete.
+- The post-processing and IBL optional-import risks are substantially addressed, and the body-style clobbering issue is fixed.
+- Remaining high-priority design gap: `OrbitControls` is still statically imported by `createThreeScene()`, so future no-controls pages migrated to the factory would still pay the controls module cost.
+- Remaining high-priority migration gap: the factory catches only async work returned from `onInit`. The `dji-fpv.ts` pilot still uses callback-style `GLTFLoader.load()`, so model load failures update its local overlay but do not reject `createThreeScene()` or exercise the standardized factory diagnostic path.
+- Runtime visual behavior was not browser-smoke-tested; `npm run build` proves bundling but not that the two pilot canvases remain nonblank and correctly resized after the dynamic-import refactor.
+- `createPage()` resize override semantics remain unresolved: `extra.resizeOptions` still cannot opt out of the 1920x1080 default.
+- Current iteration changes are uncommitted at review time and should be checkpointed before more migration work starts.
+
+### Top Improvement Proposals
+
+1. Convert `OrbitControls` to a dynamic import or split orbit support so no-controls `createThreeScene()` pages do not import controls code.
+2. Update `dji-fpv.ts` to return/reject a model-load Promise from `onInit`, preserving progress updates while proving the factory error contract works for loader pages.
+3. Browser-smoke `discord-robot.html` and `dji-fpv.html` with Vite/Playwright before migrating more Three.js pages.
+4. Migrate remaining Three.js entries only in variance-grouped batches, with loader pages using `loadAsync()` or explicit Promise wrappers.
+5. Decide and document or implement `createPage()` resize override semantics.
+2026-06-21T07:43:25Z iteration 2 reviewer completed status=0
+2026-06-21T07:43:25Z iteration 2 memory updated
+2026-06-21T07:43:25Z iteration 2 completed validation_status=0
+2026-06-21T07:43:25Z iteration 2 checkpoint started
+2026-06-21T07:43:25Z iteration 2 checkpoint status before commit:
+M  AGENT.md
+M  AGENT_LOG.md
+M  ALTERNATIVES.jsonl
+M  MEMORY.md
+M  PLAN.md
+M  SCORES.jsonl
+M  src/discord-robot.ts
+M  src/dji-fpv.ts
+M  src/lib/createThreeScene.ts
+2026-06-21T07:43:25Z iteration 3 started remaining=16711s
+2026-06-21T07:43:25Z iteration 3 preplanner effective budgets untracked_scan_max_bytes=536870912 untracked_scan_max_count=10000 snapshot_copy_max_bytes=536870912 snapshot_copy_max_count=10000 snapshot_copy_max_file_bytes=134217728
+2026-06-21T07:43:25Z iteration 3 disposable preplanner repo created path=/tmp/agent-loop-preplanner-repo-xf_4ysrf/repo copied_entries=879
+2026-06-21T07:43:25Z iteration 3 ideator phase started count=3
+2026-06-21T07:43:25Z iteration 3 ideator phase concurrency workers=3
+2026-06-21T07:43:25Z iteration 3 ideator 1 role="the pragmatist" started
+2026-06-21T07:43:25Z iteration 3 ideator 2 role="the architect" started
+2026-06-21T07:43:25Z iteration 3 ideator 3 role="the contrarian" started
+2026-06-21T07:43:40Z iteration 3 ideator 1 role="the pragmatist" completed status=0
+2026-06-21T07:43:42Z iteration 3 ideator 3 role="the contrarian" completed status=0
+2026-06-21T07:43:43Z iteration 3 ideator 2 role="the architect" completed status=0
+2026-06-21T07:43:43Z iteration 3 ideator phase completed approaches=3
+2026-06-21T07:43:43Z iteration 3 selector started approaches=3
+2026-06-21T07:43:53Z iteration 3 selector completed status=0
+2026-06-21T07:43:53Z iteration 3 disposable preplanner repo cleanup path=/tmp/agent-loop-preplanner-repo-xf_4ysrf/repo
+2026-06-21T07:43:53Z iteration 3 selector rejected alternative role="the pragmatist" approach="Stabilize the Factory Contract Before Expanding Migration: treat the current Three.js factory pilots as a contract-validation phase, prioritizing proof that the shared abstracti..." reason="Strong direction, but selected strategy should be more explicit that migration is frozen until canary confidence exists, not merely slowed."
+2026-06-21T07:43:53Z iteration 3 selector rejected alternative role="the contrarian" approach="Stabilization-first migration freeze: pause broad Three.js migrations and treat the existing PixiJS and two Three.js pilots as contract specimens until the shared factories prov..." reason="Correctly emphasizes restraint, but its framing risks becoming an indefinite pause unless tied to concrete contract-confidence criteria."
+2026-06-21T07:43:53Z iteration 3 selector rejected alternative role="the architect" approach="Canary-first contract stabilization: freeze new migrations until the existing Three.js factory pilots prove the shared contract in browser, then migrate by variance only after t..." reason="Closest to the selected approach, but selected strategy folds in the contrarian migration-freeze emphasis and the pragmatist focus on factory behavior as the immediate leverage point."
+2026-06-21T07:43:53Z iteration 3 selector alternatives persisted count=3
+2026-06-21T07:43:53Z iteration 3 selector structured alternatives persisted count=3
+2026-06-21T07:43:53Z iteration 3 planner started
+2026-06-21T07:44:29Z iteration 3 planner output unparseable — single-task fallback
+2026-06-21T07:44:29Z iteration 3 plan: 1 task(s) in 1 phase(s).
+2026-06-21T07:44:29Z iteration 3 phase 1 started parallel=False tasks=1
+2026-06-21T07:45:59Z iteration 3 task t1 ('Implement next slice') status=0
+2026-06-21T07:45:59Z iteration 3 reviewer started
+
+## Reviewer Summary — Iteration 11 / Loop Iteration 3 (2026-06-21)
+
+### What Was Done
+
+- Inspected the current working tree, latest commit, and actual source diff instead of relying on the orchestration summary.
+- Confirmed the implementation for this slice is effectively a checkpoint of the prior Three.js contract work: `a04e682 refactor(three): harden scene factory contract`.
+- Verified `a04e682` is non-empty and includes `AGENT.md`, `src/lib/createThreeScene.ts`, `src/discord-robot.ts`, and `src/dji-fpv.ts`.
+- Read the current implementations of `src/lib/createThreeScene.ts`, `src/dji-fpv.ts`, `src/discord-robot.ts`, and the updated plan/memory/log files.
+- Updated `PLAN.md` to mark the checkpoint complete, remove the stale "uncommitted contract work" blocker, and reprioritize the remaining canary-gate tasks.
+- Updated `MEMORY.md` with a durable lesson about type-only imports for optional factory features.
+
+### What Was Found
+
+- The shared-library guidance fixes and pilot barrel imports are correctly implemented and committed.
+- `createThreeScene()` now dynamically imports post-processing helpers and `RoomEnvironment`, preserves page-owned body styles, gates page-owned `onResize` until successful initialization, and reports rejecting initialization with a diagnostic overlay.
+- No additional canary-confidence work was implemented in this slice. The static `OrbitControls` import remains at `src/lib/createThreeScene.ts:2`, so no-controls pages would still pull the orbit implementation.
+- `src/dji-fpv.ts` still uses callback-style `GLTFLoader.load()` inside `onInit`. Because `onInit` returns immediately, `createThreeScene()` starts the render loop before the model has loaded; loader failure updates only the DJI overlay and does not reject through the factory diagnostic contract.
+- `createThreeScene()` starts `obsAudio.connect()` before awaited page initialization completes. If a future `onInit` rejects, the render loop is skipped but the OBS audio side effect may already have started.
+- Renderer creation, orbit-control construction, and `onFrame` exceptions remain outside the standardized initialization-failure overlay path. This is not a current pilot regression, but it is an unresolved factory contract decision.
+- Browser/runtime smoke coverage is still missing for `discord-robot.html` and `dji-fpv.html`; build success does not prove nonblank canvas output, composer behavior, model loading, or resize behavior.
+
+### Top Improvement Proposals
+
+1. Keep the migration freeze in place until the two pilots pass a canary gate.
+2. Dynamically import `OrbitControls` only when `controls: "orbit"` and convert `ThreeSceneContext.controls` to a type-only boundary.
+3. Convert `dji-fpv.ts` to return/reject an awaited GLTF load Promise from `onInit`, preserving progress updates while exercising the factory failure overlay and loop gate.
+4. Browser-smoke `discord-robot.html` and `dji-fpv.html` under Vite/Playwright for nonblank canvas, composer rendering, model load/failure behavior, and resize coherence.
+5. Decide the factory policy for side effects and runtime failures: audio connect timing, early setup errors, and `onFrame` exceptions.
+2026-06-21T07:50:15Z iteration 3 reviewer completed status=0
+2026-06-21T07:50:15Z iteration 3 memory updated
+2026-06-21T07:50:15Z iteration 3 completed validation_status=0
+2026-06-21T07:50:15Z iteration 3 checkpoint started
+2026-06-21T07:50:15Z iteration 3 checkpoint status before commit:
+M  AGENT_LOG.md
+M  ALTERNATIVES.jsonl
+M  MEMORY.md
+M  PLAN.md
+M  SCORES.jsonl

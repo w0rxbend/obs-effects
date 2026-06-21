@@ -21,3 +21,6 @@
 [pattern] When committing a new shared library (obsAudio.ts) and all its consumers together, a single conventional commit with a broad scope keeps the git history coherent: `refactor(audio): migrate all screens to shared obsAudio bridge`.
 [anti-pattern] Barrel migrations can miss newer shared helpers if the search only targets older module names; search for every exported barrel symbol before declaring deep imports gone.
 [learning] Empty conventional commits can make a baseline look preserved while the actual code lives in earlier checkpoint commits; verify commit stats after baseline tasks.
+[anti-pattern] Callback-style asset loaders inside a factory `onInit` bypass async initialization failure handling; return a Promise or use `loadAsync()` so diagnostics and loop gating work.
+[pattern] Option-gated Three.js features should be dynamically imported at the exact option boundary; static imports in shared factories leak bundle cost into pages that do not use the feature.
+[anti-pattern] Typing optional context fields with value imports can keep optional implementations in shared bundles; use type-only imports plus dynamic construction at the option boundary.
