@@ -10,6 +10,7 @@ Target architecture:
 Keep isolated pages, but introduce shared internal libraries.
 
 Each page should own:
+
 - Its page-specific entrypoint.
 - Its local configuration.
 - Its local scene composition.
@@ -17,6 +18,7 @@ Each page should own:
 - Its unique assets.
 
 Shared code should own:
+
 - PixiJS app/bootstrap logic.
 - Three.js renderer/bootstrap logic.
 - OBS/browser-source helpers.
@@ -30,12 +32,14 @@ Shared code should own:
 ## Completed
 
 ### Iteration 6 (2026-06-20): `createPage()` factory + mass PixiJS migration
+
 - [x] Created `src/lib/createPage.ts` as the shared PixiJS page bootstrap.
 - [x] Migrated 179 PixiJS `src/*.ts` entry files to `createPage()`.
 - [x] Preserved standalone per-page HTML/Vite entrypoints.
 - [x] `npm run lint` and `npm run build` passed.
 
 ### Iteration 7 (2026-06-21): Extended factory + final PixiJS migration
+
 - [x] Committed the iteration 6 baseline.
 - [x] Extended `CreatePageOptions` with `fonts?: string[]`, `antialias?: boolean`, and `extra?: Partial<ApplicationOptions>`.
 - [x] Migrated the remaining 18 PixiJS entries requiring specific font preloads or `antialias: false`.
@@ -43,6 +47,7 @@ Shared code should own:
 - [x] `npm run lint` and `npm run build` passed.
 
 ### Iteration 8 (2026-06-21): Barrel export, Three.js audit, and shared OBS audio
+
 - [x] Created `src/lib/index.ts`.
 - [x] Created `src/lib/obsAudio.ts` as the shared OBS WebSocket v5 audio bridge.
 - [x] Migrated 14 PixiJS screens and 5 Three.js entries from direct mic/analyser code to `obsAudio`.
@@ -52,6 +57,7 @@ Shared code should own:
 - [x] Added mandatory quality-gate guidance to `CLAUDE.md`.
 
 ### Iteration 9 (2026-06-21): Shared contract cleanup
+
 - [x] Fixed `createPage()` named option merge so `undefined` `background`, `backgroundAlpha`, and `antialias` no longer overwrite values supplied through `extra`.
 - [x] Migrated all `createPage` and `obsAudio` consumers to the `src/lib` barrel import.
 - [x] Confirmed no remaining deep `createPage` or `obsAudio` consumer imports under `src`.
@@ -59,6 +65,7 @@ Shared code should own:
 - [~] The intended audio baseline commit `b3c99e4` is empty; the actual audio/factory work already lives in earlier autonomous checkpoint commits. This is not a runtime bug, but it makes the history less clear than the plan intended.
 
 ### Iteration 10 (2026-06-21): Three.js factory contract hardening
+
 - [x] Updated `AGENT.md` so PixiJS screens and root entry files import shared helpers through the `src/lib` barrel.
 - [x] Corrected the Three.js audit audio count from 4 to 5.
 - [x] Migrated `src/discord-robot.ts` and `src/dji-fpv.ts` to import `createThreeScene` from `"./lib"`.
@@ -72,12 +79,14 @@ Shared code should own:
 - [x] Reviewer validation passed: `npm run lint`, `npm run build`, and `git diff --check`.
 
 ### Iteration 11 (2026-06-21): Contract checkpoint review
+
 - [x] Preserved the Iteration 10 contract work in non-empty commit `a04e682 refactor(three): harden scene factory contract`.
 - [x] Verified the commit includes `AGENT.md`, `src/lib/createThreeScene.ts`, `src/discord-robot.ts`, and `src/dji-fpv.ts`.
 - [~] No new Three.js factory behavior was implemented beyond checkpointing the prior contract hardening.
 - [~] Fresh review confirmed the canary gate is still incomplete: static `OrbitControls`, callback-style DJI GLTF loading, and missing browser smoke coverage remain unresolved.
 
 ### Iteration 12 (2026-06-21): Three.js canary gate checkpoint
+
 - [x] Removed static `OrbitControls` value import from `src/lib/createThreeScene.ts`; orbit support now loads dynamically only when `controls: "orbit"` and the context type uses a type-only import.
 - [x] Moved orbit-control construction into the factory initialization `try` path.
 - [x] Moved `obsAudio.connect()` until after awaited initialization succeeds, so rejecting `onInit` does not start the OBS audio side effect.
@@ -91,6 +100,7 @@ Shared code should own:
 - [x] Reviewer validation passed: `npm run lint`, `npm run build`, and an independent CLI screenshot smoke of both canaries at `1280x720` and `960x540`.
 
 ### Iteration 13 (2026-06-21): Three.js lifecycle and smoke runner draft
+
 - [x] Hardened `src/lib/createThreeScene.ts` lifecycle behavior:
   - Renderer creation/setup now runs inside the initialization `try` path.
   - Failed initialization removes the factory resize listener and factory canvas, disposes controls/composer/renderer where present, rethrows, and does not start the render loop.
@@ -122,16 +132,19 @@ Shared code should own:
 ## Known Exclusions
 
 **Custom-logic PixiJS entries:**
+
 - `cubic-blob-overlay.ts` — WebSocket socket bridge and `window.obsBlobOverlay` export.
 - `trapnation.ts` — custom DOM container creation and `resizeTo: window`.
 - `main.ts`, `main-cb3.ts`, `main-audio-activated-border.ts` — multi-screen launchers.
 
 **Non-PixiJS entries:**
+
 - `animated-lines.ts` — GSAP/SVG.
 - `life-webgpu.ts` — raw WebGPU.
 - `plasma-wave.ts` — raw Canvas2D.
 
 **Three.js entries not yet migrated to `createThreeScene()`:**
+
 - `energy-orb.ts`
 - `ai-character-final.ts`
 - `ai-character-natural.ts`
@@ -167,6 +180,7 @@ The canary gate is now close to reusable, but do not mass-migrate all remaining 
 **H1 — Harden the reusable smoke runner before broad use**
 
 Keep `npm run smoke:three` optional/manual for now, but improve it before using it as the standard migration gate:
+
 - Make page-error and console-error collection deterministic instead of throwing directly from event callbacks.
 - Improve the nonblank predicate to consider `visibleRatio` and `alphaMean` as well as variance, so uniform-but-visible scenes do not false-fail.
 - Print Vite stderr/stdout on startup failure instead of discarding it.
@@ -179,6 +193,7 @@ Before migrating loader-heavy pages, document or implement a page-owned cleanup 
 **H3 — Migrate remaining Three.js entries in small batches**
 
 After C0-C2 and H1 are resolved, migrate remaining Three.js files by variance group:
+
 - Procedural/no-loader pages: `hex-water-island.ts`
 - GLTF + PMREM pages: `energy-orb.ts`, `ai-character-final.ts`, `ai-character-natural.ts`, `meshy-post1-avatar.ts`, `cyclops-avatar.ts`
 - FBX/texture pages: `gunan-skeleton.ts`, `zombie-fbx.ts`, `city-view.ts`
@@ -189,6 +204,7 @@ For loader pages, return/reject an async initialization Promise; do not leave ca
 **H4 — Clarify `createPage()` resize override semantics**
 
 Decide whether the 1920x1080 default is mandatory or overridable:
+
 - If mandatory, document that `extra.resizeOptions` is intentionally ignored.
 - If overridable, add an explicit option such as `resizeOptions?: ... | false` and tests/spot checks for transparent OBS overlays.
 

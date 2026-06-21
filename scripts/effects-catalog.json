@@ -621,17 +621,41 @@
     {
       "href": "amber-terminal.html",
       "category": "Backgrounds",
-      "tags": ["Glitch", "Terminal", "Amber", "CRT", "ASCII", "Retro", "Abstract"]
+      "tags": [
+        "Glitch",
+        "Terminal",
+        "Amber",
+        "CRT",
+        "ASCII",
+        "Retro",
+        "Abstract"
+      ]
     },
     {
       "href": "cyan-data-stream.html",
       "category": "Backgrounds",
-      "tags": ["Glitch", "Terminal", "Cyan", "Data", "Hex", "Cyberpunk", "Abstract"]
+      "tags": [
+        "Glitch",
+        "Terminal",
+        "Cyan",
+        "Data",
+        "Hex",
+        "Cyberpunk",
+        "Abstract"
+      ]
     },
     {
       "href": "red-corrupt.html",
       "category": "Backgrounds",
-      "tags": ["Glitch", "Terminal", "Red", "Corrupt", "Block", "ASCII", "Abstract"]
+      "tags": [
+        "Glitch",
+        "Terminal",
+        "Red",
+        "Corrupt",
+        "Block",
+        "ASCII",
+        "Abstract"
+      ]
     },
     {
       "href": "glitch-veil.html",
