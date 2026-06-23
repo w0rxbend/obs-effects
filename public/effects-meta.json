@@ -218,22 +218,130 @@
     "createdAt": "2026-06-22T01:42:09+03:00"
   },
   {
-    "slug": "audio-waveform",
-    "title": "Audio Waveform",
-    "href": "audio-waveform.html",
-    "category": "Audio Visualizers",
-    "tags": ["audio-reactive", "waveform", "visualizer", "obs", "overlay"],
-    "description": "",
-    "createdAt": "2026-06-22T01:42:09+03:00"
-  },
-  {
     "slug": "audio-waveform-razer",
     "title": "Audio Waveform Razer",
     "href": "audio-waveform-razer.html",
     "category": "Audio Visualizers",
-    "tags": ["audio-reactive", "waveform", "razer", "toxic", "overlay"],
+    "tags": ["audio-reactive", "waveform", "razer", "rainbow", "overlay"],
     "description": "",
     "createdAt": "2026-06-22T01:42:09+03:00"
+  },
+  {
+    "slug": "audio-waveform-razer-blade",
+    "title": "Audio Waveform Razer Blade",
+    "href": "audio-waveform-razer-blade.html",
+    "category": "Audio Visualizers",
+    "tags": ["audio-reactive", "waveform", "razer", "blade", "overlay"],
+    "description": "",
+    "createdAt": "2026-06-23T07:10:37.757Z"
+  },
+  {
+    "slug": "audio-waveform-razer-equalizer",
+    "title": "Audio Waveform Razer Equalizer",
+    "href": "audio-waveform-razer-equalizer.html",
+    "category": "Audio Visualizers",
+    "tags": ["audio-reactive", "waveform", "razer", "equalizer", "overlay"],
+    "description": "",
+    "createdAt": "2026-06-23T07:10:37.757Z"
+  },
+  {
+    "slug": "audio-waveform-razer-helix",
+    "title": "Audio Waveform Razer Helix",
+    "href": "audio-waveform-razer-helix.html",
+    "category": "Audio Visualizers",
+    "tags": ["audio-reactive", "waveform", "razer", "helix", "overlay"],
+    "description": "",
+    "createdAt": "2026-06-23T07:10:37.757Z"
+  },
+  {
+    "slug": "audio-waveform-razer-orb",
+    "title": "Audio Waveform Razer Orb",
+    "href": "audio-waveform-razer-orb.html",
+    "category": "Audio Visualizers",
+    "tags": ["audio-reactive", "waveform", "razer", "sunset", "overlay"],
+    "description": "",
+    "createdAt": "2026-06-23T07:10:37.757Z"
+  },
+  {
+    "slug": "audio-waveform-razer-oscilloscope",
+    "title": "Audio Waveform Razer Oscilloscope",
+    "href": "audio-waveform-razer-oscilloscope.html",
+    "category": "Audio Visualizers",
+    "tags": ["audio-reactive", "waveform", "razer", "oscilloscope", "overlay"],
+    "description": "",
+    "createdAt": "2026-06-23T07:10:37.756Z"
+  },
+  {
+    "slug": "audio-waveform-razer-prism",
+    "title": "Audio Waveform Razer Prism",
+    "href": "audio-waveform-razer-prism.html",
+    "category": "Audio Visualizers",
+    "tags": ["audio-reactive", "waveform", "razer", "prism", "overlay"],
+    "description": "",
+    "createdAt": "2026-06-23T07:10:37.756Z"
+  },
+  {
+    "slug": "audio-waveform-razer-radial",
+    "title": "Audio Waveform Razer Radial",
+    "href": "audio-waveform-razer-radial.html",
+    "category": "Audio Visualizers",
+    "tags": ["audio-reactive", "waveform", "razer", "radial", "overlay"],
+    "description": "",
+    "createdAt": "2026-06-23T07:31:18.162Z"
+  },
+  {
+    "slug": "audio-waveform-razer-ribbon-bands",
+    "title": "Audio Waveform Razer Ribbon Bands",
+    "href": "audio-waveform-razer-ribbon-bands.html",
+    "category": "Audio Visualizers",
+    "tags": ["audio-reactive", "waveform", "razer", "bands", "overlay"],
+    "description": "Single wide layered ribbon band that swells with bass and overlaps into bright color mixes.",
+    "createdAt": "2026-06-23T08:00:00.000Z"
+  },
+  {
+    "slug": "audio-waveform-razer-ribbon-lattice",
+    "title": "Audio Waveform Razer Ribbon Lattice",
+    "href": "audio-waveform-razer-ribbon-lattice.html",
+    "category": "Audio Visualizers",
+    "tags": ["audio-reactive", "waveform", "razer", "lattice", "overlay"],
+    "description": "Single-axis ribbon lattice with braided neon waveform traces and translucent lobes.",
+    "createdAt": "2026-06-23T08:00:00.000Z"
+  },
+  {
+    "slug": "audio-waveform-razer-ribbons",
+    "title": "Audio Waveform Razer Ribbons",
+    "href": "audio-waveform-razer-ribbons.html",
+    "category": "Audio Visualizers",
+    "tags": ["audio-reactive", "waveform", "razer", "ribbons", "overlay"],
+    "description": "Single translucent waveform ribbon inspired by overlapping neon audio lobes.",
+    "createdAt": "2026-06-23T08:00:00.000Z"
+  },
+  {
+    "slug": "audio-waveform-razer-ridge",
+    "title": "Audio Waveform Razer Ridge",
+    "href": "audio-waveform-razer-ridge.html",
+    "category": "Audio Visualizers",
+    "tags": ["audio-reactive", "waveform", "razer", "dots", "overlay"],
+    "description": "",
+    "createdAt": "2026-06-23T07:10:37.757Z"
+  },
+  {
+    "slug": "audio-waveform-razer-spectrum",
+    "title": "Audio Waveform Razer Spectrum",
+    "href": "audio-waveform-razer-spectrum.html",
+    "category": "Audio Visualizers",
+    "tags": ["audio-reactive", "waveform", "razer", "spectrum", "overlay"],
+    "description": "",
+    "createdAt": "2026-06-23T07:10:37.756Z"
+  },
+  {
+    "slug": "audio-waveform-razer-weave",
+    "title": "Audio Waveform Razer Weave",
+    "href": "audio-waveform-razer-weave.html",
+    "category": "Audio Visualizers",
+    "tags": ["audio-reactive", "waveform", "razer", "weave", "overlay"],
+    "description": "",
+    "createdAt": "2026-06-23T07:10:37.757Z"
   },
   {
     "slug": "aurora-borealis",
@@ -2508,7 +2616,7 @@
       "abstract"
     ],
     "description": "",
-    "createdAt": "2026-06-22T20:49:41.014Z"
+    "createdAt": "2026-06-23T09:37:14+03:00"
   },
   {
     "slug": "toxic-dev-data-stream",
@@ -2527,7 +2635,7 @@
       "abstract"
     ],
     "description": "",
-    "createdAt": "2026-06-22T20:51:42.388Z"
+    "createdAt": "2026-06-23T09:37:14+03:00"
   },
   {
     "slug": "toxic-dev-terminal",
@@ -2544,7 +2652,7 @@
       "abstract"
     ],
     "description": "",
-    "createdAt": "2026-06-22T20:43:26.978Z"
+    "createdAt": "2026-06-23T09:37:14+03:00"
   },
   {
     "slug": "toxic-marble-dots",
@@ -2553,7 +2661,7 @@
     "category": "Backgrounds",
     "tags": ["halftone", "dots", "toxic", "green", "marble", "abstract"],
     "description": "",
-    "createdAt": "2026-06-22T20:54:30.241Z"
+    "createdAt": "2026-06-23T09:37:14+03:00"
   },
   {
     "slug": "trapcam",

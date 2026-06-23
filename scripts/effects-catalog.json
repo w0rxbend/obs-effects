@@ -121,14 +121,74 @@
       ]
     },
     {
-      "href": "audio-waveform.html",
-      "category": "Audio Visualizers",
-      "tags": ["Audio-Reactive", "Waveform", "Visualizer", "OBS", "Overlay"]
-    },
-    {
       "href": "audio-waveform-razer.html",
       "category": "Audio Visualizers",
-      "tags": ["Audio-Reactive", "Waveform", "Razer", "Toxic", "Overlay"]
+      "tags": ["Audio-Reactive", "Waveform", "Razer", "Rainbow", "Overlay"]
+    },
+    {
+      "href": "audio-waveform-razer-prism.html",
+      "category": "Audio Visualizers",
+      "tags": ["Audio-Reactive", "Waveform", "Razer", "Prism", "Overlay"]
+    },
+    {
+      "href": "audio-waveform-razer-spectrum.html",
+      "category": "Audio Visualizers",
+      "tags": ["Audio-Reactive", "Waveform", "Razer", "Spectrum", "Overlay"]
+    },
+    {
+      "href": "audio-waveform-razer-oscilloscope.html",
+      "category": "Audio Visualizers",
+      "tags": ["Audio-Reactive", "Waveform", "Razer", "Oscilloscope", "Overlay"]
+    },
+    {
+      "href": "audio-waveform-razer-blade.html",
+      "category": "Audio Visualizers",
+      "tags": ["Audio-Reactive", "Waveform", "Razer", "Blade", "Overlay"]
+    },
+    {
+      "href": "audio-waveform-razer-ridge.html",
+      "category": "Audio Visualizers",
+      "tags": ["Audio-Reactive", "Waveform", "Razer", "Dots", "Overlay"]
+    },
+    {
+      "href": "audio-waveform-razer-equalizer.html",
+      "category": "Audio Visualizers",
+      "tags": ["Audio-Reactive", "Waveform", "Razer", "Equalizer", "Overlay"]
+    },
+    {
+      "href": "audio-waveform-razer-weave.html",
+      "category": "Audio Visualizers",
+      "tags": ["Audio-Reactive", "Waveform", "Razer", "Weave", "Overlay"]
+    },
+    {
+      "href": "audio-waveform-razer-orb.html",
+      "category": "Audio Visualizers",
+      "tags": ["Audio-Reactive", "Waveform", "Razer", "Sunset", "Overlay"]
+    },
+    {
+      "href": "audio-waveform-razer-helix.html",
+      "category": "Audio Visualizers",
+      "tags": ["Audio-Reactive", "Waveform", "Razer", "Helix", "Overlay"]
+    },
+    {
+      "href": "audio-waveform-razer-radial.html",
+      "category": "Audio Visualizers",
+      "tags": ["Audio-Reactive", "Waveform", "Razer", "Radial", "Overlay"]
+    },
+    {
+      "href": "audio-waveform-razer-ribbon-bands.html",
+      "category": "Audio Visualizers",
+      "tags": ["Audio-Reactive", "Waveform", "Razer", "Bands", "Overlay"]
+    },
+    {
+      "href": "audio-waveform-razer-ribbon-lattice.html",
+      "category": "Audio Visualizers",
+      "tags": ["Audio-Reactive", "Waveform", "Razer", "Lattice", "Overlay"]
+    },
+    {
+      "href": "audio-waveform-razer-ribbons.html",
+      "category": "Audio Visualizers",
+      "tags": ["Audio-Reactive", "Waveform", "Razer", "Ribbons", "Overlay"]
     },
     {
       "href": "aurora-borealis.html",

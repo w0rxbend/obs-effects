@@ -209,8 +209,59 @@ export default defineConfig({
           "audio-reactive-black-blob.html",
         ),
         audioFlowTurbulence: resolve(__dirname, "audio-flow-turbulence.html"),
-        audioWaveform: resolve(__dirname, "audio-waveform.html"),
         audioWaveformRazer: resolve(__dirname, "audio-waveform-razer.html"),
+        audioWaveformRazerPrism: resolve(
+          __dirname,
+          "audio-waveform-razer-prism.html",
+        ),
+        audioWaveformRazerSpectrum: resolve(
+          __dirname,
+          "audio-waveform-razer-spectrum.html",
+        ),
+        audioWaveformRazerOscilloscope: resolve(
+          __dirname,
+          "audio-waveform-razer-oscilloscope.html",
+        ),
+        audioWaveformRazerBlade: resolve(
+          __dirname,
+          "audio-waveform-razer-blade.html",
+        ),
+        audioWaveformRazerRidge: resolve(
+          __dirname,
+          "audio-waveform-razer-ridge.html",
+        ),
+        audioWaveformRazerEqualizer: resolve(
+          __dirname,
+          "audio-waveform-razer-equalizer.html",
+        ),
+        audioWaveformRazerWeave: resolve(
+          __dirname,
+          "audio-waveform-razer-weave.html",
+        ),
+        audioWaveformRazerOrb: resolve(
+          __dirname,
+          "audio-waveform-razer-orb.html",
+        ),
+        audioWaveformRazerHelix: resolve(
+          __dirname,
+          "audio-waveform-razer-helix.html",
+        ),
+        audioWaveformRazerRadial: resolve(
+          __dirname,
+          "audio-waveform-razer-radial.html",
+        ),
+        audioWaveformRazerRibbons: resolve(
+          __dirname,
+          "audio-waveform-razer-ribbons.html",
+        ),
+        audioWaveformRazerRibbonBands: resolve(
+          __dirname,
+          "audio-waveform-razer-ribbon-bands.html",
+        ),
+        audioWaveformRazerRibbonLattice: resolve(
+          __dirname,
+          "audio-waveform-razer-ribbon-lattice.html",
+        ),
         particleSwarmExcitement: resolve(
           __dirname,
           "particle-swarm-excitement.html",

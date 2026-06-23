@@ -33,6 +33,10 @@ class OBSAudioBridge {
   beat = false;
   overclock = false;
 
+  get isConnected(): boolean {
+    return this.connected;
+  }
+
   /**
    * Connect to OBS WebSocket and subscribe to InputVolumeMeters.
    * Safe to call multiple times — connects only once.

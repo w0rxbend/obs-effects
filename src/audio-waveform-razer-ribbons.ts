@@ -1,7 +1,7 @@
-import { RazerWaveformPulseScreen } from "./app/screens/RazerWaveformVariationsScreen";
+import { RazerWaveformRibbonsScreen } from "./app/screens/RazerWaveformVariationsScreen";
 import { createPage } from "./lib";
 
-createPage(RazerWaveformPulseScreen, {
+createPage(RazerWaveformRibbonsScreen, {
   backgroundAlpha: 0,
   antialias: true,
   resizeOptions: { minWidth: 1920, minHeight: 1080, letterbox: false },
