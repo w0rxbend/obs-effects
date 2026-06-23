@@ -14,6 +14,7 @@ export interface GlitchTerminalConfig {
   maxBlocks: number;
   glitchInterval: [number, number]; // [min, max] frames between events
   blockAlpha: number;
+  sparkColor?: string;
   densityField?: (xn: number, yn: number) => number;
 }
 
@@ -205,7 +206,16 @@ export class GlitchTerminalBase extends Container {
   }
 
   private render(): void {
-    const { fg, fgDim, bg, blockColor, cell, font, blockAlpha } = this.cfg;
+    const {
+      fg,
+      fgDim,
+      bg,
+      blockColor,
+      cell,
+      font,
+      blockAlpha,
+      sparkColor = "#ffffff",
+    } = this.cfg;
     const ctx = this.ctx;
     ctx.clearRect(0, 0, this.w, this.h);
     ctx.fillStyle = bg;
@@ -236,7 +246,7 @@ export class GlitchTerminalBase extends Container {
     }
 
     if (this.frame % 4 < 2) {
-      ctx.fillStyle = "#ffffff";
+      ctx.fillStyle = sparkColor;
       for (let i = 0; i < 30; i++) {
         ctx.fillRect(
           Math.floor(rnd() * this.w),

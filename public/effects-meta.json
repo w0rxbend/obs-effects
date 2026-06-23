@@ -73,7 +73,7 @@
     "category": "Audio Visualizers",
     "tags": ["audio-reactive", "obs", "amber", "orange", "lines"],
     "description": "",
-    "createdAt": "2026-06-21T11:41:28.153Z"
+    "createdAt": "2026-06-22T01:42:09+03:00"
   },
   {
     "slug": "amber-terminal",
@@ -215,7 +215,7 @@
     "category": "Audio Visualizers",
     "tags": ["audio-reactive", "character", "blob", "obs", "emotion"],
     "description": "",
-    "createdAt": "2026-06-21T09:37:02.830Z"
+    "createdAt": "2026-06-22T01:42:09+03:00"
   },
   {
     "slug": "audio-waveform",
@@ -224,7 +224,7 @@
     "category": "Audio Visualizers",
     "tags": ["audio-reactive", "waveform", "visualizer", "obs", "overlay"],
     "description": "",
-    "createdAt": "2026-06-21T09:01:57.699Z"
+    "createdAt": "2026-06-22T01:42:09+03:00"
   },
   {
     "slug": "audio-waveform-razer",
@@ -233,7 +233,7 @@
     "category": "Audio Visualizers",
     "tags": ["audio-reactive", "waveform", "razer", "toxic", "overlay"],
     "description": "",
-    "createdAt": "2026-06-21T09:26:01.842Z"
+    "createdAt": "2026-06-22T01:42:09+03:00"
   },
   {
     "slug": "aurora-borealis",
@@ -566,7 +566,7 @@
     "category": "Audio Visualizers",
     "tags": ["audio-reactive", "obs", "cyan", "neon", "lines"],
     "description": "",
-    "createdAt": "2026-06-21T11:41:28.153Z"
+    "createdAt": "2026-06-22T01:42:09+03:00"
   },
   {
     "slug": "cyber-marble",
@@ -1485,7 +1485,7 @@
     "category": "Audio Visualizers",
     "tags": ["audio-reactive", "obs", "magenta", "neon", "lines"],
     "description": "",
-    "createdAt": "2026-06-21T11:41:28.153Z"
+    "createdAt": "2026-06-22T01:42:09+03:00"
   },
   {
     "slug": "magenta-dot-flow",
@@ -2043,7 +2043,7 @@
     "category": "Backgrounds",
     "tags": ["shader", "razer", "toxic", "green", "atmospheric", "silk"],
     "description": "",
-    "createdAt": "2026-06-21T12:32:25.427Z"
+    "createdAt": "2026-06-22T01:42:09+03:00"
   },
   {
     "slug": "razer-diagonal-streaks",
@@ -2052,7 +2052,7 @@
     "category": "Audio Visualizers",
     "tags": ["audio-reactive", "obs", "razer", "toxic", "green", "lines"],
     "description": "",
-    "createdAt": "2026-06-21T11:41:28.153Z"
+    "createdAt": "2026-06-22T01:42:09+03:00"
   },
   {
     "slug": "razer-halftone-fade",
@@ -2061,7 +2061,7 @@
     "category": "Backgrounds",
     "tags": ["halftone", "dots", "razer", "toxic", "green", "fade"],
     "description": "",
-    "createdAt": "2026-06-21T11:36:41.632Z"
+    "createdAt": "2026-06-22T01:42:09+03:00"
   },
   {
     "slug": "razer-toxic-marble",
@@ -2493,6 +2493,69 @@
     "createdAt": "2026-04-23T18:25:30+03:00"
   },
   {
+    "slug": "toxic-dev-corrupt",
+    "title": "Toxic Dev Corrupt",
+    "href": "toxic-dev-corrupt.html",
+    "category": "Backgrounds",
+    "tags": [
+      "glitch",
+      "terminal",
+      "toxic",
+      "green",
+      "nerd font",
+      "dev",
+      "corrupt",
+      "abstract"
+    ],
+    "description": "",
+    "createdAt": "2026-06-22T20:49:41.014Z"
+  },
+  {
+    "slug": "toxic-dev-data-stream",
+    "title": "Toxic Dev Data Stream",
+    "href": "toxic-dev-data-stream.html",
+    "category": "Backgrounds",
+    "tags": [
+      "glitch",
+      "terminal",
+      "toxic",
+      "green",
+      "nerd font",
+      "dev",
+      "data",
+      "cyberpunk",
+      "abstract"
+    ],
+    "description": "",
+    "createdAt": "2026-06-22T20:51:42.388Z"
+  },
+  {
+    "slug": "toxic-dev-terminal",
+    "title": "Toxic Dev Terminal",
+    "href": "toxic-dev-terminal.html",
+    "category": "Backgrounds",
+    "tags": [
+      "glitch",
+      "terminal",
+      "toxic",
+      "green",
+      "nerd font",
+      "dev",
+      "abstract"
+    ],
+    "description": "",
+    "createdAt": "2026-06-22T20:43:26.978Z"
+  },
+  {
+    "slug": "toxic-marble-dots",
+    "title": "Toxic Marble Dots",
+    "href": "toxic-marble-dots.html",
+    "category": "Backgrounds",
+    "tags": ["halftone", "dots", "toxic", "green", "marble", "abstract"],
+    "description": "",
+    "createdAt": "2026-06-22T20:54:30.241Z"
+  },
+  {
     "slug": "trapcam",
     "title": "Trapcam",
     "href": "trapcam.html",
@@ -2588,7 +2651,7 @@
     "category": "Audio Visualizers",
     "tags": ["audio-reactive", "obs", "purple", "cyan", "lines"],
     "description": "",
-    "createdAt": "2026-06-21T11:41:28.153Z"
+    "createdAt": "2026-06-22T01:42:09+03:00"
   },
   {
     "slug": "vector-field-bg",
@@ -2723,7 +2786,7 @@
     "category": "Audio Visualizers",
     "tags": ["audio-reactive", "obs", "white", "ice", "lines"],
     "description": "",
-    "createdAt": "2026-06-21T11:41:28.153Z"
+    "createdAt": "2026-06-22T01:42:09+03:00"
   },
   {
     "slug": "wireframe-icosphere",

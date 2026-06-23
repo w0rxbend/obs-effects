@@ -697,6 +697,19 @@
       ]
     },
     {
+      "href": "toxic-dev-terminal.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Glitch",
+        "Terminal",
+        "Toxic",
+        "Green",
+        "Nerd Font",
+        "Dev",
+        "Abstract"
+      ]
+    },
+    {
       "href": "cyan-data-stream.html",
       "category": "Backgrounds",
       "tags": [
@@ -706,6 +719,35 @@
         "Data",
         "Hex",
         "Cyberpunk",
+        "Abstract"
+      ]
+    },
+    {
+      "href": "toxic-dev-data-stream.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Glitch",
+        "Terminal",
+        "Toxic",
+        "Green",
+        "Nerd Font",
+        "Dev",
+        "Data",
+        "Cyberpunk",
+        "Abstract"
+      ]
+    },
+    {
+      "href": "toxic-dev-corrupt.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Glitch",
+        "Terminal",
+        "Toxic",
+        "Green",
+        "Nerd Font",
+        "Dev",
+        "Corrupt",
         "Abstract"
       ]
     },
@@ -736,6 +778,11 @@
       "href": "gold-marble-dots.html",
       "category": "Backgrounds",
       "tags": ["Halftone", "Dots", "Gold", "Marble", "Luxury", "Abstract"]
+    },
+    {
+      "href": "toxic-marble-dots.html",
+      "category": "Backgrounds",
+      "tags": ["Halftone", "Dots", "Toxic", "Green", "Marble", "Abstract"]
     },
     {
       "href": "gpu-boids.html",
