@@ -25,9 +25,9 @@ void main() {
 
   float level = uAudio.x;
 
-  // Slow domain warp so the hole's boundary flows like a fluid blob rather
-  // than a rigid circle.
-  vec2 wp = p + 0.10 * vec2(
+  // Gentle domain warp so the hole's boundary breathes like a fluid surface
+  // while staying close to a circle rather than a lobed blob.
+  vec2 wp = p + 0.025 * vec2(
     fbm(p * 1.6 + vec2(t * 0.05, 1.7)),
     fbm(p * 1.6 + vec2(4.1, t * 0.045))
   );
@@ -35,14 +35,13 @@ void main() {
   float rW = length(wp);
   float aW = atan(wp.y, wp.x);
 
-  // Additional low-frequency lobing around the rim for a lava-lamp silhouette.
+  // Faint high-frequency ripple around the rim — a shimmer, not a lobe.
   float lobe =
-    0.05 * sin(aW * 3.0 + t * 0.22) +
-    0.035 * sin(aW * 5.0 - t * 0.31 + 1.4) +
-    0.02 * sin(aW * 8.0 + t * 0.5 + 0.7);
+    0.008 * sin(aW * 5.0 + t * 0.28 + 1.4) +
+    0.005 * sin(aW * 9.0 - t * 0.4 + 0.7);
 
-  float breathe = 0.015 * sin(t * 0.35);
-  float radius = 0.27 + breathe + lobe + level * 0.02;
+  float breathe = 0.012 * sin(t * 0.35);
+  float radius = 0.27 + breathe + lobe + level * 0.015;
 
   float feather = 0.012;
   float holeAlpha = smoothstep(radius - feather, radius + feather, rW);
