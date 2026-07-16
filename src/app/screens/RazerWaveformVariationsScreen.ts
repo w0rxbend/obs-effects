@@ -99,6 +99,7 @@ export class RazerWaveformVariationScreen extends Container {
 
   private readonly gfx = new Graphics();
   private readonly values = new Float32Array(BARS);
+  private readonly peaks = new Float32Array(BARS);
   private readonly seeds = new Float32Array(BARS);
 
   private w = 1920;
@@ -106,6 +107,7 @@ export class RazerWaveformVariationScreen extends Container {
   private time = 0;
   private beat = 0;
   private activity = 0;
+  private wavePhase = 0;
 
   constructor(private readonly variant: WaveformVariant) {
     super();
@@ -115,6 +117,7 @@ export class RazerWaveformVariationScreen extends Container {
       const s = Math.sin(i * 91.171) * 43758.5453;
       this.seeds[i] = s - Math.floor(s);
       this.values[i] = 0.06;
+      this.peaks[i] = 0.06;
     }
 
     void obsAudio.connect();
@@ -148,11 +151,88 @@ export class RazerWaveformVariationScreen extends Container {
     const beatGate = obsAudio.isConnected ? 0.12 : 0.28;
     const beatTarget = obsAudio.beat && this.activity > beatGate ? 1 : 0;
     this.beat += (beatTarget - this.beat) * Math.min(1, dt * 8);
+    this.wavePhase += dt * (0.18 + this.activity * 0.25);
     this.updateValues(dt);
     this.draw();
   }
 
   private updateValues(dt: number): void {
+    if (this.isRibbonFamily()) {
+      this.updateRibbonsValues(dt);
+      return;
+    }
+    this.updateRibbonLikeValues(dt);
+  }
+
+  private isRibbonFamily(): boolean {
+    return (
+      this.variant === "ribbons" ||
+      this.variant === "ribbonBands" ||
+      this.variant === "ribbonLattice"
+    );
+  }
+
+  private updateRibbonsValues(dt: number): void {
+    const level = obsAudio.level;
+    const bass = obsAudio.bass;
+    const mid = obsAudio.mid;
+    const high = obsAudio.high;
+    const attack = 1 - Math.exp(-dt * 26);
+    const release = 1 - Math.exp(-dt * 3.8);
+    const peakFalloff = Math.exp(-dt * 2.05);
+    const sweep = this.wavePhase * 0.6;
+    const peakOffset = this.wavePhase * 0.12;
+
+    for (let i = 0; i < BARS; i++) {
+      const t = i / (BARS - 1);
+      const center = 1 - Math.abs(t - 0.5) * 2;
+      const bassEnvelope =
+        gauss(t, 0.22, 0.17) * (bass * 1.2 + level * 0.44) +
+        gauss(t, 0.08, 0.09) * (bass * 0.34 + level * 0.22);
+      const midEnvelope =
+        gauss(t, 0.52, 0.22) * (mid * 1.06 + level * 0.36) +
+        gauss(t, 0.34, 0.16) * (mid * 0.46 + level * 0.24);
+      const highEnvelope =
+        gauss(t, 0.78, 0.16) * (high * 0.92 + level * 0.27) +
+        gauss(t, 0.92, 0.1) * (high * 0.28 + level * 0.18);
+      const lfo =
+        0.55 +
+        0.45 *
+          Math.sin(
+            sweep +
+              t * TAU * 1.8 +
+              i * 0.14 +
+              this.seeds[i] * 0.9 +
+              this.wavePhase,
+          );
+      const micro = 0.5 + 0.5 * Math.sin(t * TAU * 2.9 + i * 0.27 + peakOffset);
+      const coherentBlend =
+        (i > 0 ? this.values[i - 1] : this.values[i]) * 0.12 +
+        (i + 1 < BARS ? this.values[i + 1] : this.values[i]) * 0.12 +
+        this.peaks[i] * 0.22;
+      const bandBase =
+        0.006 + Math.pow(center, 1.35) * (0.008 + this.activity * 0.024);
+      const response =
+        (bassEnvelope * 0.42 + midEnvelope * 0.4 + highEnvelope * 0.34) *
+        (0.9 + this.activity * 0.95);
+      const target = clamp(
+        bandBase +
+          response * (0.22 + this.activity * 0.9) +
+          lfo * (0.02 + this.activity * 0.056) * (1 + this.activity * 0.42) +
+          micro * this.activity * 0.036 +
+          coherentBlend * 0.27 +
+          this.peaks[i] * 0.08 +
+          this.beat * gauss(t, 0.5, 0.22) * 0.18,
+        0.004,
+        1,
+      );
+      const speed = target > this.values[i] ? attack : release;
+      this.values[i] += (target - this.values[i]) * speed;
+      this.peaks[i] = Math.max(this.peaks[i] * peakFalloff, this.values[i]);
+    }
+  }
+
+  private updateRibbonLikeValues(dt: number): void {
     const attack = 1 - Math.exp(-dt * 25);
     const release = 1 - Math.exp(-dt * 7);
 
@@ -174,6 +254,7 @@ export class RazerWaveformVariationScreen extends Container {
         this.beat * gauss(t, 0.5, 0.22) * 0.35;
       const speed = target > this.values[i] ? attack : release;
       this.values[i] += (target - this.values[i]) * speed;
+      this.peaks[i] = Math.max(this.peaks[i], this.values[i]);
     }
   }
 
@@ -243,19 +324,58 @@ export class RazerWaveformVariationScreen extends Container {
   }
 
   private drawPrism(): void {
-    this.drawDotSkyline({
-      base: this.h * 0.58,
-      left: this.w * 0.16,
-      span: this.w * 0.68,
-      maxHeight: this.h * 0.18,
-      columns: 68,
-      rows: 22,
-      mirror: false,
-      dotRadius: 3,
-      colorMode: "cyanDepth",
-      density: 0.72,
-      waveBias: 0.28,
-    });
+    const base = this.h * 0.58;
+    const left = this.w * 0.16;
+    const span = this.w * 0.68;
+    const maxHeight = this.h * 0.18;
+    const columns = 68;
+    const rows = 22;
+    const dotRadius = 3;
+    const density = 0.72;
+    const waveBias = 0.28;
+    const calm = this.activity < 0.06;
+    const colGap = span / Math.max(1, columns - 1);
+    const rowGap = maxHeight / rows;
+
+    for (let col = 0; col < columns; col++) {
+      const t = col / Math.max(1, columns - 1);
+      const envelope =
+        gauss(t, 0.24, 0.1) * 0.55 +
+        gauss(t, 0.42, 0.14) * 0.78 +
+        gauss(t, 0.58, 0.08) * 1.05 +
+        gauss(t, 0.76, 0.14) * 0.72;
+      const responsiveHeight =
+        rows *
+        clamp(
+          (0.06 + envelope * density * (0.48 + this.activity * 0.52)) *
+            (0.24 + this.activity * 1.1) +
+            this.valueAt(t) * waveBias * (0.35 + this.activity * 0.9) +
+            (calm
+              ? 0
+              : 0.1 *
+                (0.5 +
+                  0.5 *
+                    Math.sin(
+                      this.time * (1.4 + this.seeds[col % BARS] * 1.8) +
+                        col * 0.54,
+                    )) *
+                this.activity),
+          0.06,
+          1,
+        );
+      const height = calm ? 1 : Math.ceil(responsiveHeight);
+      const x = left + colGap * col;
+
+      for (let row = 0; row < height; row++) {
+        const p = row / rows;
+        const yTop = base - row * rowGap;
+        const color = this.dotColor("cyanDepth", t, p, false);
+        this.gfx.circle(x, yTop, dotRadius).fill({
+          color,
+          alpha: (0.28 + p * 0.7) * edgeAlpha(t),
+        });
+      }
+    }
   }
 
   private drawSpectrum(): void {
@@ -266,28 +386,39 @@ export class RazerWaveformVariationScreen extends Container {
     const rows = 18;
     const cellW = span / columns;
     const cellH = this.h * 0.018;
+    const calm = this.activity < 0.06;
+    const tone = clamp(0.2 + obsAudio.level * 0.8, 0, 1);
 
     for (let i = 0; i < columns; i++) {
       const t = i / (columns - 1);
+      const bandEnergy =
+        this.valueAt(t) * (0.28 + this.activity * 0.72) +
+        gauss(t, 0.48, 0.2) *
+          (0.09 + obsAudio.bass * this.activity * 0.42) *
+          (0.4 + this.activity * 0.5);
+      const noise = calm
+        ? 0
+        : 0.05 *
+          this.activity *
+          (0.5 +
+            0.5 * Math.sin(this.time * 0.42 + i * 0.65 + this.wavePhase * 0.8));
       const height = Math.ceil(
-        rows *
-          clamp(
-            0.08 +
-              this.valueAt(t) * (0.32 + this.activity * 0.68) +
-              gauss(t, 0.48, 0.2) *
-                (0.18 + obsAudio.bass * this.activity * 0.28) +
-              Math.sin(this.time * 0.42 + i * 0.65) * 0.04 * this.activity,
-            0.08,
-            1,
-          ),
+        rows * clamp(0.06 + bandEnergy + noise + tone * 0.03, 0.08, 1),
       );
       const x = left + span * t;
-      for (let row = 0; row < height; row++) {
+      const barHeight = calm ? 1 : height;
+      for (let row = 0; row < barHeight; row++) {
         const y = base - row * cellH;
         const color = mixColor(BLUE, CYAN, row / rows);
-        this.gfx
-          .rect(x, y, cellW * 0.74, cellH * 0.56)
-          .fill({ color, alpha: 0.16 + (row / rows) * 0.62 });
+        this.gfx.rect(x, y, cellW * 0.74, cellH * 0.56).fill({
+          color,
+          alpha: calm
+            ? 0.22
+            : 0.16 +
+              (row / rows) *
+                (0.5 + this.activity * 0.12) *
+                (0.55 + bandEnergy * 0.75),
+        });
       }
     }
   }
@@ -300,30 +431,79 @@ export class RazerWaveformVariationScreen extends Container {
       this.h *
       (0.026 + this.activity * 0.054 + obsAudio.mid * this.activity * 0.08);
 
-    this.glowLine(left, cy, left + span, cy, BLUE, 0.26, 1.2, 14);
-    this.strokeWave(cy, left, span, amp, 5.2, this.time * 1.1, CYAN, 0.95, 1.4);
+    const energy = (this.valueAt(0.17) + this.valueAt(0.83)) * 0.5;
+    const motionPulse = 1 + (this.activity * 0.22 + energy * 0.16);
+    const centerDrift = Math.sin(this.time * 0.28) * amp * 0.08;
+
+    this.glowLine(
+      left,
+      cy + centerDrift,
+      left + span,
+      cy - centerDrift,
+      WHITE,
+      0.44,
+      1.7,
+      18,
+    );
+    this.glowLine(
+      left,
+      cy + centerDrift * 0.5,
+      left + span,
+      cy - centerDrift * 0.5,
+      BLUE,
+      0.22 + energy * 0.2,
+      1.2,
+      10,
+    );
     this.strokeWave(
       cy,
       left,
       span,
-      amp * 0.66,
-      6.7,
+      amp * (0.92 * motionPulse + energy * 0.2),
+      5.8,
+      this.time * 1.1,
+      CYAN,
+      0.94,
+      1.55,
+    );
+    this.strokeWave(
+      cy,
+      left,
+      span,
+      amp * 0.68 * motionPulse,
+      7.2,
       this.time * 1.1 + 1.5,
       TEAL,
-      0.76,
-      1.05,
+      0.84,
+      1.2,
     );
     this.strokeWave(
       cy,
       left,
       span,
-      amp * 0.45,
-      9.6,
+      amp * 0.44 * (1 + this.activity * 0.2),
+      10.6,
       this.time * 1.6 + Math.PI,
       BLUE,
-      0.5,
-      0.85,
+      0.7,
+      1.02,
     );
+    for (let i = 0; i < 24; i++) {
+      const t = (i + 0.5) / 24;
+      const marker = this.valueAt(t);
+      const peak = this.peakAt(t);
+      if ((marker < 0.16 && peak < 0.16) || t <= 0.02 || t >= 0.98) continue;
+      const x = left + span * t;
+      const y =
+        cy + this.waveAt(t, amp * 0.22 * motionPulse, 13, this.time * 1.3 + i);
+      const a = (0.1 + marker * 0.45 + peak * 0.4) * edgeAlpha(t);
+      this.gfx
+        .circle(x, y, 1.8 + peak * 3.4)
+        .fill({ color: WHITE, alpha: clamp(a, 0, 0.8) });
+      this.gfx
+        .circle(x, y, 4.8)
+        .fill({ color: CYAN, alpha: clamp(a * 0.24, 0, 0.32) });
+    }
   }
 
   private drawBlade(): void {
@@ -346,22 +526,51 @@ export class RazerWaveformVariationScreen extends Container {
         gauss(t, 0.46, 0.15) * 0.9 +
         gauss(t, 0.6, 0.13) * 0.72 +
         gauss(t, 0.75, 0.16) * 0.34;
+      const sample = this.valueAt(t);
+      const peak = this.peakAt(t);
       const crest =
-        0.82 +
-        0.18 *
-          Math.sin(t * TAU * 7.5 + this.time * (0.45 + this.activity * 1.6));
-      const h = amp * body * crest * (0.72 + this.valueAt(t) * 0.58);
+        0.8 +
+        0.24 *
+          Math.sin(t * TAU * 7.5 + this.time * (0.45 + this.activity * 1.6)) +
+        peak * 0.3;
+      const profile = 0.72 + sample * 0.58;
+      const h = amp * body * crest * profile * (1 + sample * 0.2 + peak * 0.16);
       const x = left + span * t;
       upper.push(x, cy - h);
-      lower.unshift(x, cy + h * (0.72 + Math.sin(t * TAU * 3.5) * 0.08));
+      lower.unshift(
+        x,
+        cy +
+          h *
+            (0.64 +
+              Math.sin(t * TAU * 3.5 + this.wavePhase) * 0.1 +
+              peak * 0.14),
+      );
     }
 
-    this.gfx.poly([...upper, ...lower]).fill({ color: MAGENTA, alpha: 0.58 });
+    this.gfx.poly([...upper, ...lower]).fill({
+      color: MAGENTA,
+      alpha: 0.52 + this.activity * 0.1,
+    });
     this.gfx.poly([...upper, ...lower]).stroke({
       color: PINK,
-      alpha: 0.88,
-      width: 1.4,
+      alpha: 0.9,
+      width: 1.5,
     });
+    this.gfx.poly([...upper, ...lower]).stroke({
+      color: WHITE,
+      alpha: 0.28,
+      width: 2.6,
+    });
+
+    for (let i = 0; i < upper.length; i += 2) {
+      const t = i / 2 / SEGMENTS;
+      if (this.valueAt(t) < 0.12) continue;
+      const x = upper[i];
+      const y0 = upper[i + 1];
+      const y1 = lower[lower.length - 2 - i];
+      this.glowLine(x, y0, x, y1, CYAN, edgeAlpha(t) * 0.28, 1.1, 4);
+    }
+
     this.glowLine(left, cy, left + span, cy, WHITE, 0.9, 1.2, 12);
   }
 
@@ -384,8 +593,11 @@ export class RazerWaveformVariationScreen extends Container {
     const amp =
       this.h *
       (0.095 + this.activity * 0.185 + obsAudio.level * this.activity * 0.12);
-    const points: number[] = [];
+    const upper: number[] = [];
+    const lower: number[] = [];
     const steps = 156;
+    const floor = this.h * 0.5;
+    const floorLift = amp * 0.23;
 
     for (let i = 0; i <= steps; i++) {
       const t = i / steps;
@@ -399,22 +611,33 @@ export class RazerWaveformVariationScreen extends Container {
         Math.sin(t * TAU * 9.2 - this.time * (0.22 + this.activity * 0.9)) *
           0.24 +
         Math.sin(t * TAU * 2.2 + this.time * 0.18) * 0.18;
+      const sample = this.valueAt(t);
+      const peak = this.peakAt(t);
       const h =
         amp *
         body *
-        (0.34 + this.valueAt(t) * 0.72) *
+        (0.34 + sample * 0.72 + peak * 0.26) *
         carrier *
-        (0.72 + this.activity * 0.28);
+        (0.74 + this.activity * 0.34);
       const x = left + span * t;
-      points.push(x, cy + h);
+      upper.push(x, cy + h);
+      const drift = Math.sin(t * TAU * 0.8 + this.wavePhase) * 0.16;
+      const floorMod = 1 + drift + peak * 0.4;
+      lower.push(x, floor + floorLift * floorMod * 0.6);
     }
 
-    for (let i = 0; i < points.length - 2; i += 2) {
-      const t = i / Math.max(2, points.length - 2);
-      const x0 = points[i];
-      const y0 = points[i + 1];
-      const x1 = points[i + 2];
-      const y1 = points[i + 3];
+    const base = [...lower].reverse();
+    this.gfx.poly([...upper, ...base]).fill({
+      color: TEAL,
+      alpha: 0.22 + this.activity * 0.3,
+    });
+
+    for (let i = 0; i < upper.length - 2; i += 2) {
+      const t = i / Math.max(2, upper.length - 2);
+      const x0 = upper[i];
+      const y0 = upper[i + 1];
+      const x1 = upper[i + 2];
+      const y1 = upper[i + 3];
       this.glowLine(
         x0,
         y0,
@@ -425,7 +648,21 @@ export class RazerWaveformVariationScreen extends Container {
         1.2,
         9,
       );
+      if ((i / 2) % 16 === 0 && this.peakAt(t) > 0.22) {
+        this.glowLine(x0, y0, x1, y1, WHITE, 0.28, 1.6, 6);
+      }
     }
+
+    this.glowLine(
+      left,
+      cy,
+      left + span,
+      cy,
+      WHITE,
+      0.24 + this.peakAt(0.5) * 0.3,
+      0.9,
+      10,
+    );
   }
 
   private drawWeave(): void {
@@ -505,15 +742,20 @@ export class RazerWaveformVariationScreen extends Container {
     const cy = this.h * 0.5;
     const size = Math.min(this.w, this.h);
     const rays = 56;
-    const rows = 12;
+    const rows = 13;
     const innerRadius = size * 0.14;
-    const cellDepth = size * 0.029;
+    const cellDepth = size * 0.026;
     const cellWidth = size * 0.023;
-    const spin = this.time * (0.015 + this.activity * 0.105);
+    const spin =
+      this.time * (0.015 + this.activity * 0.105) + this.wavePhase * 0.24;
 
     for (let ray = 0; ray < rays; ray++) {
       const t = ray / rays;
-      const angle = t * TAU - Math.PI * 0.5 + spin;
+      const angle =
+        t * TAU -
+        Math.PI * 0.5 +
+        spin +
+        Math.sin(this.wavePhase + t * TAU) * 0.016;
       const wave =
         gauss(t, 0.08, 0.045) * 0.64 +
         gauss(t, 0.18, 0.06) * 0.5 +
@@ -522,6 +764,8 @@ export class RazerWaveformVariationScreen extends Container {
         gauss(t, 0.58, 0.07) * 0.56 +
         gauss(t, 0.72, 0.045) * 0.76 +
         gauss(t, 0.86, 0.06) * 0.62;
+      const sample = this.valueAt(t);
+      const peak = this.peakAt(t);
       const flicker =
         0.5 +
         0.5 *
@@ -534,8 +778,11 @@ export class RazerWaveformVariationScreen extends Container {
           clamp(
             0.14 +
               wave * (0.36 + this.activity * 0.22) +
-              this.valueAt(t) * (0.18 + this.activity * 0.32) +
-              flicker * 0.08 * this.activity,
+              sample * (0.18 + this.activity * 0.36) +
+              peak * 0.2 +
+              flicker * 0.08 * this.activity +
+              this.beat * gauss(t, 0.5, 0.25) * 0.22 +
+              this.wavePhase * 0.007,
             0.12,
             1,
           ),
@@ -544,11 +791,14 @@ export class RazerWaveformVariationScreen extends Container {
       for (let row = 0; row < height; row++) {
         const rowT = row / Math.max(1, rows - 1);
         const radius = innerRadius + row * cellDepth;
-        const color = paletteAt(t + rowT * 0.16, 0.18);
-        const alpha = 0.34 + rowT * 0.4 + this.valueAt(t) * 0.14;
+        const color = paletteAt(t + rowT * 0.16 + peak * 0.2, 0.18);
+        const alpha =
+          0.34 + rowT * 0.4 + sample * 0.14 + this.wavePhase * 0.005;
         const jitter =
           Math.sin(row * 1.7 + ray * 0.41 + this.time * 2) *
-          (0.15 + this.activity * 0.65);
+            (0.15 + this.activity * 0.65) +
+          peak * 0.22 +
+          Math.sin(this.wavePhase * 0.8 + t * TAU * 2) * 0.07;
         this.fillRotatedCell(
           cx + Math.cos(angle) * (radius + jitter),
           cy + Math.sin(angle) * (radius + jitter),
@@ -559,6 +809,43 @@ export class RazerWaveformVariationScreen extends Container {
           alpha,
         );
       }
+    }
+
+    const corePulse =
+      innerRadius * (0.28 + this.activity * 0.2 + this.peakAt(0) * 0.16);
+    this.gfx.circle(cx, cy, corePulse).fill({
+      color: WHITE,
+      alpha: 0.09 + this.activity * 0.09,
+    });
+    this.gfx.circle(cx, cy, corePulse).stroke({
+      color: CYAN,
+      alpha: 0.44,
+      width: 1.8,
+    });
+
+    const ringSteps = 96;
+    for (let i = 0; i < ringSteps; i++) {
+      const a0 = (i / ringSteps) * TAU + spin;
+      const a1 = ((i + 1) / ringSteps) * TAU + spin;
+      const t0 = i / ringSteps;
+      const waveT =
+        this.valueAt(t0) * 0.4 + this.peakAt(t0) * 0.12 + this.activity * 0.2;
+      const r = innerRadius * (1 + (0.34 + waveT) * 0.32);
+      const x0 = cx + Math.cos(a0) * r;
+      const y0 = cy + Math.sin(a0) * r;
+      const x1 = cx + Math.cos(a1) * r;
+      const y1 = cy + Math.sin(a1) * r;
+      const sw = 0.8 + waveT * 1.8;
+      this.glowLine(
+        x0,
+        y0,
+        x1,
+        y1,
+        paletteAt(t0, 0.4),
+        edgeAlpha(t0) * 0.36,
+        sw,
+        7,
+      );
     }
   }
 
@@ -700,31 +987,43 @@ export class RazerWaveformVariationScreen extends Container {
       const t = i / SEGMENTS;
       const edge = edgeAlpha(t);
       const lobes = this.ribbonLobeAt(t, row, layer) * lobeScale;
+      const sampleT = clamp(t + layer * 0.014 - row * 0.01, 0, 1);
+      const sample = this.valueAt(sampleT);
+      const peak = this.peakAt(sampleT);
       const audio =
-        0.42 +
-        this.activity * 0.52 +
-        this.valueAt(clamp(t + layer * 0.027 - 0.08, 0, 1)) *
-          (0.9 + this.activity * 0.45) +
-        this.beat * gauss(t, 0.5, 0.28) * 0.42;
+        0.32 +
+        sample * (0.95 + this.activity * 0.45) +
+        peak * 0.42 +
+        this.activity * 0.28 +
+        this.beat * gauss(t, 0.5, 0.3) * 0.34;
       const carrier =
-        Math.sin(t * TAU * (1.45 + layer * 0.13) + phase + this.time * speed) *
-          0.58 +
         Math.sin(
-          t * TAU * (3.25 + row * 0.21) - phase + this.time * speed * 0.7,
+          t * TAU * (1.38 + layer * 0.1) + phase + this.time * speed * 0.9,
         ) *
-          0.22;
+          (0.52 + sample * 0.18) +
+        Math.sin(
+          t * TAU * (2.95 + row * 0.18) -
+            phase +
+            this.wavePhase * 0.7 +
+            i * 0.02,
+        ) *
+          0.2 +
+        Math.sin(
+          t * TAU * (0.82 + layer * 0.035) + this.wavePhase * 1.4 + i * 0.16,
+        ) *
+          0.16;
       const lift =
         carrier *
         amp *
         edge *
-        (0.22 + lobes * 0.62) *
-        (0.82 + this.activity * 0.2);
+        (0.21 + lobes * 0.64) *
+        (0.76 + this.activity * 0.22);
       const half =
         thickness *
         edge *
         Math.max(0.02, lobes) *
-        audio *
-        (0.76 + 0.24 * Math.sin(t * TAU * 2 + phase));
+        (0.86 + audio * 0.52) *
+        (0.72 + 0.2 * Math.sin(this.wavePhase + t * TAU * 1.9 + phase));
       const x = left + span * t;
 
       upper.push(x, cy + lift - half);
@@ -920,6 +1219,15 @@ export class RazerWaveformVariationScreen extends Container {
     const next = Math.min(BARS - 1, idx + 1);
     return (
       this.values[idx] + (this.values[next] - this.values[idx]) * (scaled - idx)
+    );
+  }
+
+  private peakAt(t: number): number {
+    const scaled = clamp(t, 0, 1) * (BARS - 1);
+    const idx = Math.floor(scaled);
+    const next = Math.min(BARS - 1, idx + 1);
+    return (
+      this.peaks[idx] + (this.peaks[next] - this.peaks[idx]) * (scaled - idx)
     );
   }
 

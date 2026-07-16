@@ -25,6 +25,141 @@
       "tags": ["Shader", "Razer", "Toxic", "Green", "Atmospheric", "Silk"]
     },
     {
+      "href": "razer-audio-cam-border.html",
+      "category": "Webcam Borders",
+      "tags": [
+        "Shader",
+        "Razer",
+        "Toxic",
+        "Green",
+        "Webcam",
+        "Border",
+        "Audio-Reactive",
+        "Circular"
+      ]
+    },
+    {
+      "href": "razer-cam-border-rect.html",
+      "category": "Webcam Borders",
+      "tags": [
+        "Shader",
+        "Razer",
+        "Toxic",
+        "Green",
+        "Webcam",
+        "Border",
+        "Audio-Reactive",
+        "Rectangular"
+      ]
+    },
+    {
+      "href": "razer-cam-border-rhombic.html",
+      "category": "Webcam Borders",
+      "tags": [
+        "Shader",
+        "Razer",
+        "Toxic",
+        "Green",
+        "Webcam",
+        "Border",
+        "Audio-Reactive",
+        "Rhombic",
+        "Diamond"
+      ]
+    },
+    {
+      "href": "razer-cam-border-fluid.html",
+      "category": "Webcam Borders",
+      "tags": [
+        "Shader",
+        "Razer",
+        "Toxic",
+        "Green",
+        "Webcam",
+        "Border",
+        "Audio-Reactive",
+        "Fluid",
+        "Organic"
+      ]
+    },
+    {
+      "href": "razer-screen-share-border.html",
+      "category": "Overlays",
+      "tags": [
+        "Shader",
+        "Razer",
+        "Toxic",
+        "Green",
+        "Screen Share",
+        "Border",
+        "Audio-Reactive",
+        "HUD"
+      ]
+    },
+    {
+      "href": "razer-status-line.html",
+      "category": "Overlays",
+      "tags": [
+        "Razer",
+        "Toxic",
+        "Green",
+        "Status Bar",
+        "Audio-Reactive",
+        "Meter",
+        "Live"
+      ]
+    },
+    {
+      "href": "razer-logo-mark.html",
+      "category": "Overlays",
+      "tags": ["Razer", "Toxic", "Green", "Logo", "Emblem", "Audio-Reactive"]
+    },
+    {
+      "href": "razer-bg-coding.html",
+      "category": "Backgrounds",
+      "tags": ["Razer", "Toxic", "Green", "Coding", "Terminal", "Ambient"]
+    },
+    {
+      "href": "razer-bg-gaming.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Shader",
+        "Razer",
+        "Toxic",
+        "Green",
+        "Gaming",
+        "Grid",
+        "Audio-Reactive",
+        "Magenta"
+      ]
+    },
+    {
+      "href": "razer-bg-talking.html",
+      "category": "Backgrounds",
+      "tags": [
+        "Shader",
+        "Razer",
+        "Toxic",
+        "Green",
+        "Talking",
+        "Ambient",
+        "Calm"
+      ]
+    },
+    {
+      "href": "razer-corner-accents.html",
+      "category": "Overlays",
+      "tags": [
+        "Razer",
+        "Toxic",
+        "Green",
+        "Decoration",
+        "Corners",
+        "Audio-Reactive",
+        "HUD"
+      ]
+    },
+    {
       "href": "ai-character-final.html",
       "category": "3D",
       "tags": [
@@ -92,6 +227,19 @@
       "href": "audio-reactive-black-blob.html",
       "category": "Audio Visualizers",
       "tags": ["Audio-Reactive", "Character", "Blob", "OBS", "Emotion"]
+    },
+    {
+      "href": "audio-reactive-dot-orb.html",
+      "category": "Audio Visualizers",
+      "tags": [
+        "Audio-Reactive",
+        "Dots",
+        "Orb",
+        "Transparent",
+        "OBS",
+        "Cyan",
+        "Magenta"
+      ]
     },
     {
       "href": "audio-flow-turbulence.html",

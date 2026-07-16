@@ -218,6 +218,23 @@
     "createdAt": "2026-06-22T01:42:09+03:00"
   },
   {
+    "slug": "audio-reactive-dot-orb",
+    "title": "Audio Reactive Dot Orb",
+    "href": "audio-reactive-dot-orb.html",
+    "category": "Audio Visualizers",
+    "tags": [
+      "audio-reactive",
+      "dots",
+      "orb",
+      "transparent",
+      "obs",
+      "cyan",
+      "magenta"
+    ],
+    "description": "",
+    "createdAt": "2026-06-23T09:46:31.382Z"
+  },
+  {
     "slug": "audio-waveform-razer",
     "title": "Audio Waveform Razer",
     "href": "audio-waveform-razer.html",
@@ -233,7 +250,7 @@
     "category": "Audio Visualizers",
     "tags": ["audio-reactive", "waveform", "razer", "blade", "overlay"],
     "description": "",
-    "createdAt": "2026-06-23T07:10:37.757Z"
+    "createdAt": "2026-06-23T12:24:03+03:00"
   },
   {
     "slug": "audio-waveform-razer-equalizer",
@@ -242,7 +259,7 @@
     "category": "Audio Visualizers",
     "tags": ["audio-reactive", "waveform", "razer", "equalizer", "overlay"],
     "description": "",
-    "createdAt": "2026-06-23T07:10:37.757Z"
+    "createdAt": "2026-06-23T12:24:03+03:00"
   },
   {
     "slug": "audio-waveform-razer-helix",
@@ -251,7 +268,7 @@
     "category": "Audio Visualizers",
     "tags": ["audio-reactive", "waveform", "razer", "helix", "overlay"],
     "description": "",
-    "createdAt": "2026-06-23T07:10:37.757Z"
+    "createdAt": "2026-06-23T12:24:03+03:00"
   },
   {
     "slug": "audio-waveform-razer-orb",
@@ -260,7 +277,7 @@
     "category": "Audio Visualizers",
     "tags": ["audio-reactive", "waveform", "razer", "sunset", "overlay"],
     "description": "",
-    "createdAt": "2026-06-23T07:10:37.757Z"
+    "createdAt": "2026-06-23T12:24:03+03:00"
   },
   {
     "slug": "audio-waveform-razer-oscilloscope",
@@ -269,7 +286,7 @@
     "category": "Audio Visualizers",
     "tags": ["audio-reactive", "waveform", "razer", "oscilloscope", "overlay"],
     "description": "",
-    "createdAt": "2026-06-23T07:10:37.756Z"
+    "createdAt": "2026-06-23T12:24:03+03:00"
   },
   {
     "slug": "audio-waveform-razer-prism",
@@ -278,7 +295,7 @@
     "category": "Audio Visualizers",
     "tags": ["audio-reactive", "waveform", "razer", "prism", "overlay"],
     "description": "",
-    "createdAt": "2026-06-23T07:10:37.756Z"
+    "createdAt": "2026-06-23T12:24:03+03:00"
   },
   {
     "slug": "audio-waveform-razer-radial",
@@ -287,7 +304,7 @@
     "category": "Audio Visualizers",
     "tags": ["audio-reactive", "waveform", "razer", "radial", "overlay"],
     "description": "",
-    "createdAt": "2026-06-23T07:31:18.162Z"
+    "createdAt": "2026-06-23T12:24:03+03:00"
   },
   {
     "slug": "audio-waveform-razer-ribbon-bands",
@@ -295,8 +312,8 @@
     "href": "audio-waveform-razer-ribbon-bands.html",
     "category": "Audio Visualizers",
     "tags": ["audio-reactive", "waveform", "razer", "bands", "overlay"],
-    "description": "Single wide layered ribbon band that swells with bass and overlaps into bright color mixes.",
-    "createdAt": "2026-06-23T08:00:00.000Z"
+    "description": "",
+    "createdAt": "2026-06-23T12:24:03+03:00"
   },
   {
     "slug": "audio-waveform-razer-ribbon-lattice",
@@ -304,8 +321,8 @@
     "href": "audio-waveform-razer-ribbon-lattice.html",
     "category": "Audio Visualizers",
     "tags": ["audio-reactive", "waveform", "razer", "lattice", "overlay"],
-    "description": "Single-axis ribbon lattice with braided neon waveform traces and translucent lobes.",
-    "createdAt": "2026-06-23T08:00:00.000Z"
+    "description": "",
+    "createdAt": "2026-06-23T12:24:03+03:00"
   },
   {
     "slug": "audio-waveform-razer-ribbons",
@@ -313,8 +330,8 @@
     "href": "audio-waveform-razer-ribbons.html",
     "category": "Audio Visualizers",
     "tags": ["audio-reactive", "waveform", "razer", "ribbons", "overlay"],
-    "description": "Single translucent waveform ribbon inspired by overlapping neon audio lobes.",
-    "createdAt": "2026-06-23T08:00:00.000Z"
+    "description": "",
+    "createdAt": "2026-06-23T12:24:03+03:00"
   },
   {
     "slug": "audio-waveform-razer-ridge",
@@ -323,7 +340,7 @@
     "category": "Audio Visualizers",
     "tags": ["audio-reactive", "waveform", "razer", "dots", "overlay"],
     "description": "",
-    "createdAt": "2026-06-23T07:10:37.757Z"
+    "createdAt": "2026-06-23T12:24:03+03:00"
   },
   {
     "slug": "audio-waveform-razer-spectrum",
@@ -332,7 +349,7 @@
     "category": "Audio Visualizers",
     "tags": ["audio-reactive", "waveform", "razer", "spectrum", "overlay"],
     "description": "",
-    "createdAt": "2026-06-23T07:10:37.756Z"
+    "createdAt": "2026-06-23T12:24:03+03:00"
   },
   {
     "slug": "audio-waveform-razer-weave",
@@ -341,7 +358,7 @@
     "category": "Audio Visualizers",
     "tags": ["audio-reactive", "waveform", "razer", "weave", "overlay"],
     "description": "",
-    "createdAt": "2026-06-23T07:10:37.757Z"
+    "createdAt": "2026-06-23T12:24:03+03:00"
   },
   {
     "slug": "aurora-borealis",
@@ -2154,6 +2171,133 @@
     "createdAt": "2026-06-22T01:42:09+03:00"
   },
   {
+    "slug": "razer-audio-cam-border",
+    "title": "Razer Audio Cam Border",
+    "href": "razer-audio-cam-border.html",
+    "category": "Webcam Borders",
+    "tags": [
+      "shader",
+      "razer",
+      "toxic",
+      "green",
+      "webcam",
+      "border",
+      "audio-reactive",
+      "circular"
+    ],
+    "description": "",
+    "createdAt": "2026-07-16T12:59:05.330Z"
+  },
+  {
+    "slug": "razer-bg-coding",
+    "title": "Razer Bg Coding",
+    "href": "razer-bg-coding.html",
+    "category": "Backgrounds",
+    "tags": ["razer", "toxic", "green", "coding", "terminal", "ambient"],
+    "description": "",
+    "createdAt": "2026-07-16T13:01:45.614Z"
+  },
+  {
+    "slug": "razer-bg-gaming",
+    "title": "Razer Bg Gaming",
+    "href": "razer-bg-gaming.html",
+    "category": "Backgrounds",
+    "tags": [
+      "shader",
+      "razer",
+      "toxic",
+      "green",
+      "gaming",
+      "grid",
+      "audio-reactive",
+      "magenta"
+    ],
+    "description": "",
+    "createdAt": "2026-07-16T13:02:22.527Z"
+  },
+  {
+    "slug": "razer-bg-talking",
+    "title": "Razer Bg Talking",
+    "href": "razer-bg-talking.html",
+    "category": "Backgrounds",
+    "tags": ["shader", "razer", "toxic", "green", "talking", "ambient", "calm"],
+    "description": "",
+    "createdAt": "2026-07-16T13:02:45.663Z"
+  },
+  {
+    "slug": "razer-cam-border-fluid",
+    "title": "Razer Cam Border Fluid",
+    "href": "razer-cam-border-fluid.html",
+    "category": "Webcam Borders",
+    "tags": [
+      "shader",
+      "razer",
+      "toxic",
+      "green",
+      "webcam",
+      "border",
+      "audio-reactive",
+      "fluid",
+      "organic"
+    ],
+    "description": "",
+    "createdAt": "2026-07-16T13:33:32.765Z"
+  },
+  {
+    "slug": "razer-cam-border-rect",
+    "title": "Razer Cam Border Rect",
+    "href": "razer-cam-border-rect.html",
+    "category": "Webcam Borders",
+    "tags": [
+      "shader",
+      "razer",
+      "toxic",
+      "green",
+      "webcam",
+      "border",
+      "audio-reactive",
+      "rectangular"
+    ],
+    "description": "",
+    "createdAt": "2026-07-16T13:32:21.223Z"
+  },
+  {
+    "slug": "razer-cam-border-rhombic",
+    "title": "Razer Cam Border Rhombic",
+    "href": "razer-cam-border-rhombic.html",
+    "category": "Webcam Borders",
+    "tags": [
+      "shader",
+      "razer",
+      "toxic",
+      "green",
+      "webcam",
+      "border",
+      "audio-reactive",
+      "rhombic",
+      "diamond"
+    ],
+    "description": "",
+    "createdAt": "2026-07-16T13:32:52.835Z"
+  },
+  {
+    "slug": "razer-corner-accents",
+    "title": "Razer Corner Accents",
+    "href": "razer-corner-accents.html",
+    "category": "Overlays",
+    "tags": [
+      "razer",
+      "toxic",
+      "green",
+      "decoration",
+      "corners",
+      "audio-reactive",
+      "hud"
+    ],
+    "description": "",
+    "createdAt": "2026-07-16T13:03:18.967Z"
+  },
+  {
     "slug": "razer-diagonal-streaks",
     "title": "Razer Diagonal Streaks",
     "href": "razer-diagonal-streaks.html",
@@ -2170,6 +2314,50 @@
     "tags": ["halftone", "dots", "razer", "toxic", "green", "fade"],
     "description": "",
     "createdAt": "2026-06-22T01:42:09+03:00"
+  },
+  {
+    "slug": "razer-logo-mark",
+    "title": "Razer Logo Mark",
+    "href": "razer-logo-mark.html",
+    "category": "Overlays",
+    "tags": ["razer", "toxic", "green", "logo", "emblem", "audio-reactive"],
+    "description": "",
+    "createdAt": "2026-07-16T13:01:10.521Z"
+  },
+  {
+    "slug": "razer-screen-share-border",
+    "title": "Razer Screen Share Border",
+    "href": "razer-screen-share-border.html",
+    "category": "Overlays",
+    "tags": [
+      "shader",
+      "razer",
+      "toxic",
+      "green",
+      "screen share",
+      "border",
+      "audio-reactive",
+      "hud"
+    ],
+    "description": "",
+    "createdAt": "2026-07-16T12:59:53.595Z"
+  },
+  {
+    "slug": "razer-status-line",
+    "title": "Razer Status Line",
+    "href": "razer-status-line.html",
+    "category": "Overlays",
+    "tags": [
+      "razer",
+      "toxic",
+      "green",
+      "status bar",
+      "audio-reactive",
+      "meter",
+      "live"
+    ],
+    "description": "",
+    "createdAt": "2026-07-16T13:00:38.712Z"
   },
   {
     "slug": "razer-toxic-marble",

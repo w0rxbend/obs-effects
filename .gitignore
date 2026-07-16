@@ -2,7 +2,6 @@
 logs
 *.log
 AGENT_LOG.md
-PLAN.md
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
