@@ -371,6 +371,7 @@ export default defineConfig({
           "razer-cam-border-rhombic.html",
         ),
         razerCamBorderFluid: resolve(__dirname, "razer-cam-border-fluid.html"),
+        chromaFluidHole: resolve(__dirname, "chroma-fluid-hole.html"),
         razerScreenShareBorder: resolve(
           __dirname,
           "razer-screen-share-border.html",

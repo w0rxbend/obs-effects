@@ -232,7 +232,7 @@
       "magenta"
     ],
     "description": "",
-    "createdAt": "2026-06-23T09:46:31.382Z"
+    "createdAt": "2026-07-16T16:48:18+03:00"
   },
   {
     "slug": "audio-waveform-razer",
@@ -557,6 +557,24 @@
     "tags": [],
     "description": "",
     "createdAt": "2026-05-08T00:37:27+03:00"
+  },
+  {
+    "slug": "chroma-fluid-hole",
+    "title": "Chroma Fluid Hole",
+    "href": "chroma-fluid-hole.html",
+    "category": "Backgrounds",
+    "tags": [
+      "shader",
+      "chroma key",
+      "green screen",
+      "fluid",
+      "transparent",
+      "hole",
+      "webcam",
+      "audio-reactive"
+    ],
+    "description": "",
+    "createdAt": "2026-07-16T13:51:22.112Z"
   },
   {
     "slug": "city-view",
@@ -2186,7 +2204,7 @@
       "circular"
     ],
     "description": "",
-    "createdAt": "2026-07-16T12:59:05.330Z"
+    "createdAt": "2026-07-16T16:48:18+03:00"
   },
   {
     "slug": "razer-bg-coding",
@@ -2195,7 +2213,7 @@
     "category": "Backgrounds",
     "tags": ["razer", "toxic", "green", "coding", "terminal", "ambient"],
     "description": "",
-    "createdAt": "2026-07-16T13:01:45.614Z"
+    "createdAt": "2026-07-16T16:48:18+03:00"
   },
   {
     "slug": "razer-bg-gaming",
@@ -2213,7 +2231,7 @@
       "magenta"
     ],
     "description": "",
-    "createdAt": "2026-07-16T13:02:22.527Z"
+    "createdAt": "2026-07-16T16:48:18+03:00"
   },
   {
     "slug": "razer-bg-talking",
@@ -2222,7 +2240,7 @@
     "category": "Backgrounds",
     "tags": ["shader", "razer", "toxic", "green", "talking", "ambient", "calm"],
     "description": "",
-    "createdAt": "2026-07-16T13:02:45.663Z"
+    "createdAt": "2026-07-16T16:48:18+03:00"
   },
   {
     "slug": "razer-cam-border-fluid",
@@ -2241,7 +2259,7 @@
       "organic"
     ],
     "description": "",
-    "createdAt": "2026-07-16T13:33:32.765Z"
+    "createdAt": "2026-07-16T16:48:18+03:00"
   },
   {
     "slug": "razer-cam-border-rect",
@@ -2259,7 +2277,7 @@
       "rectangular"
     ],
     "description": "",
-    "createdAt": "2026-07-16T13:32:21.223Z"
+    "createdAt": "2026-07-16T16:48:18+03:00"
   },
   {
     "slug": "razer-cam-border-rhombic",
@@ -2278,7 +2296,7 @@
       "diamond"
     ],
     "description": "",
-    "createdAt": "2026-07-16T13:32:52.835Z"
+    "createdAt": "2026-07-16T16:48:18+03:00"
   },
   {
     "slug": "razer-corner-accents",
@@ -2295,7 +2313,7 @@
       "hud"
     ],
     "description": "",
-    "createdAt": "2026-07-16T13:03:18.967Z"
+    "createdAt": "2026-07-16T16:48:18+03:00"
   },
   {
     "slug": "razer-diagonal-streaks",
@@ -2322,7 +2340,7 @@
     "category": "Overlays",
     "tags": ["razer", "toxic", "green", "logo", "emblem", "audio-reactive"],
     "description": "",
-    "createdAt": "2026-07-16T13:01:10.521Z"
+    "createdAt": "2026-07-16T16:48:18+03:00"
   },
   {
     "slug": "razer-screen-share-border",
@@ -2340,7 +2358,7 @@
       "hud"
     ],
     "description": "",
-    "createdAt": "2026-07-16T12:59:53.595Z"
+    "createdAt": "2026-07-16T16:48:18+03:00"
   },
   {
     "slug": "razer-status-line",
@@ -2357,7 +2375,7 @@
       "live"
     ],
     "description": "",
-    "createdAt": "2026-07-16T13:00:38.712Z"
+    "createdAt": "2026-07-16T16:48:18+03:00"
   },
   {
     "slug": "razer-toxic-marble",
