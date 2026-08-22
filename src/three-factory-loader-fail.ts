@@ -35,7 +35,9 @@ void createThreeScene({
     const loader = new GLTFLoader();
 
     try {
-      await loader.loadAsync("/assets/fixtures/missing-three-factory.glb");
+      await loader.loadAsync(
+        `${import.meta.env.BASE_URL}assets/fixtures/missing-three-factory.glb`,
+      );
     } catch (error) {
       overlay.textContent = "Fixture model failed to load";
       throw error;

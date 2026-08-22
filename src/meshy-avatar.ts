@@ -213,7 +213,7 @@ const loadFill = document.getElementById("load-fill") as HTMLDivElement;
 
 const loader = new GLTFLoader();
 loader.load(
-  "/assets/main/Meshy_AI_Character_output-Avatar.glb",
+  `${import.meta.env.BASE_URL}assets/main/Meshy_AI_Character_output-Avatar.glb`,
   (gltf) => {
     modelRoot = gltf.scene;
 
@@ -308,7 +308,7 @@ loader.load(
     // GLB contains both halves in one mesh (left half X<0, right half X>0).
     // Scale to ~35% of character height and position at hand level in front.
     new GLTFLoader().load(
-      "/assets/main/ErgoDox_EZ_keyb.glb",
+      `${import.meta.env.BASE_URL}assets/main/ErgoDox_EZ_keyb.glb`,
       (kbGltf) => {
         // keyboard native half-width ≈ 0.95 units; target span ≈ 38% of h
         const kbScale = (h * 0.38) / 1.9;

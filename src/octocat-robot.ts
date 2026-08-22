@@ -74,7 +74,7 @@ let gazeRangeY = 0;
 const loader = new GLTFLoader();
 
 loader.load(
-  "/assets/main/octocat.glb",
+  `${import.meta.env.BASE_URL}assets/main/octocat.glb`,
   (gltf) => {
     const model = gltf.scene;
     scene.add(model);

@@ -115,14 +115,32 @@ function loadTexture(path: string, color = false): THREE.Texture {
 }
 
 const textures = {
-  eyeColor: loadTexture("/assets/main/gunan/textures/eye_diff.png", true),
-  eyeNormal: loadTexture("/assets/main/gunan/textures/Eye_normal.png"),
-  eyeSpec: loadTexture("/assets/main/gunan/textures/eye_glossy.png"),
-  headAo: loadTexture("/assets/main/gunan/textures/head_ao.png"),
-  headColor: loadTexture("/assets/main/gunan/textures/head_diffuse.png", true),
-  headNormal: loadTexture("/assets/main/gunan/textures/head_normal.png"),
-  headSpec: loadTexture("/assets/main/gunan/textures/head_spec.png"),
-  teethAo: loadTexture("/assets/main/gunan/textures/teeth_ao.png"),
+  eyeColor: loadTexture(
+    `${import.meta.env.BASE_URL}assets/main/gunan/textures/eye_diff.png`,
+    true,
+  ),
+  eyeNormal: loadTexture(
+    `${import.meta.env.BASE_URL}assets/main/gunan/textures/Eye_normal.png`,
+  ),
+  eyeSpec: loadTexture(
+    `${import.meta.env.BASE_URL}assets/main/gunan/textures/eye_glossy.png`,
+  ),
+  headAo: loadTexture(
+    `${import.meta.env.BASE_URL}assets/main/gunan/textures/head_ao.png`,
+  ),
+  headColor: loadTexture(
+    `${import.meta.env.BASE_URL}assets/main/gunan/textures/head_diffuse.png`,
+    true,
+  ),
+  headNormal: loadTexture(
+    `${import.meta.env.BASE_URL}assets/main/gunan/textures/head_normal.png`,
+  ),
+  headSpec: loadTexture(
+    `${import.meta.env.BASE_URL}assets/main/gunan/textures/head_spec.png`,
+  ),
+  teethAo: loadTexture(
+    `${import.meta.env.BASE_URL}assets/main/gunan/textures/teeth_ao.png`,
+  ),
 };
 
 function pose(name: string, rx: number, ry: number, rz: number): void {
@@ -301,9 +319,11 @@ const loadFill = document.getElementById("load-fill") as HTMLDivElement;
 void obsAudio.connect();
 
 const loader = new FBXLoader();
-loader.setResourcePath("/assets/main/gunan/textures/");
+loader.setResourcePath(
+  `${import.meta.env.BASE_URL}assets/main/gunan/textures/`,
+);
 loader.load(
-  "/assets/main/gunan/source/Gunan_animated.fbx",
+  `${import.meta.env.BASE_URL}assets/main/gunan/source/Gunan_animated.fbx`,
   (fbx) => {
     modelRoot = fbx;
 

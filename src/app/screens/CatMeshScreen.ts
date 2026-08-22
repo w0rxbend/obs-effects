@@ -68,7 +68,9 @@ export class CatMeshScreen extends Container {
   }
 
   private async build(): Promise<void> {
-    const img = await this.loadImage("/assets/main/cat-shape.png");
+    const img = await this.loadImage(
+      `${import.meta.env.BASE_URL}assets/main/cat-shape.png`,
+    );
     const pixelData = this.rasterize(img);
 
     this.gridCols = Math.ceil(img.naturalWidth / SAMPLE_STEP);

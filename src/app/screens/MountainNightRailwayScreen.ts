@@ -426,7 +426,9 @@ export class MountainNightRailwayScreen extends Container {
   private async buildTreeTextures(): Promise<void> {
     if (this.texturesBuilt) return;
 
-    const img = await this.loadImage("/assets/main/forest-175-255.png");
+    const img = await this.loadImage(
+      `${import.meta.env.BASE_URL}assets/main/forest-175-255.png`,
+    );
 
     for (let row = 0; row < TREE_ROWS; row++) {
       for (let col = 0; col < TREE_COLS; col++) {

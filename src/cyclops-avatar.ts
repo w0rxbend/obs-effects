@@ -104,7 +104,7 @@ let mixer: THREE.AnimationMixer | null = null;
 const loader = new GLTFLoader();
 
 loader.load(
-  "/assets/main/cyclops_rig.glb",
+  `${import.meta.env.BASE_URL}assets/main/cyclops_rig.glb`,
   (gltf) => {
     const model = gltf.scene;
     model.rotation.y = THREE.MathUtils.degToRad(-15);

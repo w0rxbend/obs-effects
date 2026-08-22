@@ -51,10 +51,10 @@ let ready = false;
 
 // ── Load ──────────────────────────────────────────────────────────────────────
 const loader = new FBXLoader();
-loader.setResourcePath("/assets/main/");
+loader.setResourcePath(`${import.meta.env.BASE_URL}assets/main/`);
 
 loader.load(
-  "/assets/main/tq3280_hd_zero.fbx",
+  `${import.meta.env.BASE_URL}assets/main/tq3280_hd_zero.fbx`,
   (fbx) => {
     const box = new THREE.Box3().setFromObject(fbx);
     const center = new THREE.Vector3();

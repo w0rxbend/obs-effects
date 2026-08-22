@@ -277,7 +277,7 @@ function frameModel(model: THREE.Group): void {
 }
 
 loader.load(
-  "/assets/main/drone.glb",
+  `${import.meta.env.BASE_URL}assets/main/drone.glb`,
   (gltf) => {
     const model = gltf.scene;
     droneRoot = model;

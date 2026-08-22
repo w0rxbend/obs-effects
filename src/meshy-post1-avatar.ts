@@ -3,7 +3,7 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 
-const MODEL_URL = "/assets/main/Meshy_AI_Character_output-Post1.glb";
+const MODEL_URL = `${import.meta.env.BASE_URL}assets/main/Meshy_AI_Character_output-Post1.glb`;
 const USE_AUTHORED_MODEL_POSE = true;
 
 const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });

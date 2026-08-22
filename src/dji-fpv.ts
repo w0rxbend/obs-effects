@@ -2,8 +2,7 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { createThreeScene, obsAudio } from "./lib";
 
-const MODEL_URL =
-  "/assets/main/dji-fpv/source/e4e0a592c53ea71bfc3cd948397e31a1.glb";
+const MODEL_URL = `${import.meta.env.BASE_URL}assets/main/dji-fpv/source/e4e0a592c53ea71bfc3cd948397e31a1.glb`;
 
 // Loading overlay — injected before factory creates the canvas
 const overlay = document.createElement("div");

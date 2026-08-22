@@ -179,7 +179,7 @@ export class CatCircleCamScreen extends Container {
         resolve();
       };
       img.onerror = reject;
-      img.src = "/assets/main/cat-border-top.png";
+      img.src = `${import.meta.env.BASE_URL}assets/main/cat-border-top.png`;
     });
   }
 

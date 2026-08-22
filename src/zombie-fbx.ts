@@ -3,10 +3,9 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { FBXLoader } from "three/addons/loaders/FBXLoader.js";
 import { obsAudio } from "./lib";
 
-const MODEL_URL = "/assets/main/zombie/source/Zombie/Zombie1.FBX";
-const WALK_ANIM_URL =
-  "/assets/main/zombie/source/Zombie/animations/Zombie@Z_Walk_InPlace.FBX";
-const TEXTURE_ROOT = "/assets/main/zombie/textures/";
+const MODEL_URL = `${import.meta.env.BASE_URL}assets/main/zombie/source/Zombie/Zombie1.FBX`;
+const WALK_ANIM_URL = `${import.meta.env.BASE_URL}assets/main/zombie/source/Zombie/animations/Zombie@Z_Walk_InPlace.FBX`;
+const TEXTURE_ROOT = `${import.meta.env.BASE_URL}assets/main/zombie/textures/`;
 
 const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));

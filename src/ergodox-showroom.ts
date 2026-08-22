@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 
-const MODEL_URL = "/assets/main/ErgoDox_EZ_keyb.glb";
+const MODEL_URL = `${import.meta.env.BASE_URL}assets/main/ErgoDox_EZ_keyb.glb`;
 
 const renderer = new THREE.WebGLRenderer({
   antialias: true,

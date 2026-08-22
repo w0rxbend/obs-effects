@@ -181,7 +181,7 @@ let userIdleTimer = 0;
 // ── Load model ────────────────────────────────────────────────────────────────
 const loader = new GLTFLoader();
 loader.load(
-  "/assets/main/final-ai-character.glb",
+  `${import.meta.env.BASE_URL}assets/main/final-ai-character.glb`,
   (gltf) => {
     modelRoot = gltf.scene;
     const seen = new Set<string>();

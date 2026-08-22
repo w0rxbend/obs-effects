@@ -479,7 +479,7 @@ class TuxMesh extends Container {
         this.ready = true;
         resolve();
       };
-      img.src = "/assets/main/linux.svg";
+      img.src = `${import.meta.env.BASE_URL}assets/main/linux.svg`;
     });
   }
 

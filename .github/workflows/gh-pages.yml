@@ -1,0 +1,68 @@
+# Publishes the built effects site to GitHub Pages.
+#
+# GitHub Pages serves a project site from a sub-path, so the build sets
+# VITE_BASE=/<repo-name>/ (for example /obs-effects/). Vite prefixes every asset URL with
+# that value, and the source code reads it back at runtime via import.meta.env.BASE_URL.
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+  # Lets you re-publish the site by hand from the Actions tab without pushing a commit.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  # Required by actions/deploy-pages to prove the artifact came from this workflow run.
+  id-token: write
+
+# Only one Pages deployment at a time. A newer push waits for the running one instead of
+# cancelling it, so a half-uploaded site is never left live.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "25"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build site
+        env:
+          # Leading and trailing slashes both matter: "/obs-effects/" produces
+          # "/obs-effects/assets/main/tux.glb", while "/obs-effects" would produce
+          # "/obs-effectsassets/...".
+          VITE_BASE: /${{ github.event.repository.name }}/
+        run: npm run build
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload build output as a Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

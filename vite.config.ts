@@ -5,7 +5,12 @@ import { defineConfig } from "vite";
 import { assetpackPlugin } from "./scripts/assetpack-vite-plugin";
 
 // https://vite.dev/config/
+// GitHub Pages serves this project from a sub-path (https://<user>.github.io/obs-effects/),
+// while local dev and the Docker deploy serve it from the domain root. The CI workflow sets
+// VITE_BASE=/obs-effects/ so every generated URL is prefixed correctly; everywhere else the
+// default "/" keeps the current behaviour.
 export default defineConfig({
+  base: process.env.VITE_BASE ?? "/",
   plugins: [assetpackPlugin()],
   server: {
     port: 8080,

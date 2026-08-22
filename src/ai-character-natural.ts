@@ -178,7 +178,7 @@ let camOrbit: { dist: number; targetY: number; center: THREE.Vector3 } | null =
 // ── Load model ────────────────────────────────────────────────────────────────
 const loader = new GLTFLoader();
 loader.load(
-  "/assets/main/ai-character-natural-pose.glb",
+  `${import.meta.env.BASE_URL}assets/main/ai-character-natural-pose.glb`,
   (gltf) => {
     modelRoot = gltf.scene;
     const seen = new Set<string>();

@@ -3,7 +3,7 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 
-const MODEL_URL = "/assets/main/energy_orb.glb";
+const MODEL_URL = `${import.meta.env.BASE_URL}assets/main/energy_orb.glb`;
 
 const renderer = new THREE.WebGLRenderer({
   antialias: true,
