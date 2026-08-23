@@ -804,11 +804,6 @@
       "tags": ["Marble", "Teal", "Red", "GLSL", "Abstract"]
     },
     {
-      "href": "triangle-sparkle.html",
-      "category": "Backgrounds",
-      "tags": ["Triangle", "Sparkle", "Monochrome", "GLSL", "Abstract"]
-    },
-    {
       "href": "glitch-terminal.html",
       "category": "Backgrounds",
       "tags": ["Glitch", "Terminal", "Lime", "ASCII", "Matrix", "Abstract"]
