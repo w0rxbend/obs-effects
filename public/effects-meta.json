@@ -2693,15 +2693,6 @@
     "createdAt": "2026-04-22T19:26:50+03:00"
   },
   {
-    "slug": "warp-tunnel-rush",
-    "title": "Warp Tunnel Rush",
-    "href": "warp-tunnel-rush.html",
-    "category": "Backgrounds",
-    "tags": ["three.js", "3d", "tunnel", "cel shader", "anime"],
-    "description": "",
-    "createdAt": "2026-06-19T18:57:59+03:00"
-  },
-  {
     "slug": "water-goldfish",
     "title": "Water Goldfish",
     "href": "water-goldfish.html",

@@ -1644,11 +1644,6 @@
       "tags": ["Generative", "Stippling"]
     },
     {
-      "href": "warp-tunnel-rush.html",
-      "category": "Backgrounds",
-      "tags": ["Three.js", "3D", "Tunnel", "Cel Shader", "Anime"]
-    },
-    {
       "href": "water-goldfish.html",
       "category": "Backgrounds",
       "tags": ["Shader", "Water", "Caustics", "Boids", "Goldfish"]
