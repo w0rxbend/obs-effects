@@ -1639,11 +1639,6 @@
       "tags": ["Generative", "Stippling"]
     },
     {
-      "href": "water-goldfish.html",
-      "category": "Backgrounds",
-      "tags": ["Shader", "Water", "Caustics", "Boids", "Goldfish"]
-    },
-    {
       "href": "wave-border-cam.html",
       "category": "Webcam Borders",
       "tags": ["Fluid", "Border"]
