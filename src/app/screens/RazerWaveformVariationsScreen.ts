@@ -1352,51 +1352,15 @@ export class RazerWaveformSpectrumScreen extends RazerWaveformVariationScreen {
   }
 }
 
-export class RazerWaveformOscilloscopeScreen extends RazerWaveformVariationScreen {
-  constructor() {
-    super("oscilloscope");
-  }
-}
-
-export class RazerWaveformBladeScreen extends RazerWaveformVariationScreen {
-  constructor() {
-    super("blade");
-  }
-}
-
-export class RazerWaveformRidgeScreen extends RazerWaveformVariationScreen {
-  constructor() {
-    super("ridge");
-  }
-}
-
-export class RazerWaveformEqualizerScreen extends RazerWaveformVariationScreen {
-  constructor() {
-    super("equalizer");
-  }
-}
-
 export class RazerWaveformWeaveScreen extends RazerWaveformVariationScreen {
   constructor() {
     super("weave");
   }
 }
 
-export class RazerWaveformOrbScreen extends RazerWaveformVariationScreen {
-  constructor() {
-    super("orb");
-  }
-}
-
 export class RazerWaveformHelixScreen extends RazerWaveformVariationScreen {
   constructor() {
     super("helix");
-  }
-}
-
-export class RazerWaveformRadialScreen extends RazerWaveformVariationScreen {
-  constructor() {
-    super("radial");
   }
 }
 

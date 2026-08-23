@@ -244,24 +244,6 @@
     "createdAt": "2026-06-22T01:42:09+03:00"
   },
   {
-    "slug": "audio-waveform-razer-blade",
-    "title": "Audio Waveform Razer Blade",
-    "href": "audio-waveform-razer-blade.html",
-    "category": "Audio Visualizers",
-    "tags": ["audio-reactive", "waveform", "razer", "blade", "overlay"],
-    "description": "",
-    "createdAt": "2026-06-23T12:24:03+03:00"
-  },
-  {
-    "slug": "audio-waveform-razer-equalizer",
-    "title": "Audio Waveform Razer Equalizer",
-    "href": "audio-waveform-razer-equalizer.html",
-    "category": "Audio Visualizers",
-    "tags": ["audio-reactive", "waveform", "razer", "equalizer", "overlay"],
-    "description": "",
-    "createdAt": "2026-06-23T12:24:03+03:00"
-  },
-  {
     "slug": "audio-waveform-razer-helix",
     "title": "Audio Waveform Razer Helix",
     "href": "audio-waveform-razer-helix.html",
@@ -271,38 +253,11 @@
     "createdAt": "2026-06-23T12:24:03+03:00"
   },
   {
-    "slug": "audio-waveform-razer-orb",
-    "title": "Audio Waveform Razer Orb",
-    "href": "audio-waveform-razer-orb.html",
-    "category": "Audio Visualizers",
-    "tags": ["audio-reactive", "waveform", "razer", "sunset", "overlay"],
-    "description": "",
-    "createdAt": "2026-06-23T12:24:03+03:00"
-  },
-  {
-    "slug": "audio-waveform-razer-oscilloscope",
-    "title": "Audio Waveform Razer Oscilloscope",
-    "href": "audio-waveform-razer-oscilloscope.html",
-    "category": "Audio Visualizers",
-    "tags": ["audio-reactive", "waveform", "razer", "oscilloscope", "overlay"],
-    "description": "",
-    "createdAt": "2026-06-23T12:24:03+03:00"
-  },
-  {
     "slug": "audio-waveform-razer-prism",
     "title": "Audio Waveform Razer Prism",
     "href": "audio-waveform-razer-prism.html",
     "category": "Audio Visualizers",
     "tags": ["audio-reactive", "waveform", "razer", "prism", "overlay"],
-    "description": "",
-    "createdAt": "2026-06-23T12:24:03+03:00"
-  },
-  {
-    "slug": "audio-waveform-razer-radial",
-    "title": "Audio Waveform Razer Radial",
-    "href": "audio-waveform-razer-radial.html",
-    "category": "Audio Visualizers",
-    "tags": ["audio-reactive", "waveform", "razer", "radial", "overlay"],
     "description": "",
     "createdAt": "2026-06-23T12:24:03+03:00"
   },
@@ -330,15 +285,6 @@
     "href": "audio-waveform-razer-ribbons.html",
     "category": "Audio Visualizers",
     "tags": ["audio-reactive", "waveform", "razer", "ribbons", "overlay"],
-    "description": "",
-    "createdAt": "2026-06-23T12:24:03+03:00"
-  },
-  {
-    "slug": "audio-waveform-razer-ridge",
-    "title": "Audio Waveform Razer Ridge",
-    "href": "audio-waveform-razer-ridge.html",
-    "category": "Audio Visualizers",
-    "tags": ["audio-reactive", "waveform", "razer", "dots", "overlay"],
     "description": "",
     "createdAt": "2026-06-23T12:24:03+03:00"
   },
@@ -574,7 +520,7 @@
       "audio-reactive"
     ],
     "description": "",
-    "createdAt": "2026-07-16T13:51:22.112Z"
+    "createdAt": "2026-07-16T16:53:33+03:00"
   },
   {
     "slug": "city-view",
@@ -771,24 +717,6 @@
     ],
     "description": "",
     "createdAt": "2026-05-17T01:42:36+03:00"
-  },
-  {
-    "slug": "dark-fluid-swirl",
-    "title": "Dark Fluid Swirl",
-    "href": "dark-fluid-swirl.html",
-    "category": "Backgrounds",
-    "tags": ["fluid", "marble", "pink", "coral", "dark", "abstract"],
-    "description": "",
-    "createdAt": "2026-06-19T18:57:59+03:00"
-  },
-  {
-    "slug": "dark-glass-lattice",
-    "title": "Dark Glass Lattice",
-    "href": "dark-glass-lattice.html",
-    "category": "Backgrounds",
-    "tags": ["shader", "neon", "depth"],
-    "description": "",
-    "createdAt": "2026-06-14T15:17:17+03:00"
   },
   {
     "slug": "dark-neon-marble",
@@ -1005,15 +933,6 @@
     "createdAt": "2026-04-19T03:01:01+03:00"
   },
   {
-    "slug": "fluid-blob-frame",
-    "title": "Fluid Blob Frame",
-    "href": "fluid-blob-frame.html",
-    "category": "Backgrounds",
-    "tags": ["blobs", "fluid", "memphis", "frame"],
-    "description": "",
-    "createdAt": "2026-06-14T16:26:59+03:00"
-  },
-  {
     "slug": "fluid-catppuccin-rings-cam",
     "title": "Fluid Catppuccin Rings Cam",
     "href": "fluid-catppuccin-rings-cam.html",
@@ -1172,15 +1091,6 @@
     "tags": ["glitch", "character", "neon", "glsl", "abstract"],
     "description": "",
     "createdAt": "2026-06-20T17:59:20+03:00"
-  },
-  {
-    "slug": "glitch-circle-ring-cam",
-    "title": "Glitch Circle Ring Cam",
-    "href": "glitch-circle-ring-cam.html",
-    "category": "Webcam Borders",
-    "tags": ["shader", "glitch", "neon", "chromatic", "transparent"],
-    "description": "",
-    "createdAt": "2026-06-19T18:57:59+03:00"
   },
   {
     "slug": "glitch-overlay",
@@ -1532,15 +1442,6 @@
     "createdAt": "2026-05-19T16:55:17+03:00"
   },
   {
-    "slug": "lava-cell-membrane",
-    "title": "Lava Cell Membrane",
-    "href": "lava-cell-membrane.html",
-    "category": "Backgrounds",
-    "tags": ["shader", "organic", "neon"],
-    "description": "",
-    "createdAt": "2026-06-14T15:17:17+03:00"
-  },
-  {
     "slug": "lavender-dashes-cam",
     "title": "Lavender Dashes Cam",
     "href": "lavender-dashes-cam.html",
@@ -1838,42 +1739,6 @@
     "createdAt": "2026-05-23T18:24:51+03:00"
   },
   {
-    "slug": "neon-ribbon-pattern",
-    "title": "Neon Ribbon Pattern",
-    "href": "neon-ribbon-pattern.html",
-    "category": "Backgrounds",
-    "tags": ["pattern", "neon", "loop"],
-    "description": "",
-    "createdAt": "2026-06-19T19:20:08+03:00"
-  },
-  {
-    "slug": "neon-starburst",
-    "title": "Neon Starburst",
-    "href": "neon-starburst.html",
-    "category": "Backgrounds",
-    "tags": ["neon", "starburst", "psychedelic", "lime", "magenta"],
-    "description": "",
-    "createdAt": "2026-06-19T18:57:59+03:00"
-  },
-  {
-    "slug": "neon-topo",
-    "title": "Neon Topo",
-    "href": "neon-topo.html",
-    "category": "Backgrounds",
-    "tags": ["topo", "contour", "red", "pink", "neon", "abstract"],
-    "description": "",
-    "createdAt": "2026-06-19T18:57:59+03:00"
-  },
-  {
-    "slug": "neon-vein-network",
-    "title": "Neon Vein Network",
-    "href": "neon-vein-network.html",
-    "category": "Backgrounds",
-    "tags": ["shader", "organic", "loop"],
-    "description": "",
-    "createdAt": "2026-06-14T15:17:17+03:00"
-  },
-  {
     "slug": "network-surge",
     "title": "Network Surge",
     "href": "network-surge.html",
@@ -1925,15 +1790,6 @@
     "tags": ["physics", "space"],
     "description": "",
     "createdAt": "2026-04-19T13:58:14+03:00"
-  },
-  {
-    "slug": "paint-vortex",
-    "title": "Paint Vortex",
-    "href": "paint-vortex.html",
-    "category": "Backgrounds",
-    "tags": ["shader", "spiral", "paint", "vortex"],
-    "description": "",
-    "createdAt": "2026-06-19T18:57:59+03:00"
   },
   {
     "slug": "particle-border-overlay",
@@ -2028,24 +1884,6 @@
     "createdAt": "2026-04-30T18:43:00+03:00"
   },
   {
-    "slug": "pink-fluid-marble",
-    "title": "Pink Fluid Marble",
-    "href": "pink-fluid-marble.html",
-    "category": "Backgrounds",
-    "tags": ["fluid", "marble", "pink", "magenta", "dark", "abstract"],
-    "description": "",
-    "createdAt": "2026-06-20T02:28:21+03:00"
-  },
-  {
-    "slug": "pixel-skull",
-    "title": "Pixel Skull",
-    "href": "pixel-skull.html",
-    "category": "Backgrounds",
-    "tags": ["glitch", "skull", "pixel", "glsl", "abstract"],
-    "description": "",
-    "createdAt": "2026-06-20T17:59:20+03:00"
-  },
-  {
     "slug": "planet",
     "title": "Planet",
     "href": "planet.html",
@@ -2099,15 +1937,6 @@
     "createdAt": "2026-04-19T03:01:01+03:00"
   },
   {
-    "slug": "prism-biofoam",
-    "title": "Prism Biofoam",
-    "href": "prism-biofoam.html",
-    "category": "Backgrounds",
-    "tags": ["shader", "organic", "color"],
-    "description": "",
-    "createdAt": "2026-06-14T15:17:17+03:00"
-  },
-  {
     "slug": "procedural-logo",
     "title": "Procedural Logo",
     "href": "procedural-logo.html",
@@ -2158,15 +1987,6 @@
     "href": "rain-umbrella.html",
     "category": "Backgrounds",
     "tags": ["atmospheric", "rain", "scene"],
-    "description": "",
-    "createdAt": "2026-05-23T18:24:51+03:00"
-  },
-  {
-    "slug": "rain-umbrella(1)",
-    "title": "Rain Umbrella(1)",
-    "href": "rain-umbrella(1).html",
-    "category": "Uncategorized",
-    "tags": [],
     "description": "",
     "createdAt": "2026-05-23T18:24:51+03:00"
   },

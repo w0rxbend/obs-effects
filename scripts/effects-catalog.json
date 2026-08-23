@@ -298,44 +298,14 @@
       "tags": ["Audio-Reactive", "Waveform", "Razer", "Spectrum", "Overlay"]
     },
     {
-      "href": "audio-waveform-razer-oscilloscope.html",
-      "category": "Audio Visualizers",
-      "tags": ["Audio-Reactive", "Waveform", "Razer", "Oscilloscope", "Overlay"]
-    },
-    {
-      "href": "audio-waveform-razer-blade.html",
-      "category": "Audio Visualizers",
-      "tags": ["Audio-Reactive", "Waveform", "Razer", "Blade", "Overlay"]
-    },
-    {
-      "href": "audio-waveform-razer-ridge.html",
-      "category": "Audio Visualizers",
-      "tags": ["Audio-Reactive", "Waveform", "Razer", "Dots", "Overlay"]
-    },
-    {
-      "href": "audio-waveform-razer-equalizer.html",
-      "category": "Audio Visualizers",
-      "tags": ["Audio-Reactive", "Waveform", "Razer", "Equalizer", "Overlay"]
-    },
-    {
       "href": "audio-waveform-razer-weave.html",
       "category": "Audio Visualizers",
       "tags": ["Audio-Reactive", "Waveform", "Razer", "Weave", "Overlay"]
     },
     {
-      "href": "audio-waveform-razer-orb.html",
-      "category": "Audio Visualizers",
-      "tags": ["Audio-Reactive", "Waveform", "Razer", "Sunset", "Overlay"]
-    },
-    {
       "href": "audio-waveform-razer-helix.html",
       "category": "Audio Visualizers",
       "tags": ["Audio-Reactive", "Waveform", "Razer", "Helix", "Overlay"]
-    },
-    {
-      "href": "audio-waveform-razer-radial.html",
-      "category": "Audio Visualizers",
-      "tags": ["Audio-Reactive", "Waveform", "Razer", "Radial", "Overlay"]
     },
     {
       "href": "audio-waveform-razer-ribbon-bands.html",
@@ -558,21 +528,6 @@
       ]
     },
     {
-      "href": "dark-fluid-swirl.html",
-      "category": "Backgrounds",
-      "tags": ["Fluid", "Marble", "Pink", "Coral", "Dark", "Abstract"]
-    },
-    {
-      "href": "pink-fluid-marble.html",
-      "category": "Backgrounds",
-      "tags": ["Fluid", "Marble", "Pink", "Magenta", "Dark", "Abstract"]
-    },
-    {
-      "href": "dark-glass-lattice.html",
-      "category": "Backgrounds",
-      "tags": ["Shader", "Neon", "Depth"]
-    },
-    {
       "href": "dark-sun-cam.html",
       "category": "Webcam Borders",
       "tags": ["Fluid", "Border"]
@@ -730,11 +685,6 @@
       "tags": ["Particles", "Generative"]
     },
     {
-      "href": "fluid-blob-frame.html",
-      "category": "Backgrounds",
-      "tags": ["Blobs", "Fluid", "Memphis", "Frame"]
-    },
-    {
       "href": "fluid-catppuccin-rings-cam.html",
       "category": "Webcam Borders",
       "tags": ["Fluid", "Border"]
@@ -826,11 +776,6 @@
       "tags": ["Dev", "Network", "Ambient"]
     },
     {
-      "href": "glitch-circle-ring-cam.html",
-      "category": "Webcam Borders",
-      "tags": ["Shader", "Glitch", "Neon", "Chromatic", "Transparent"]
-    },
-    {
       "href": "glitch-overlay.html",
       "category": "Overlays",
       "tags": ["VHS", "Glitch", "Cyberpunk", "Transparent"]
@@ -879,11 +824,6 @@
       "href": "golden-dot-field.html",
       "category": "Backgrounds",
       "tags": ["Dots", "Gold", "Navy", "GLSL", "Abstract"]
-    },
-    {
-      "href": "pixel-skull.html",
-      "category": "Backgrounds",
-      "tags": ["Glitch", "Skull", "Pixel", "GLSL", "Abstract"]
     },
     {
       "href": "razer-toxic-marble.html",
@@ -1183,11 +1123,6 @@
       "tags": ["3D", "Three.js", "Jelly", "Physics"]
     },
     {
-      "href": "lava-cell-membrane.html",
-      "category": "Backgrounds",
-      "tags": ["Shader", "Organic", "Neon"]
-    },
-    {
       "href": "lavender-dashes-cam.html",
       "category": "Webcam Borders",
       "tags": ["Geometric", "Border"]
@@ -1348,26 +1283,6 @@
       "tags": []
     },
     {
-      "href": "neon-ribbon-pattern.html",
-      "category": "Backgrounds",
-      "tags": ["Pattern", "Neon", "Loop"]
-    },
-    {
-      "href": "neon-starburst.html",
-      "category": "Backgrounds",
-      "tags": ["Neon", "Starburst", "Psychedelic", "Lime", "Magenta"]
-    },
-    {
-      "href": "neon-topo.html",
-      "category": "Backgrounds",
-      "tags": ["Topo", "Contour", "Red", "Pink", "Neon", "Abstract"]
-    },
-    {
-      "href": "neon-vein-network.html",
-      "category": "Backgrounds",
-      "tags": ["Shader", "Organic", "Loop"]
-    },
-    {
       "href": "network-surge.html",
       "category": "Backgrounds",
       "tags": ["Physics", "Network", "Ambient"]
@@ -1399,11 +1314,6 @@
       "href": "orbital-mechanics.html",
       "category": "Particle Systems",
       "tags": ["Physics", "Space"]
-    },
-    {
-      "href": "paint-vortex.html",
-      "category": "Backgrounds",
-      "tags": ["Shader", "Spiral", "Paint", "Vortex"]
     },
     {
       "href": "particle-border-overlay.html",
@@ -1495,11 +1405,6 @@
       "tags": ["Particles", "Mesh"]
     },
     {
-      "href": "prism-biofoam.html",
-      "category": "Backgrounds",
-      "tags": ["Shader", "Organic", "Color"]
-    },
-    {
       "href": "procedural-logo.html",
       "category": "Particle Systems",
       "tags": ["Brand", "Generative"]
@@ -1523,11 +1428,6 @@
       "href": "rain-umbrella.html",
       "category": "Backgrounds",
       "tags": ["Atmospheric", "Rain", "Scene"]
-    },
-    {
-      "href": "rain-umbrella(1).html",
-      "category": "Uncategorized",
-      "tags": []
     },
     {
       "href": "rain.html",
