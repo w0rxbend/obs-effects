@@ -1,7 +1,7 @@
 import type { Ticker } from "pixi.js";
 import { BlurFilter, Container, Graphics } from "pixi.js";
+import { clamp, TAU } from "../../lib/math";
 
-const TAU = Math.PI * 2;
 const MEMBRANE_N = 96;
 const NUCLEUS_N = 32;
 const PARTICLE_N = 50;
@@ -19,10 +19,6 @@ const C_MITO_STROKE = 0xffb347;
 const C_MITO_CRISTAE = 0xffb450;
 const C_RIBO = 0xffe080;
 const PARTICLE_COLORS = [0x00ffc8, 0x80ffea, 0xffffff, 0xb8fff0];
-
-function clamp(v: number, lo: number, hi: number): number {
-  return Math.max(lo, Math.min(hi, v));
-}
 
 // Layered sine displacement for organic membrane deformation.
 // Low-frequency terms drive large lobes; high-frequency terms add surface quiver.

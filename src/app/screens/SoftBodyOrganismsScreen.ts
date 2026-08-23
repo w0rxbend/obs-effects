@@ -29,6 +29,13 @@ const CONSTRAINT_ITERS = 7;
 const WAVE_AMP = 0.3; // spoke rest-length modulation ±fraction
 const SPLINE_SUBS = 6; // quadratic bezier samples per segment
 
+/**
+ * Fixed simulation step, in seconds. This screen is deliberately frame-rate
+ * locked: its motion is tuned to a 60 fps step, so reading the real ticker
+ * delta would change the tuned timing.
+ */
+const FIXED_STEP_SECONDS = 1 / 60;
+
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface Pt {
   x: number;
@@ -149,7 +156,7 @@ export class SoftBodyOrganismsScreen extends Container {
     // Seed initial velocity into Verlet by offsetting previous positions
     const vx0 = (Math.random() - 0.5) * FLOAT_SPEED * 1.6;
     const vy0 = (Math.random() - 0.5) * FLOAT_SPEED;
-    const dt0 = 1 / 60;
+    const dt0 = FIXED_STEP_SECONDS;
     for (const p of pts) {
       p.px = p.x - vx0 * dt0;
       p.py = p.y - vy0 * dt0;

@@ -1,6 +1,7 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics, Sprite, Texture } from "pixi.js";
 import { obsAudio } from "../../lib";
+import { clamp } from "../../lib/math";
 
 type RGB = [number, number, number];
 
@@ -35,10 +36,6 @@ const PALETTES: RGB[][] = [
 // Internal gradient canvas resolution — upscaled to fill screen
 const GW = 128;
 const GH = 128;
-
-function clamp(v: number, lo: number, hi: number): number {
-  return v < lo ? lo : v > hi ? hi : v;
-}
 
 function lerpC(a: number, b: number, t: number): number {
   return Math.round(a + (b - a) * t);

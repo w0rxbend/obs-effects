@@ -1,5 +1,6 @@
 import { BlurFilter, Container, Graphics } from "pixi.js";
 import type { Ticker } from "pixi.js";
+import { clamp, randRange as rand } from "../../lib/math";
 
 const C = {
   crust: 0x11111b,
@@ -26,14 +27,6 @@ const N_TENDRILS = 8;
 const MAX_RINGS = 12;
 const GRID_STEP = 80;
 const GRID_SUB = 10;
-
-function rand(lo: number, hi: number): number {
-  return lo + Math.random() * (hi - lo);
-}
-
-function clamp(v: number, lo: number, hi: number): number {
-  return v < lo ? lo : v > hi ? hi : v;
-}
 
 interface TrailPt {
   x: number;

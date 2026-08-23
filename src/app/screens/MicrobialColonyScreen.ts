@@ -1,7 +1,7 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
-
-const TAU = Math.PI * 2;
+import { mixHex as lerpColor } from "../../lib/color";
+import { clamp, lerp, TAU, randRange as rand } from "../../lib/math";
 
 const CRUST = 0x11111b;
 const MANTLE = 0x181825;
@@ -127,14 +127,6 @@ interface MantleBlob {
   phase: number;
 }
 
-function rand(min: number, max: number): number {
-  return min + Math.random() * (max - min);
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, value));
-}
-
 function distSq(ax: number, ay: number, bx: number, by: number): number {
   const dx = bx - ax;
   const dy = by - ay;
@@ -144,10 +136,6 @@ function distSq(ax: number, ay: number, bx: number, by: number): number {
 function normalize(x: number, y: number, length = 1): { x: number; y: number } {
   const d = Math.hypot(x, y) || 1;
   return { x: (x / d) * length, y: (y / d) * length };
-}
-
-function lerp(from: number, to: number, t: number): number {
-  return from + (to - from) * t;
 }
 
 function pick<T>(items: readonly T[]): T {
@@ -1014,18 +1002,4 @@ export class MicrobialColonyScreen extends Container {
     }
     g.lineTo(points[0].x, points[0].y);
   }
-}
-
-function lerpColor(from: number, to: number, t: number): number {
-  const fR = (from >> 16) & 0xff;
-  const fG = (from >> 8) & 0xff;
-  const fB = from & 0xff;
-  const tR = (to >> 16) & 0xff;
-  const tG = (to >> 8) & 0xff;
-  const tB = to & 0xff;
-
-  const r = Math.round(lerp(fR, tR, clamp(t, 0, 1)));
-  const g = Math.round(lerp(fG, tG, clamp(t, 0, 1)));
-  const b = Math.round(lerp(fB, tB, clamp(t, 0, 1)));
-  return (r << 16) | (g << 8) | b;
 }

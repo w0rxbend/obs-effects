@@ -1,8 +1,8 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
 import { obsAudio } from "../../lib";
+import { clamp, TAU } from "../../lib/math";
 
-const TAU = Math.PI * 2;
 const BLOB_STEPS = 96;
 const SQUIRCLE_POWER = 4.3;
 
@@ -17,10 +17,6 @@ const BROW_COL = 0x1a100a;
 const MOUTH_STROKE_COL = 0x281804;
 const MOUTH_INSIDE = 0x1a0a10;
 const TEETH_COL = 0xf0ece4;
-
-function clamp(v: number, lo: number, hi: number): number {
-  return v < lo ? lo : v > hi ? hi : v;
-}
 
 function squircleXY(angle: number): [number, number] {
   const c = Math.cos(angle);

@@ -1,7 +1,7 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
+import { TAU, randRange as rand } from "../../lib/math";
 
-const TAU = Math.PI * 2;
 const WEBCAM_R = 220;
 const WR2 = WEBCAM_R * WEBCAM_R;
 
@@ -19,10 +19,6 @@ const FLAMINGO = 0xf2cdcd;
 const SURFACE0 = 0x313244;
 const BASE = 0x1e1e2e;
 const CRUST = 0x11111b;
-
-function rand(a: number, b: number) {
-  return a + Math.random() * (b - a);
-}
 
 // ─── Layer 1: N-body gravitational stars ─────────────────────────────────────
 

@@ -1,10 +1,10 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
+import { lerpHex } from "../../lib/color";
+import { TAU } from "../../lib/math";
 
 // Two-color fluid marble: magenta + teal on black
 // Dense interleaved flow bands create full-coverage marble texture
-
-const TAU = Math.PI * 2;
 
 const MAGENTA_A = 0xff00cc;
 const MAGENTA_B = 0xcc00ff;
@@ -16,20 +16,6 @@ const BLACK = 0x000000;
 const BAND_COUNT = 72;
 const X_STEPS = 200;
 const GOLDEN = 1.6180339887;
-
-function lerpHex(a: number, b: number, t: number): number {
-  const ar = (a >> 16) & 0xff;
-  const ag = (a >> 8) & 0xff;
-  const ab = a & 0xff;
-  const br = (b >> 16) & 0xff;
-  const bg = (b >> 8) & 0xff;
-  const bb = b & 0xff;
-  return (
-    (Math.round(ar + (br - ar) * t) << 16) |
-    (Math.round(ag + (bg - ag) * t) << 8) |
-    Math.round(ab + (bb - ab) * t)
-  );
-}
 
 export class CyberMarbleScreen extends Container {
   public static assetBundles: string[] = [];

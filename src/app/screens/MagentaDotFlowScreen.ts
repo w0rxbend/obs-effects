@@ -1,11 +1,11 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
+import { TAU } from "../../lib/math";
 
 // Hot magenta halftone dots on dark charcoal — organic void shapes break the dot field
 // Single color, radius encodes field intensity (true halftone)
 
 const SPACING = 12;
-const TAU = Math.PI * 2;
 const DOT_COLOR = 0xcc0099;
 const BG = 0x1a1a1a;
 

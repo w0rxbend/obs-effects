@@ -192,9 +192,6 @@ loader.load(
     if (gltf.animations.length > 0) {
       mixer = new THREE.AnimationMixer(model);
       gltf.animations.forEach((clip) => mixer!.clipAction(clip).play());
-      console.log(
-        `[ergodox-showroom] playing ${gltf.animations.length} animation clip(s)`,
-      );
     }
 
     overlay.style.opacity = "0";

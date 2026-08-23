@@ -1,12 +1,11 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics, Sprite, Texture } from "pixi.js";
+import { randRange as rnd, TAU } from "../../lib/math";
 
 const W = 1920;
 const H = 1080;
 const CX = W / 2;
 const CY = H / 2;
-const TAU = Math.PI * 2;
-
 // Catppuccin Mocha
 const CRUST = 0x11111b;
 const MANTLE = 0x181825;
@@ -28,10 +27,6 @@ const N_HALO = 2000;
 const N_BG = 1500;
 const N_BRIGHT = 40;
 const N_CORE = 800;
-
-function rnd(lo: number, hi: number): number {
-  return lo + Math.random() * (hi - lo);
-}
 
 function gaussian(): number {
   let u = 0,

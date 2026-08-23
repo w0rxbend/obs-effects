@@ -1,7 +1,6 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
-
-const TAU = Math.PI * 2;
+import { TAU, randRange as rand } from "../../lib/math";
 
 const MAUVE = 0xcba6f7;
 const PINK = 0xf38ba8;
@@ -17,10 +16,6 @@ const WEBCAM_R = 200;
 const TILT_RAD = 17 * (Math.PI / 180);
 const COS_TILT = Math.cos(TILT_RAD);
 const SIN_TILT = Math.sin(TILT_RAD);
-
-function rand(lo: number, hi: number) {
-  return lo + Math.random() * (hi - lo);
-}
 
 // Project a point on a tilted ellipse to screen space.
 // The tilt is a rotation about the x-axis: bottom of ellipse swings toward viewer.

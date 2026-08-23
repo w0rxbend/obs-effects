@@ -1,5 +1,6 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
+import { clamp } from "../../lib/math";
 
 const BLOB_COLOR = 0xcba6f7; // Catppuccin Mocha mauve
 
@@ -33,10 +34,6 @@ function lighten(c: number, t: number): number {
     (Math.round(g + (255 - g) * t) << 8) |
     Math.round(b + (255 - b) * t)
   );
-}
-
-function clamp(v: number, lo: number, hi: number): number {
-  return Math.max(lo, Math.min(hi, v));
 }
 
 function mulberry32(seed: number): () => number {

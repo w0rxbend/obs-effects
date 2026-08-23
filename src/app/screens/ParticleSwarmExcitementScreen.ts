@@ -1,6 +1,7 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
 import { obsAudio } from "../../lib";
+import { lerpHex } from "../../lib/color";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const N = 700;
@@ -34,20 +35,6 @@ const C_HOT = 0xeef8ff;
 const CONN_COLOR = 0x152848;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-function lerpHex(a: number, b: number, t: number): number {
-  const ar = (a >> 16) & 0xff,
-    ag = (a >> 8) & 0xff,
-    ab = a & 0xff;
-  const br = (b >> 16) & 0xff,
-    bg = (b >> 8) & 0xff,
-    bb = b & 0xff;
-  return (
-    (Math.round(ar + (br - ar) * t) << 16) |
-    (Math.round(ag + (bg - ag) * t) << 8) |
-    Math.round(ab + (bb - ab) * t)
-  );
-}
-
 function energyColor(e: number): number {
   if (e < 0.5) return lerpHex(C_CALM, C_CYAN, e * 2);
   return lerpHex(C_CYAN, C_HOT, (e - 0.5) * 2);

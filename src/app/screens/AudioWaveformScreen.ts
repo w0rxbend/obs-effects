@@ -2,6 +2,7 @@ import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
 
 import { obsAudio } from "../../lib";
+import { clamp, smoothstep, TAU } from "../../lib/math";
 
 interface AudioWaveformPalette {
   core: number;
@@ -21,19 +22,9 @@ const RAZER_TOXIC_PALETTE: AudioWaveformPalette = {
   outline: 0x000000,
 };
 
-const TAU = Math.PI * 2;
 const BAR_COUNT = 128;
 const LINE_SEGMENTS = 176;
 const EDGE_FADE = 0.16;
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, value));
-}
-
-function smoothstep(edge0: number, edge1: number, value: number): number {
-  const t = clamp((value - edge0) / (edge1 - edge0), 0, 1);
-  return t * t * (3 - 2 * t);
-}
 
 function edgeAlpha(t: number): number {
   return smoothstep(0, EDGE_FADE, t) * (1 - smoothstep(1 - EDGE_FADE, 1, t));

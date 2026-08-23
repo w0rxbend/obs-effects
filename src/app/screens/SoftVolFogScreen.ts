@@ -1,17 +1,12 @@
 import type { Ticker } from "pixi.js";
 import { BlurFilter, Container, Graphics } from "pixi.js";
-
-const TAU = Math.PI * 2;
+import { clamp, TAU } from "../../lib/math";
 
 // Cool blue-white mist palette — unobtrusive over game/code content
 const COLORS = [0xcad8f0, 0xd6e4ff, 0xb8ccec, 0xdce8fc, 0xe4eeff, 0xc4d4f8];
 
 function rng(min: number, max: number): number {
   return min + Math.random() * (max - min);
-}
-
-function clamp(v: number, lo: number, hi: number): number {
-  return v < lo ? lo : v > hi ? hi : v;
 }
 
 interface Blob {

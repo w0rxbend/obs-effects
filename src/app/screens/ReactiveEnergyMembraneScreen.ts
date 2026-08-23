@@ -1,7 +1,6 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
-
-const TAU = Math.PI * 2;
+import { TAU } from "../../lib/math";
 
 const C_BG = 0x020006;
 const C_VEIN_DIM = 0x2a0060;

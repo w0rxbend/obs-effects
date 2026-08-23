@@ -1,12 +1,8 @@
-import { ApplicationOptions, Container } from "pixi.js";
+import { ApplicationOptions } from "pixi.js";
 
 import { setEngine } from "../app/getEngine";
 import { CreationEngine } from "../engine/engine";
-
-interface AppScreenConstructor {
-  new (): Container;
-  assetBundles?: string[];
-}
+import type { AppScreenConstructor } from "../engine/navigation/navigation";
 
 interface CreatePageOptions {
   background?: number | string;
@@ -53,5 +49,10 @@ export function createPage(
     });
 
     await engine.navigation.showScreen(ScreenClass);
-  })();
+  })().catch((error: unknown) => {
+    console.error(
+      "[createPage] page initialization failed; no screen was shown.",
+      error,
+    );
+  });
 }

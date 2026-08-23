@@ -51,6 +51,13 @@ const ECG_SCROLL = 0.007;
 const ECG_AMP = 50;
 
 /**
+ * Fixed simulation step, in seconds. This screen is deliberately frame-rate
+ * locked: its motion is tuned to a 60 fps step, so reading the real ticker
+ * delta would change the tuned timing.
+ */
+const FIXED_STEP_SECONDS = 1 / 60;
+
+/**
  * Standalone animated logo overlay with heartbeat animation and ECG background.
  * Drop it into OBS as a browser source over any scene.
  */
@@ -116,9 +123,8 @@ export class LogoScreen extends Container {
     this.addChild(this.liveText);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public update(_ticker: Ticker): void {
-    this.time += 1 / 60;
+    this.time += FIXED_STEP_SECONDS;
     this.animateLogo();
   }
 
@@ -153,7 +159,7 @@ export class LogoScreen extends Container {
     if (!sprite) return;
 
     // ── Lub-dub beat detection ────────────────────────────────────────────────
-    const prevPhase = (this.time - 1 / 60) % BEAT_INTERVAL;
+    const prevPhase = (this.time - FIXED_STEP_SECONDS) % BEAT_INTERVAL;
     const currPhase = this.time % BEAT_INTERVAL;
     const dubPhase = BEAT_INTERVAL * DUB_PHASE_RATIO;
 
@@ -325,7 +331,7 @@ export class LogoScreen extends Container {
   }
 
   private drawOrbitDots(floatY: number): void {
-    const dt = 1 / 60;
+    const dt = FIXED_STEP_SECONDS;
     this.orbitDotGfx.clear();
 
     for (const dot of this.orbitDots) {

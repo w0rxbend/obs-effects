@@ -201,9 +201,6 @@ loader.load(
       gltf.animations.forEach((clip) => {
         mixer!.clipAction(clip).play();
       });
-      console.log(
-        `[octocat] playing ${gltf.animations.length} animation clip(s)`,
-      );
     }
 
     // Fade out loading overlay

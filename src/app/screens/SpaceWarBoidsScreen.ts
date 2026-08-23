@@ -1,5 +1,6 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
+import { clamp } from "../../lib/math";
 
 // ── Simulation tuning ──────────────────────────────────────────────────────────
 const AGENTS_PER_FACTION = 80;
@@ -141,10 +142,6 @@ class SpatialHash {
 }
 
 // ── Vector helpers ─────────────────────────────────────────────────────────────
-function clamp(v: number, lo: number, hi: number): number {
-  return v < lo ? lo : v > hi ? hi : v;
-}
-
 // Return (x,y) capped to `max` magnitude, skipping sqrt when possible.
 function cap(x: number, y: number, max: number): [number, number] {
   const sq = x * x + y * y;

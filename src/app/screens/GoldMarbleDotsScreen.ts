@@ -1,12 +1,11 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
+import { TAU } from "../../lib/math";
 
 // Halftone dots over domain-warped gold marble field
 // Dot size and color encode field intensity: white → light gold → amber → invisible
 
 const SPACING = 12;
-const TAU = Math.PI * 2;
-
 const TIERS = [
   { threshold: 0.72, color: 0xffffff }, // bright white
   { threshold: 0.48, color: 0xffd890 }, // light gold

@@ -6,8 +6,8 @@ import { FBXLoader } from "three/addons/loaders/FBXLoader.js";
 import earthModelUrl from "../../../raw-assets/main{m}/earth/source/Earth.fbx?url";
 import earthTextureUrl from "../../../raw-assets/main{m}/earth/textures/1_earth_8k.jpg?url";
 import moonTextureUrl from "../../../raw-assets/main{m}/earth/textures/moon-generated.png?url";
+import { TAU, randRange as random } from "../../lib/math";
 
-const TAU = Math.PI * 2;
 const STAR_COUNT = 520;
 const DUST_COUNT = 90;
 const CAMERA_Y = 2.15;
@@ -45,10 +45,6 @@ interface NebulaBlob {
   phase: number;
   dx: number;
   dy: number;
-}
-
-function random(min: number, max: number): number {
-  return min + Math.random() * (max - min);
 }
 
 function pick<T>(items: readonly T[]): T {

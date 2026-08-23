@@ -1,12 +1,11 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
+import { TAU } from "../../lib/math";
 
 // Blue mosaic/halftone over dark flowing organic shapes
 // Small dots, deep navy background, dots range from near-white to dark steel blue
 
 const SPACING = 9;
-const TAU = Math.PI * 2;
-
 export class BlueMosaicFlowScreen extends Container {
   public static assetBundles: string[] = [];
 

@@ -1,5 +1,7 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
+import { mixHex as mixColor } from "../../lib/color";
+import { clamp } from "../../lib/math";
 
 const GRID_SPACING = 8;
 const EDGE_THRESHOLD = GRID_SPACING * 1.9;
@@ -27,30 +29,6 @@ interface MeshEdge {
   a: number;
   b: number;
   diagonal: boolean;
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, value));
-}
-
-function lerp(start: number, end: number, t: number): number {
-  return start + (end - start) * t;
-}
-
-function mixColor(colorA: number, colorB: number, t: number): number {
-  const clampedT = clamp(t, 0, 1);
-  const ar = (colorA >> 16) & 0xff;
-  const ag = (colorA >> 8) & 0xff;
-  const ab = colorA & 0xff;
-  const br = (colorB >> 16) & 0xff;
-  const bg = (colorB >> 8) & 0xff;
-  const bb = colorB & 0xff;
-
-  const r = Math.round(lerp(ar, br, clampedT));
-  const g = Math.round(lerp(ag, bg, clampedT));
-  const b = Math.round(lerp(ab, bb, clampedT));
-
-  return (r << 16) | (g << 8) | b;
 }
 
 function gradientColor(t: number): number {

@@ -476,9 +476,6 @@ loader.load(
       gltf.animations.forEach((clip) => mixer!.clipAction(clip).play());
     }
 
-    console.log(
-      `[tux] animated parts: ${eyes.length} eye islands, ${wings.length} wings`,
-    );
     overlay.style.opacity = "0";
     setTimeout(() => overlay.remove(), 800);
   },

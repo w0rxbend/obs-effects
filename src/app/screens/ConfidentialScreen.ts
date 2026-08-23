@@ -1,296 +1,54 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics, Sprite, Text, TextStyle, Texture } from "pixi.js";
 
-// ── Palette ───────────────────────────────────────────────────────────────────
-const TAPE_YELLOW = 0xf9e2af; // Catppuccin Mocha Yellow
-const TAPE_BLACK = 0x11111b; // Catppuccin Mocha Crust
-const CATT_MAUVE = 0xcba6f7;
-const CATT_PINK = 0xf38ba8;
-const CATT_PEACH = 0xfab387;
-const CATT_SKY = 0x89dceb;
-const CATT_YELLOW = 0xf9e2af;
-const WHITE = 0xffffff;
-// Yellow-family variants for the new effects
-const CATT_GOLD = 0xe6c07b;
-const CATT_AMBER = 0xd4a04a;
-const CATT_LEMON = 0xfff0a0;
-const CATT_BUTTER = 0xfde8b0;
-const CATT_HONEY = 0xf2c97a;
-// Fire ramp: dark core → hot yellow tip
-const FIRE_RED = 0xe64553; // Catppuccin Maroon-ish
-const FIRE_ORANGE = 0xfe640b; // Catppuccin Flamingo-orange
-const FIRE_YELLOW = 0xdf8e1d; // Catppuccin Yellow-orange
-const FIRE_TIP = 0xfff0a0; // pale lemon tip
-
-const PARTICLE_PALETTE = [
-  CATT_MAUVE,
-  CATT_PINK,
-  CATT_PEACH,
-  CATT_SKY,
-  CATT_YELLOW,
-  WHITE,
-] as const;
-
-const YELLOW_PALETTE = [
-  CATT_YELLOW,
-  CATT_GOLD,
-  CATT_AMBER,
-  CATT_LEMON,
-  CATT_BUTTER,
-  CATT_HONEY,
-  CATT_PEACH,
-] as const;
-
-// ── Main tape phrases ─────────────────────────────────────────────────────────
-const MAIN_PHRASES = [
-  "STREAMER IS DEFINITELY NOT CRYING",
-  "HIDING PASSWORDS IN PLAIN SIGHT",
-  "IF YOU SAW THAT, YOU SAW NOTHING",
-  "MY BOSS THINKS I AM WORKING",
-  "CONFIDENTIAL: SALARY NEGOTIATION TACTICS",
-  "CHAT DO NOT CLIP THIS. CHAT.",
-  "DISCORD DM READING SIMULATOR",
-  "GOOGLE SEARCH HISTORY: CLASSIFIED",
-  "ABSOLUTELY NOT ONLINE SHOPPING",
-  "STREAMER SWITCHING TO COMPETITOR",
-  "TOP SECRET: ACTUALLY READING DOCS",
-  "CTRL+Z CANNOT SAVE ME NOW",
-  "YES THIS IS A WORK MEETING",
-  "DO NOT TELL WIFE ABOUT THIS TAB",
-  "STREAMER IS GOOGLING HOW TO CODE",
-  "CLASSIFIED: TWITCH RIVAL RESEARCH",
-  "TAX FRAUD SPEEDRUN IN PROGRESS",
-  "NOTHING HAPPENED. GO WATCH ADS.",
-] as const;
-
-// ── Constants ─────────────────────────────────────────────────────────────────
-const NET_DOT_COUNT = 45;
-const NET_MAX_DIST = 180;
-const PARTICLE_COUNT = 140;
-const RAIN_COUNT = 90;
-const METEOR_COUNT = 6;
-const SPARK_COUNT = 60;
-const STAIN_COUNT = 12;
-const DROP_COUNT = 40;
-const YELLOW_DOT_COUNT = 55;
-const FIRE_PARTICLE_COUNT = 420;
-const MOVING_LINE_COUNT = 28;
-const PULSE_DOT_COUNT = 22;
-const ORBIT_GROUP_COUNT = 6;
-// Local half-width of each tape (must reach screen edges from centre at any rotation)
-const TAPE_HW = 1400;
-const TAPE_FADE_DURATION = 0.5;
-const TAPE_SHOW_MIN = 4.0;
-const TAPE_SHOW_MAX = 8.5;
-
-// ── Interfaces ────────────────────────────────────────────────────────────────
-
-interface TapeObj {
-  container: Container;
-  contentCont: Container; // holds label + icons; faded as a unit
-  isMain: boolean;
-  baseCX: number;
-  baseCY: number;
-  baseAngle: number;
-  bounceAmp: number;
-  bounceFreq: number;
-  bouncePhase: number;
-  wobbleAmp: number;
-  wobbleFreq: number;
-  wobblePhase: number;
-  fontSize: number;
-  hh: number;
-  state: "show" | "fade_out" | "fade_in";
-  fadeTimer: number;
-  showTimer: number;
-  showDuration: number;
-}
-
-interface NetDot {
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  size: number;
-  color: number;
-  alpha: number;
-  phase: number;
-}
-
-interface Particle {
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  size: number;
-  alpha: number;
-  color: number;
-  twinklePhase: number;
-  twinkleSpeed: number;
-}
-
-interface RainDrop {
-  x: number;
-  y: number;
-  vy: number;
-  length: number;
-  alpha: number;
-  color: number;
-  width: number;
-}
-
-interface Meteor {
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  length: number;
-  alpha: number;
-  color: number;
-  life: number;
-  maxLife: number;
-  trailAlpha: number;
-}
-
-interface Spark {
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  life: number;
-  maxLife: number;
-  size: number;
-  color: number;
-  gravity: number;
-}
-
-interface StainBlob {
-  dx: number; // offset from stain centre
-  dy: number;
-  r: number; // current radius
-  baseR: number; // rest radius
-  pulsePhase: number;
-  pulseSpeed: number;
-  pulseAmp: number; // fraction of baseR
-  driftVx: number; // slow drift velocity
-  driftVy: number;
-  colorB: number; // secondary color for lerp
-  colorPhase: number;
-  colorSpeed: number;
-}
-
-interface Stain {
-  x: number;
-  y: number;
-  alpha: number;
-  color: number;
-  blobs: StainBlob[];
-}
-
-interface Drop {
-  x: number;
-  y: number;
-  vy: number;
-  size: number;
-  alpha: number;
-  color: number;
-  splat: number; // 0 = falling, >0 = splatting (radius grows)
-  splatMax: number;
-}
-
-interface FireParticle {
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  life: number;
-  maxLife: number;
-  size: number;
-  baseX: number;
-  baseY: number;
-  turbPhase: number;
-  turbFreq: number;
-  turbAmp: number;
-}
-
-interface FireworkShell {
-  x: number;
-  y: number;
-  vy: number; // rising velocity (negative = up)
-  life: number;
-  maxLife: number;
-  burst: boolean; // has it exploded yet
-  color: number;
-  trailParticles: Array<{
-    x: number;
-    y: number;
-    vx: number;
-    vy: number;
-    life: number;
-    maxLife: number;
-    size: number;
-  }>;
-}
-
-interface MovingLine {
-  x: number; // leading edge x (in screen coords, centre-origin)
-  y: number;
-  angle: number; // radians
-  length: number;
-  speed: number; // px/s along angle direction
-  alpha: number;
-  color: number;
-  width: number;
-}
-
-interface PulseDot {
-  x: number;
-  y: number;
-  baseR: number;
-  pulseAmp: number; // fraction of baseR
-  pulsePhase: number;
-  pulseSpeed: number;
-  alpha: number;
-  color: number;
-  colorB: number;
-  colorPhase: number;
-  colorSpeed: number;
-  ringAlpha: number; // outer ring opacity multiplier
-}
-
-interface OrbitDot {
-  angle: number; // current orbital angle
-  speed: number; // rad/s
-  radius: number; // orbit radius
-  size: number;
-  trailLen: number; // number of ghost circles in trail
-  alpha: number;
-  color: number;
-}
-
-interface OrbitGroup {
-  cx: number;
-  cy: number;
-  dots: OrbitDot[];
-}
-
-interface YellowDot {
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  size: number;
-  alpha: number;
-  color: number;
-  phase: number;
-  speed: number;
-}
+import {
+  DROP_COUNT,
+  FIRE_ORANGE,
+  FIRE_PARTICLE_COUNT,
+  FIRE_RED,
+  FIRE_TIP,
+  FIRE_YELLOW,
+  MAIN_PHRASES,
+  METEOR_COUNT,
+  MOVING_LINE_COUNT,
+  NET_DOT_COUNT,
+  NET_MAX_DIST,
+  ORBIT_GROUP_COUNT,
+  PARTICLE_COUNT,
+  PARTICLE_PALETTE,
+  PULSE_DOT_COUNT,
+  RAIN_COUNT,
+  SPARK_COUNT,
+  STAIN_COUNT,
+  TAPE_BLACK,
+  TAPE_FADE_DURATION,
+  TAPE_SHOW_MAX,
+  TAPE_SHOW_MIN,
+  TAPE_YELLOW,
+  YELLOW_DOT_COUNT,
+  YELLOW_PALETTE,
+} from "./confidential/palette";
+import { buildTapeGraphics, easeInOutCubic } from "./confidential/tape";
+import type {
+  Drop,
+  FireParticle,
+  FireworkShell,
+  Meteor,
+  MovingLine,
+  NetDot,
+  OrbitDot,
+  OrbitGroup,
+  Particle,
+  PulseDot,
+  RainDrop,
+  Spark,
+  Stain,
+  StainBlob,
+  TapeObj,
+  YellowDot,
+} from "./confidential/types";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-
-function easeInOutCubic(t: number): number {
-  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-}
 
 function randomFrom<T>(arr: readonly T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
@@ -309,65 +67,6 @@ function lerpColor(a: number, b: number, t: number): number {
     (Math.round(ag + (bg - ag) * t) << 8) |
     Math.round(ab + (bb - ab) * t)
   );
-}
-
-/**
- * Builds a caution-tape Graphics in tape-local coordinates (origin = centre).
- * Stripes are drawn ONLY inside the border zones so they never overlap the
- * yellow centre band — no overdraw, no layering issues.
- */
-function buildTapeGraphics(hh: number): Graphics {
-  const hw = TAPE_HW;
-  const bz = Math.max(hh * 0.32, 14); // border zone height
-  const cHH = hh - bz; // centre half-height
-  const period = bz * 2.4; // stripe period scaled to border zone
-  const blackW = period * 0.48;
-  const slant = bz; // 45° within the border zone
-
-  const g = new Graphics();
-
-  // 1. Full yellow background (no overdraw issues — drawn once)
-  g.rect(-hw, -hh, hw * 2, hh * 2).fill({ color: TAPE_YELLOW });
-
-  // 2. Black stripes in TOP border zone only
-  for (let x = -hw - slant * 2; x < hw + slant; x += period) {
-    g.poly([
-      x,
-      -hh,
-      x + blackW,
-      -hh,
-      x + blackW + slant,
-      -cHH,
-      x + slant,
-      -cHH,
-    ]).fill({ color: TAPE_BLACK });
-  }
-
-  // 3. Black stripes in BOTTOM border zone only (mirrored)
-  for (let x = -hw - slant * 2; x < hw + slant; x += period) {
-    g.poly([
-      x + slant,
-      cHH,
-      x + blackW + slant,
-      cHH,
-      x + blackW,
-      hh,
-      x,
-      hh,
-    ]).fill({
-      color: TAPE_BLACK,
-    });
-  }
-
-  // 4. Hard outer border lines
-  g.rect(-hw, -hh, hw * 2, 3).fill({ color: TAPE_BLACK });
-  g.rect(-hw, hh - 3, hw * 2, 3).fill({ color: TAPE_BLACK });
-
-  // 5. Thin separator lines at centre band edges
-  g.rect(-hw, -cHH - 1, hw * 2, 2).fill({ color: TAPE_BLACK, alpha: 0.5 });
-  g.rect(-hw, cHH - 1, hw * 2, 2).fill({ color: TAPE_BLACK, alpha: 0.5 });
-
-  return g;
 }
 
 export class ConfidentialScreen extends Container {

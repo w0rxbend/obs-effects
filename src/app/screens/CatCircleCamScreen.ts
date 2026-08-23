@@ -1,5 +1,7 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
+import { lerpHex as lerpColor } from "../../lib/color";
+import { clamp } from "../../lib/math";
 
 // ── Palette ───────────────────────────────────────────────────────────────────
 const C_BLUE = 0x89b4fa;
@@ -28,24 +30,6 @@ const DRIFT_X = 2.0; // max horizontal drift in screen px
 const MAX_DT = 0.05;
 const TICK_COUNT = 48;
 const ARC_DOT_COUNT = 8;
-
-function clamp(v: number, lo: number, hi: number) {
-  return Math.max(lo, Math.min(hi, v));
-}
-
-function lerpColor(a: number, b: number, t: number): number {
-  const ar = (a >> 16) & 0xff,
-    ag = (a >> 8) & 0xff,
-    ab = a & 0xff;
-  const br = (b >> 16) & 0xff,
-    bg = (b >> 8) & 0xff,
-    bb = b & 0xff;
-  return (
-    (Math.round(ar + (br - ar) * t) << 16) |
-    (Math.round(ag + (bg - ag) * t) << 8) |
-    Math.round(ab + (bb - ab) * t)
-  );
-}
 
 interface CatDot {
   fx: number; // x / naturalWidth  [0, 1] — permanent

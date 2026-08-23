@@ -7,6 +7,7 @@ import {
   Texture,
   UniformGroup,
 } from "pixi.js";
+import { HASH12_GLSL } from "../../lib/shaders/noise";
 
 const FILTER_VERT = `in vec2 aPosition;
 out vec2 vTextureCoord;
@@ -50,11 +51,7 @@ float hash11(float p) {
   return fract(p);
 }
 
-float hash12(vec2 p) {
-  vec3 p3 = fract(vec3(p.xyx) * 0.1031);
-  p3 += dot(p3, p3.yzx + 33.33);
-  return fract((p3.x + p3.y) * p3.z);
-}
+${HASH12_GLSL}
 
 // ── Glitch displacement ───────────────────────────────────────────────────────
 // Returns a horizontal shift for the given normalised y coordinate.

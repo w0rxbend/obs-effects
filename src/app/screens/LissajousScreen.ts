@@ -1,5 +1,6 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
+import { lerp } from "../../lib/math";
 
 const BG = 0x11111b;
 
@@ -200,9 +201,6 @@ function drawVignette(g: Graphics, cx: number, cy: number): void {
   }
 }
 
-function lerp(a: number, b: number, t: number): number {
-  return a + (b - a) * t;
-}
 function smoothstep(t: number): number {
   return t * t * (3 - 2 * t);
 }

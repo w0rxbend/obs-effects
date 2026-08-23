@@ -1,5 +1,6 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
+import { lerp } from "../../lib/math";
 
 const BG = 0x11111b;
 
@@ -156,8 +157,4 @@ function speedColor(t: number): number {
     b = lerp(0xec, 0xff, s);
   }
   return (Math.round(r) << 16) | (Math.round(gr) << 8) | Math.round(b);
-}
-
-function lerp(a: number, b: number, t: number): number {
-  return a + (b - a) * t;
 }

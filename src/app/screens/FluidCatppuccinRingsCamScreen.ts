@@ -1,5 +1,6 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
+import { clamp, TAU } from "../../lib/math";
 
 const CATT_ROSEWATER = 0xf5e0dc;
 const CATT_FLAMINGO = 0xf2cdcd;
@@ -33,7 +34,6 @@ const LINE_COLORS = [
   CATT_MAROON,
 ] as const;
 
-const TAU = Math.PI * 2;
 const RING_WIDTH = 65;
 const ANGLE_STEPS = 220;
 const LINE_COUNT = 26;
@@ -52,10 +52,6 @@ interface ProjectedNode {
   crest: number;
   depth: number;
   band: number;
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, value));
 }
 
 export class FluidCatppuccinRingsCamScreen extends Container {

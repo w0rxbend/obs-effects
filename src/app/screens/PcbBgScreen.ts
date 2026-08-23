@@ -1,5 +1,6 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics, Text, TextStyle } from "pixi.js";
+import { randRange as rnd } from "../../lib/math";
 
 // ─── Canvas ──────────────────────────────────────────────────────────────────
 const W = 1920,
@@ -70,9 +71,6 @@ interface Electron {
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
-function rnd(lo: number, hi: number) {
-  return lo + Math.random() * (hi - lo);
-}
 function rndInt(lo: number, hi: number) {
   return Math.floor(rnd(lo, hi + 1));
 }
@@ -106,7 +104,6 @@ export class PcbBgScreen extends Container {
   }
   public async hide(): Promise<void> {}
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public resize(_w: number, _h: number): void {
     this.bgGfx.clear();
     this.eGfx.clear();

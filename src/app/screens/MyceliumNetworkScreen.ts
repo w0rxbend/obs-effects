@@ -1,5 +1,6 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
+import { clamp } from "../../lib/math";
 
 const BG = 0x050810;
 const PALETTE = [0x00e8ff, 0xff00dd, 0x00ff65, 0x2979ff, 0xff8c00, 0xb94fff];
@@ -39,10 +40,6 @@ interface Edge {
   a: number;
   b: number;
   age: number;
-}
-
-function clamp(v: number, lo: number, hi: number): number {
-  return Math.max(lo, Math.min(hi, v));
 }
 
 export class MyceliumNetworkScreen extends Container {

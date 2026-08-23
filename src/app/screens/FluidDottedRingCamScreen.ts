@@ -1,12 +1,13 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
+import { mixHex as mixColor } from "../../lib/color";
+import { clamp, TAU } from "../../lib/math";
 
 const GRADIENT_INNER = 0x2dd4bf;
 const GRADIENT_MID = 0x60a5fa;
 const GRADIENT_OUTER = 0xc084fc;
 const DOT_HIGHLIGHT = 0xf5e0dc;
 
-const TAU = Math.PI * 2;
 const RING_WIDTH = 65;
 const ANGLE_STEPS = 220;
 const RADIAL_STEPS = 13;
@@ -25,30 +26,6 @@ interface ProjectedNode {
   crest: number;
   depth: number;
   band: number;
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, value));
-}
-
-function lerp(start: number, end: number, t: number): number {
-  return start + (end - start) * t;
-}
-
-function mixColor(colorA: number, colorB: number, t: number): number {
-  const clampedT = clamp(t, 0, 1);
-  const ar = (colorA >> 16) & 0xff;
-  const ag = (colorA >> 8) & 0xff;
-  const ab = colorA & 0xff;
-  const br = (colorB >> 16) & 0xff;
-  const bg = (colorB >> 8) & 0xff;
-  const bb = colorB & 0xff;
-
-  const r = Math.round(lerp(ar, br, clampedT));
-  const g = Math.round(lerp(ag, bg, clampedT));
-  const b = Math.round(lerp(ab, bb, clampedT));
-
-  return (r << 16) | (g << 8) | b;
 }
 
 function gradientColor(t: number): number {

@@ -1,434 +1,85 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
-
-// ── Palette (Catppuccin Mocha) ────────────────────────────────────────────────
-const SUN_CORE = 0xf9e2af;
-const SUN_MID = 0xfab387;
-const SUN_CORONA = 0xfe640b;
-const CATT_ROSEWATER = 0xf5e0dc;
-const CATT_FLAMINGO = 0xf2cdcd;
-const CATT_PEACH = 0xfab387;
-const CATT_YELLOW = 0xf9e2af;
-const CATT_GREEN = 0xa6e3a1;
-const CATT_RED = 0xf38ba8;
-const CATT_SKY = 0x89dceb;
-const CATT_BLUE = 0x89b4fa;
-const CATT_MAUVE = 0xcba6f7;
-const CATT_LAVENDER = 0xb4befe;
-const CATT_TEAL = 0x94e2d5;
-const CATT_OVERLAY0 = 0x6c7086;
-const CATT_SURFACE0 = 0x313244;
-const CATT_BASE = 0x1e1e2e;
-const CATT_CRUST = 0x11111b;
-
-const STAR_COLORS = [
-  0xffffff,
-  0xcdd6f4,
-  CATT_LAVENDER,
+import {
+  ADMIRAL_HEALTH,
+  ADMIRAL_SHOOT_INTERVAL,
+  ADMIRAL_SPAWN_RADIUS,
+  ADMIRAL_SPEED,
+  ADMIRAL_WANDER_INTERVAL,
+  ALI_RADIUS,
+  ASTEROID_COUNT,
+  BH_EVENT_HORIZON,
+  BH_GRAVITY,
+  BH_SWALLOW_R,
+  BOID_HEALTH,
+  BOID_MAX_FORCE,
+  BOID_MAX_SPEED,
+  BOIDS_PER_TEAM,
+  CATT_BASE,
   CATT_BLUE,
-  CATT_SKY,
-  CATT_ROSEWATER,
-  CATT_YELLOW,
-  0xffe9b0,
-] as const;
-
-const GALAXY_COLORS = [
+  CATT_CRUST,
+  CATT_FLAMINGO,
+  CATT_LAVENDER,
   CATT_MAUVE,
-  CATT_BLUE,
+  CATT_OVERLAY0,
+  CATT_PEACH,
+  CATT_ROSEWATER,
   CATT_SKY,
+  CATT_SURFACE0,
   CATT_TEAL,
-  CATT_LAVENDER,
-] as const;
-
-// ── Constants ─────────────────────────────────────────────────────────────────
-const STAR_COUNT = 280;
-const DEEP_CLUSTER_COUNT = 6;
-const GALAXY_COUNT = 4;
-const ASTEROID_COUNT = 90;
-const KUIPER_COUNT = 60;
-const INNER_BELT_COUNT = 50;
-const PULSAR_COUNT = 3;
-const QUASAR_COUNT = 4;
-// Orbital scale: semi-major axes are fractions of this * min(w,h)*0.5
-const SOLAR_SCALE = 0.88;
-// Dot dash segment length for orbit trajectories (px)
-const DASH_LEN = 6;
-const GAP_LEN = 10;
-
-// ── Black hole ────────────────────────────────────────────────────────────────
-const BH_GRAVITY = 600000; // gravitational pull strength (px·px/s²)
-const BH_SWALLOW_R = 28; // boids inside this radius get swallowed (= event horizon)
-const BH_EVENT_HORIZON = 28; // visual event horizon radius
-
-// ── Boids / Space Battle ──────────────────────────────────────────────────────
-const BOIDS_PER_TEAM = 38;
-const BOID_MAX_SPEED = 115;
-const BOID_MAX_FORCE = 220;
-const SEP_RADIUS = 24; // push apart within this distance
-const ALI_RADIUS = 58; // match heading within this distance
-const COH_RADIUS = 80; // steer toward centroid within this distance
-const DETECT_RANGE = 190; // switch to attack when enemy within this range
-const FIRE_RANGE = 115; // fire laser when enemy within this range
-const SHOOT_INTERVAL = 1.6; // seconds between shots per boid
-const LASER_SPEED = 400;
-const LASER_LIFE = 0.32;
-const BOID_HEALTH = 4;
-const REINFORCE_INTERVAL = 12; // seconds between reinforcement waves
-const REINFORCE_COUNT = 6; // boids added per wave per team
-const SPLIT_CHANCE = 0.3; // probability a dying boid splits into 2 offspring
-const ADMIRAL_HEALTH = 30;
-const ADMIRAL_SPEED = 38;
-const ADMIRAL_SIZE = 9; // draw radius
-const ADMIRAL_SPAWN_RADIUS = 55; // boids spawn within this distance of admiral
-const ADMIRAL_WANDER_INTERVAL = 4; // seconds between heading changes
-const ADMIRAL_SHOOT_INTERVAL = 0.9;
-
-const TEAM_RED = 0 as const;
-const TEAM_BLUE = 1 as const;
-const TEAM_COLOR = [0xf38ba8, 0x89b4fa] as const; // CATT_RED, CATT_BLUE
-const TEAM_ENGINE = [0xfab387, 0x89dceb] as const; // CATT_PEACH, CATT_SKY
-const TEAM_LASER_COLOR = [0xff6e6e, 0x74c7ec] as const;
-
-// ── Interfaces ────────────────────────────────────────────────────────────────
-
-interface Star {
-  x: number;
-  y: number;
-  size: number;
-  alpha: number;
-  twinklePhase: number;
-  twinkleSpeed: number;
-  color: number;
-}
-
-interface StarCluster {
-  x: number;
-  y: number;
-  radius: number;
-  color: number;
-  stars: Array<{
-    dx: number;
-    dy: number;
-    size: number;
-    alpha: number;
-    phase: number;
-  }>;
-}
-
-interface Galaxy {
-  x: number;
-  y: number;
-  angle: number; // orientation angle
-  scaleX: number;
-  scaleY: number;
-  color: number;
-  alpha: number;
-  rotation: number; // slow rotation
-  rotSpeed: number;
-  arms: number;
-}
-
-interface Moon {
-  angle: number;
-  speed: number;
-  orbitR: number;
-  size: number;
-  color: number;
-}
-
-// Keplerian orbit: ellipse with semi-major axis a, eccentricity e
-// The focus (sun) is at one of the ellipse foci: focus offset = a*e from centre
-interface PlanetDef {
-  semiMajorFrac: number; // fraction of max orbit radius
-  eccentricity: number; // 0 = circle, <1 = ellipse
-  inclination: number; // rotation of orbit ellipse (radians)
-  period: number; // orbital period in sim seconds
-  size: number;
-  color: number;
-  atmoColor: number;
-  hasRings: boolean;
-  ringColor: number;
-  trailLen: number;
-  moons: Array<{
-    orbitFrac: number;
-    period: number;
-    size: number;
-    color: number;
-  }>;
-}
-
-interface Planet {
-  // Keplerian params
-  a: number; // semi-major axis (px)
-  b: number; // semi-minor axis (px)
-  e: number; // eccentricity
-  inc: number; // inclination (rotation of ellipse)
-  foci: number; // distance from centre to focus = a*e
-  meanAnomaly: number; // current mean anomaly (advances linearly)
-  meanMotion: number; // rad/s
-  // visual
-  size: number;
-  color: number;
-  atmoColor: number;
-  hasRings: boolean;
-  ringColor: number;
-  pulsePhase: number;
-  moons: Moon[];
-  trail: Array<{ x: number; y: number }>;
-  trailLen: number;
-  // cached current position (sun at origin)
-  px: number;
-  py: number;
-}
-
-interface Asteroid {
-  a: number; // semi-major axis
-  e: number; // eccentricity
-  inc: number;
-  meanAnomaly: number;
-  meanMotion: number;
-  offsetR: number; // extra radial jitter
-  size: number;
-  alpha: number;
-  color: number;
-}
-
-interface Comet {
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  life: number;
-  maxLife: number;
-  size: number;
-  color: number;
-  trailPoints: Array<{ x: number; y: number }>;
-}
-
-// ── Black hole / Boids ────────────────────────────────────────────────────────
-
-interface BlackHole {
-  x: number;
-  y: number;
-  accretionPhase: number; // slow rotation for accretion disk
-  swallowFlashes: Array<{ angle: number; life: number; color: number }>;
-}
-
-interface Admiral {
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  team: 0 | 1;
-  health: number;
-  maxHealth: number;
-  wanderAngle: number;
-  wanderTimer: number; // seconds until next heading change
-  shootTimer: number;
-  shieldPhase: number;
-}
-
-interface Boid {
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  team: 0 | 1;
-  health: number;
-  shootTimer: number;
-  wanderAngle: number;
-  size: number;
-  isOffspring: boolean;
-}
-
-interface Laser {
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  team: 0 | 1;
-  life: number;
-}
-
-interface BoidExplosion {
-  x: number;
-  y: number;
-  life: number;
-  color: number;
-  sparks: Array<{ vx: number; vy: number; size: number; color: number }>;
-}
-
-interface Pulsar {
-  x: number;
-  y: number;
-  phase: number; // current rotation phase
-  rotSpeed: number; // rad/s — pulsars spin very fast
-  beamLen: number;
-  color: number;
-  pulseTimer: number; // time since last radio burst
-  pulsePeriod: number; // seconds between bursts
-  burstAlpha: number; // fades after each burst
-  size: number;
-}
-
-interface Quasar {
-  x: number;
-  y: number;
-  color: number;
-  coreColor: number;
-  size: number;
-  jetAngle: number;
-  jetLen: number;
-  phase: number;
-  flickerSpeed: number;
-  alpha: number;
-  diskAngle: number;
-}
-
-// ── Planet definitions ────────────────────────────────────────────────────────
-// Orbits spread 0.17–1.0, with generous gaps between each planet
-const PLANET_DEFS: PlanetDef[] = [
-  // Mercury — pushed further out from sun
-  {
-    semiMajorFrac: 0.17,
-    eccentricity: 0.21,
-    inclination: 0.0,
-    period: 9,
-    size: 5,
-    color: CATT_ROSEWATER,
-    atmoColor: CATT_FLAMINGO,
-    hasRings: false,
-    ringColor: 0,
-    trailLen: 22,
-    moons: [],
-  },
-  // Venus
-  {
-    semiMajorFrac: 0.25,
-    eccentricity: 0.007,
-    inclination: 0.35,
-    period: 16,
-    size: 8,
-    color: CATT_PEACH,
-    atmoColor: CATT_YELLOW,
-    hasRings: false,
-    ringColor: 0,
-    trailLen: 28,
-    moons: [],
-  },
-  // Earth
-  {
-    semiMajorFrac: 0.34,
-    eccentricity: 0.017,
-    inclination: -0.18,
-    period: 24,
-    size: 9,
-    color: CATT_GREEN,
-    atmoColor: CATT_BLUE,
-    hasRings: false,
-    ringColor: 0,
-    trailLen: 32,
-    moons: [{ orbitFrac: 0.09, period: 2.7, size: 2.5, color: CATT_OVERLAY0 }],
-  },
-  // Mars
-  {
-    semiMajorFrac: 0.44,
-    eccentricity: 0.093,
-    inclination: 0.52,
-    period: 34,
-    size: 7,
-    color: CATT_RED,
-    atmoColor: CATT_FLAMINGO,
-    hasRings: false,
-    ringColor: 0,
-    trailLen: 34,
-    moons: [
-      { orbitFrac: 0.07, period: 1.3, size: 1.5, color: CATT_OVERLAY0 },
-      { orbitFrac: 0.13, period: 2.5, size: 1.5, color: CATT_SURFACE0 },
-    ],
-  },
-  // Jupiter
-  {
-    semiMajorFrac: 0.6,
-    eccentricity: 0.049,
-    inclination: -0.08,
-    period: 68,
-    size: 20,
-    color: CATT_PEACH,
-    atmoColor: CATT_YELLOW,
-    hasRings: false,
-    ringColor: 0,
-    trailLen: 42,
-    moons: [
-      { orbitFrac: 0.05, period: 1.8, size: 3.0, color: CATT_FLAMINGO },
-      { orbitFrac: 0.08, period: 2.9, size: 2.5, color: CATT_ROSEWATER },
-      { orbitFrac: 0.12, period: 4.6, size: 3.5, color: CATT_OVERLAY0 },
-      { orbitFrac: 0.17, period: 8.0, size: 2.0, color: CATT_SURFACE0 },
-    ],
-  },
-  // Saturn
-  {
-    semiMajorFrac: 0.72,
-    eccentricity: 0.057,
-    inclination: 0.72,
-    period: 92,
-    size: 17,
-    color: CATT_YELLOW,
-    atmoColor: CATT_PEACH,
-    hasRings: true,
-    ringColor: CATT_YELLOW,
-    trailLen: 46,
-    moons: [
-      { orbitFrac: 0.06, period: 2.2, size: 2.5, color: CATT_ROSEWATER },
-      { orbitFrac: 0.11, period: 3.8, size: 3.0, color: CATT_OVERLAY0 },
-    ],
-  },
-  // Uranus
-  {
-    semiMajorFrac: 0.83,
-    eccentricity: 0.044,
-    inclination: -0.55,
-    period: 118,
-    size: 13,
-    color: CATT_SKY,
-    atmoColor: CATT_TEAL,
-    hasRings: true,
-    ringColor: CATT_TEAL,
-    trailLen: 50,
-    moons: [
-      { orbitFrac: 0.07, period: 3.0, size: 2.0, color: CATT_LAVENDER },
-      { orbitFrac: 0.12, period: 5.2, size: 2.0, color: CATT_BLUE },
-    ],
-  },
-  // Neptune
-  {
-    semiMajorFrac: 0.95,
-    eccentricity: 0.01,
-    inclination: 1.1,
-    period: 144,
-    size: 12,
-    color: CATT_BLUE,
-    atmoColor: CATT_MAUVE,
-    hasRings: false,
-    ringColor: 0,
-    trailLen: 54,
-    moons: [{ orbitFrac: 0.06, period: 2.8, size: 2.0, color: CATT_LAVENDER }],
-  },
-  // Rogue dwarf — highly eccentric, crosses multiple orbits
-  {
-    semiMajorFrac: 0.68,
-    eccentricity: 0.78,
-    inclination: 2.1,
-    period: 100,
-    size: 4,
-    color: CATT_MAUVE,
-    atmoColor: CATT_LAVENDER,
-    hasRings: false,
-    ringColor: 0,
-    trailLen: 60,
-    moons: [],
-  },
-];
+  CATT_YELLOW,
+  COH_RADIUS,
+  DEEP_CLUSTER_COUNT,
+  DETECT_RANGE,
+  FIRE_RANGE,
+  GALAXY_COLORS,
+  GALAXY_COUNT,
+  INNER_BELT_COUNT,
+  KUIPER_COUNT,
+  LASER_LIFE,
+  LASER_SPEED,
+  PULSAR_COUNT,
+  QUASAR_COUNT,
+  REINFORCE_COUNT,
+  REINFORCE_INTERVAL,
+  SEP_RADIUS,
+  SHOOT_INTERVAL,
+  SOLAR_SCALE,
+  SPLIT_CHANCE,
+  STAR_COLORS,
+  STAR_COUNT,
+  SUN_CORE,
+  SUN_CORONA,
+  SUN_MID,
+  TEAM_BLUE,
+  TEAM_COLOR,
+  TEAM_LASER_COLOR,
+  TEAM_RED,
+} from "./planet/constants";
+import { PLANET_DEFS } from "./planet/planet-defs";
+import {
+  drawDashedOrbit,
+  keplerTrueAnomaly,
+  orbitPos,
+  rotate,
+} from "./planet/orbits";
+import { drawAdmiralShip, drawShip } from "./planet/ships";
+import type {
+  Admiral,
+  Asteroid,
+  BlackHole,
+  Boid,
+  BoidExplosion,
+  Comet,
+  Galaxy,
+  Laser,
+  Moon,
+  Planet,
+  Pulsar,
+  Quasar,
+  Star,
+  StarCluster,
+} from "./planet/types";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -449,99 +100,6 @@ function lerpColor(a: number, b: number, t: number): number {
     (Math.round(ag + (bg - ag) * t) << 8) |
     Math.round(ab + (bb - ab) * t)
   );
-}
-
-// Solve Kepler's equation M = E - e*sin(E) for eccentric anomaly E
-// Returns true anomaly (angle at focus)
-function keplerTrueAnomaly(M: number, e: number): number {
-  // Iterative Newton solver for E
-  let E = M;
-  for (let i = 0; i < 6; i++) {
-    E = E - (E - e * Math.sin(E) - M) / (1 - e * Math.cos(E));
-  }
-  // True anomaly from E
-  const cosE = Math.cos(E);
-  const sinE = Math.sin(E);
-  const cosV = (cosE - e) / (1 - e * cosE);
-  const sinV = (Math.sqrt(1 - e * e) * sinE) / (1 - e * cosE);
-  return Math.atan2(sinV, cosV);
-}
-
-// Position on ellipse in orbit frame (sun at focus origin)
-function orbitPos(
-  a: number,
-  e: number,
-  trueAnomaly: number,
-): { x: number; y: number } {
-  const r = (a * (1 - e * e)) / (1 + e * Math.cos(trueAnomaly));
-  return { x: r * Math.cos(trueAnomaly), y: r * Math.sin(trueAnomaly) };
-}
-
-// Rotate point by angle
-function rotate(x: number, y: number, angle: number): { x: number; y: number } {
-  const cos = Math.cos(angle),
-    sin = Math.sin(angle);
-  return { x: x * cos - y * sin, y: x * sin + y * cos };
-}
-
-// Draw a dashed ellipse (orbit ring) with sun at focus
-function drawDashedOrbit(
-  g: Graphics,
-  a: number,
-  b: number,
-  e: number,
-  inc: number,
-  color: number,
-  alpha: number,
-): void {
-  const foci = a * e;
-  const steps = 180;
-  let dashAcc = 0;
-  let drawing = true;
-  let prevX = 0,
-    prevY = 0;
-
-  for (let i = 0; i <= steps; i++) {
-    const ta = (i / steps) * Math.PI * 2;
-    const ex = a * Math.cos(ta) - foci;
-    const ey = b * Math.sin(ta);
-    const rot = rotate(ex, ey, inc);
-
-    if (i === 0) {
-      prevX = rot.x;
-      prevY = rot.y;
-      continue;
-    }
-
-    const segLen = Math.hypot(rot.x - prevX, rot.y - prevY);
-    dashAcc += segLen;
-
-    if (drawing) {
-      if (dashAcc <= DASH_LEN) {
-        g.moveTo(prevX, prevY)
-          .lineTo(rot.x, rot.y)
-          .stroke({ color, alpha, width: 0.6, cap: "round" });
-      } else {
-        // partial dash
-        const t = DASH_LEN / dashAcc;
-        const mx = prevX + (rot.x - prevX) * t;
-        const my = prevY + (rot.y - prevY) * t;
-        g.moveTo(prevX, prevY)
-          .lineTo(mx, my)
-          .stroke({ color, alpha, width: 0.6, cap: "round" });
-        dashAcc -= DASH_LEN;
-        drawing = false;
-      }
-    } else {
-      if (dashAcc >= GAP_LEN) {
-        dashAcc -= GAP_LEN;
-        drawing = true;
-      }
-    }
-
-    prevX = rot.x;
-    prevY = rot.y;
-  }
 }
 
 // ── Screen ────────────────────────────────────────────────────────────────────
@@ -1738,7 +1296,7 @@ export class PlanetScreen extends Container {
       }
 
       // ── draw ship ─────────────────────────────────────────────────────────
-      this.drawShip(b);
+      drawShip(this.boidsGfx, b);
     }
 
     // remove dead boids (reverse to preserve indices)
@@ -1766,49 +1324,6 @@ export class PlanetScreen extends Container {
         );
       }
       this.boids.splice(idx, 1);
-    }
-  }
-
-  private drawShip(b: Boid): void {
-    const angle = Math.atan2(b.vy, b.vx);
-    const cos = Math.cos(angle),
-      sin = Math.sin(angle);
-    const s = b.size;
-    const col = TEAM_COLOR[b.team];
-    const engCol = TEAM_ENGINE[b.team];
-
-    // engine glow behind the ship
-    const ex = b.x - cos * s * 1.4;
-    const ey = b.y - sin * s * 1.4;
-    this.boidsGfx.circle(ex, ey, s * 1.5).fill({ color: engCol, alpha: 0.22 });
-    this.boidsGfx.circle(ex, ey, s * 0.7).fill({ color: engCol, alpha: 0.55 });
-
-    // ship body (triangle: nose forward, two wing tips back)
-    const nx = b.x + cos * s * 2.2;
-    const ny = b.y + sin * s * 2.2;
-    const w1x = b.x - cos * s + sin * s * 1.1;
-    const w1y = b.y - sin * s - cos * s * 1.1;
-    const w2x = b.x - cos * s - sin * s * 1.1;
-    const w2y = b.y - sin * s + cos * s * 1.1;
-
-    this.boidsGfx
-      .poly([nx, ny, w1x, w1y, w2x, w2y])
-      .fill({ color: col, alpha: 0.92 });
-    this.boidsGfx
-      .poly([nx, ny, w1x, w1y, w2x, w2y])
-      .stroke({ color: 0xffffff, alpha: 0.22, width: 0.5 });
-
-    // health bar (thin line above ship)
-    if (b.health < BOID_HEALTH) {
-      const hp = b.health / (b.isOffspring ? 2 : BOID_HEALTH);
-      const barW = s * 3.5;
-      const barY = b.y - s * 3.2;
-      this.boidsGfx
-        .rect(b.x - barW * 0.5, barY, barW * hp, 1.5)
-        .fill({ color: col, alpha: 0.8 });
-      this.boidsGfx
-        .rect(b.x - barW * 0.5 + barW * hp, barY, barW * (1 - hp), 1.5)
-        .fill({ color: CATT_OVERLAY0, alpha: 0.5 });
     }
   }
 
@@ -2043,7 +1558,7 @@ export class PlanetScreen extends Container {
       }
 
       // ── draw admiral ship ─────────────────────────────────────────────────
-      this.drawAdmiralShip(adm);
+      drawAdmiralShip(this.admiralGfx, adm);
     }
 
     // remove dead admirals and respawn after delay
@@ -2073,70 +1588,5 @@ export class PlanetScreen extends Container {
         shieldPhase: 0,
       });
     }
-  }
-
-  private drawAdmiralShip(adm: Admiral): void {
-    const angle = Math.atan2(adm.vy || 1, adm.vx || 0);
-    const cos = Math.cos(angle),
-      sin = Math.sin(angle);
-    const s = ADMIRAL_SIZE;
-    const col = TEAM_COLOR[adm.team];
-    const eng = TEAM_ENGINE[adm.team];
-
-    // engine glow
-    const ex = adm.x - cos * s * 1.6,
-      ey = adm.y - sin * s * 1.6;
-    this.admiralGfx.circle(ex, ey, s * 1.8).fill({ color: eng, alpha: 0.28 });
-    this.admiralGfx.circle(ex, ey, s * 0.9).fill({ color: eng, alpha: 0.7 });
-
-    // large command ship body — hexagonal silhouette (6-point polygon)
-    const pts: number[] = [];
-    for (let i = 0; i < 6; i++) {
-      const a = angle + (i / 6) * Math.PI * 2;
-      pts.push(adm.x + Math.cos(a) * s, adm.y + Math.sin(a) * s);
-    }
-    this.admiralGfx.poly(pts).fill({ color: col, alpha: 0.95 });
-    this.admiralGfx
-      .poly(pts)
-      .stroke({ color: 0xffffff, alpha: 0.55, width: 1.2 });
-
-    // forward cannon nose
-    const nx = adm.x + cos * s * 2.0,
-      ny = adm.y + sin * s * 2.0;
-    this.admiralGfx
-      .moveTo(adm.x + cos * s * 0.8, adm.y + sin * s * 0.8)
-      .lineTo(nx, ny)
-      .stroke({ color: 0xffffff, alpha: 0.7, width: 2.5, cap: "round" });
-
-    // rotating shield ring
-    const shieldR = s * 2.6;
-    const shieldArc = Math.PI * 1.3;
-    const shieldStart = adm.shieldPhase;
-    for (let i = 0; i < 24; i++) {
-      const ta = shieldStart + (i / 24) * shieldArc;
-      this.admiralGfx
-        .circle(
-          adm.x + Math.cos(ta) * shieldR,
-          adm.y + Math.sin(ta) * shieldR,
-          1.0,
-        )
-        .fill({ color: col, alpha: 0.45 });
-    }
-
-    // health bar below ship
-    const hp = adm.health / adm.maxHealth;
-    const bw = s * 5;
-    const by = adm.y + s * 3.8;
-    this.admiralGfx
-      .rect(adm.x - bw * 0.5, by, bw * hp, 2.5)
-      .fill({ color: col, alpha: 0.9 });
-    this.admiralGfx
-      .rect(adm.x - bw * 0.5 + bw * hp, by, bw * (1 - hp), 2.5)
-      .fill({ color: CATT_OVERLAY0, alpha: 0.5 });
-
-    // "ADM" label dot — small bright pip at centre
-    this.admiralGfx
-      .circle(adm.x, adm.y, s * 0.38)
-      .fill({ color: 0xffffff, alpha: 0.9 });
   }
 }

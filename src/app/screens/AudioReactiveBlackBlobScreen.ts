@@ -1,8 +1,8 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
 import { obsAudio } from "../../lib";
+import { clamp01, lerp, smoothstep, TAU } from "../../lib/math";
 
-const TAU = Math.PI * 2;
 const BODY_POINTS = 128;
 const BODY_COLOR = 0x010101;
 const BODY_EDGE = 0x181818;
@@ -47,23 +47,6 @@ interface FacePose {
   mouthWidth: number;
   browInner: number;
   browOuter: number;
-}
-
-function clamp(v: number, lo: number, hi: number): number {
-  return v < lo ? lo : v > hi ? hi : v;
-}
-
-function clamp01(v: number): number {
-  return clamp(v, 0, 1);
-}
-
-function smoothstep(edge0: number, edge1: number, value: number): number {
-  const t = clamp01((value - edge0) / (edge1 - edge0));
-  return t * t * (3 - 2 * t);
-}
-
-function lerp(a: number, b: number, t: number): number {
-  return a + (b - a) * t;
 }
 
 function approach(

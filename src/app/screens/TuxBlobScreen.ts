@@ -1,7 +1,8 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
+import { lerpHex as lerpColor } from "../../lib/color";
+import { clamp, clamp01, lerp, smooth01, TAU } from "../../lib/math";
 
-const TAU = Math.PI * 2;
 const BLOB_STEPS = 72;
 const SQUIRCLE_POWER = 4.0;
 
@@ -221,42 +222,11 @@ const EMOTION_POOL: Emotion[] = [
 
 // ─── Utilities ────────────────────────────────────────────────────────────────
 
-function clamp(v: number, lo: number, hi: number): number {
-  return Math.max(lo, Math.min(hi, v));
-}
-
-function clamp01(v: number): number {
-  return clamp(v, 0, 1);
-}
-
-function smooth01(v: number): number {
-  const c = clamp01(v);
-  return c * c * (3 - 2 * c);
-}
-
 function pulse(timeLeft: number, duration: number): number {
   if (timeLeft <= 0 || duration <= 0) return 0;
   const p = clamp01(1 - timeLeft / duration);
   if (p < 0.4) return smooth01(p / 0.4);
   return smooth01(1 - (p - 0.4) / 0.6);
-}
-
-function lerp(a: number, b: number, t: number): number {
-  return a + (b - a) * t;
-}
-
-function lerpColor(a: number, b: number, t: number): number {
-  const ar = (a >> 16) & 0xff,
-    ag = (a >> 8) & 0xff,
-    ab = a & 0xff;
-  const br = (b >> 16) & 0xff,
-    bg = (b >> 8) & 0xff,
-    bb = b & 0xff;
-  return (
-    (Math.round(ar + (br - ar) * t) << 16) |
-    (Math.round(ag + (bg - ag) * t) << 8) |
-    Math.round(ab + (bb - ab) * t)
-  );
 }
 
 function lerpFace(a: FaceParams, b: FaceParams, t: number): FaceParams {

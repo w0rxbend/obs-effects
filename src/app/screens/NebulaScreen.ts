@@ -1,5 +1,6 @@
 import type { Ticker } from "pixi.js";
 import { Container, Sprite, Texture } from "pixi.js";
+import { lerp } from "../../lib/math";
 
 // ── Permutation table (seeded deterministic shuffle) ─────────────────────────
 const PERM = (() => {
@@ -37,10 +38,6 @@ const G3 = [
 function fade(t: number) {
   return t * t * t * (t * (6 * t - 15) + 10);
 }
-function lerp(a: number, b: number, t: number) {
-  return a + (b - a) * t;
-}
-
 function noise3(x: number, y: number, z: number): number {
   const ix = Math.floor(x),
     iy = Math.floor(y),

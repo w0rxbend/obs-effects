@@ -1,7 +1,6 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics, Text, TextStyle } from "pixi.js";
-
-const TAU = Math.PI * 2;
+import { clamp, TAU } from "../../lib/math";
 
 const C = {
   BG: 0x030d1f,
@@ -18,10 +17,6 @@ const C = {
   ANNOT: 0x00aacc,
   ANNOT_DIM: 0x336688,
 } as const;
-
-function clamp(v: number, lo: number, hi: number): number {
-  return v < lo ? lo : v > hi ? hi : v;
-}
 
 // ── Blueprint Grid & Frame ─────────────────────────────────────────────────────
 

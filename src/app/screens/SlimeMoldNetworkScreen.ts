@@ -1,7 +1,6 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
-
-const TAU = Math.PI * 2;
+import { randRange as rnd, TAU } from "../../lib/math";
 
 const C_BG = 0x010905;
 const C_NODE_HOT = 0x44ffaa;
@@ -41,10 +40,6 @@ interface Packet {
   t: number; // 0..1 progress
   dir: 1 | -1; // +1 from a→b, -1 from b→a
   speed: number;
-}
-
-function rnd(lo: number, hi: number): number {
-  return lo + Math.random() * (hi - lo);
 }
 
 export class SlimeMoldNetworkScreen extends Container {

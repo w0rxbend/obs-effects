@@ -35,6 +35,13 @@ const NET_MAX_DIST = 180; // px — max distance to draw a connection line
 // ── Fluid stains ──────────────────────────────────────────────────────────────
 const STAIN_COUNT = 7;
 
+/**
+ * Fixed simulation step, in seconds. This screen is deliberately frame-rate
+ * locked: its motion is tuned to a 60 fps step, so reading the real ticker
+ * delta would change the tuned timing.
+ */
+const FIXED_STEP_SECONDS = 1 / 60;
+
 // ── Interfaces ────────────────────────────────────────────────────────────────
 
 interface FreqBin {
@@ -435,9 +442,8 @@ export class MusicBreakScreen extends Container {
     this.graffitiCyan = makeGhost(0x00ffee);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public update(_ticker: Ticker): void {
-    const dt = 1 / 60;
+    const dt = FIXED_STEP_SECONDS;
     this.time += dt;
 
     this.tickActivity(dt);
@@ -1060,7 +1066,7 @@ export class MusicBreakScreen extends Container {
 
     if (this.graffitiText) {
       const gt = this.graffitiText;
-      const dt = 1 / 60; // same dt used in update()
+      const dt = FIXED_STEP_SECONDS;
 
       // ── Colour cycling — advances on every beat, smooth lerp between steps ──
       this.graffitiColorTimer -=
@@ -1193,7 +1199,7 @@ export class MusicBreakScreen extends Container {
   }
 
   private applyShake(): void {
-    this.shakeDecay = Math.max(0, this.shakeDecay - (1 / 60) * 10.0);
+    this.shakeDecay = Math.max(0, this.shakeDecay - FIXED_STEP_SECONDS * 10.0);
     this.x = this.w * 0.5 + this.shakeX * this.shakeDecay;
     this.y = this.h * 0.5 + this.shakeY * this.shakeDecay;
   }

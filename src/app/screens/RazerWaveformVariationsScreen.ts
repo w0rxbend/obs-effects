@@ -2,6 +2,8 @@ import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
 
 import { obsAudio } from "../../lib";
+import { lerpHex as mixColor } from "../../lib/color";
+import { TAU } from "../../lib/math";
 
 type WaveformVariant =
   | "pulse"
@@ -19,7 +21,6 @@ type WaveformVariant =
   | "ribbonBands"
   | "ribbonLattice";
 
-const TAU = Math.PI * 2;
 const SEGMENTS = 184;
 const BARS = 128;
 const RED = 0xff3a20;
@@ -72,19 +73,6 @@ function edgeAlpha(t: number): number {
 
 function gauss(t: number, center: number, width: number): number {
   return Math.exp(-Math.pow((t - center) / width, 2));
-}
-
-function mixColor(a: number, b: number, t: number): number {
-  const ar = (a >> 16) & 0xff;
-  const ag = (a >> 8) & 0xff;
-  const ab = a & 0xff;
-  const br = (b >> 16) & 0xff;
-  const bg = (b >> 8) & 0xff;
-  const bb = b & 0xff;
-  const r = Math.round(ar + (br - ar) * t);
-  const g = Math.round(ag + (bg - ag) * t);
-  const blue = Math.round(ab + (bb - ab) * t);
-  return (r << 16) | (g << 8) | blue;
 }
 
 function paletteAt(t: number, offset = 0): number {

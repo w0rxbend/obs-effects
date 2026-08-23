@@ -1,8 +1,9 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
 import { obsAudio } from "../../lib";
+import { mixHex as mixColor } from "../../lib/color";
+import { clamp, clamp01, TAU } from "../../lib/math";
 
-const TAU = Math.PI * 2;
 const RINGS = 42;
 const SPOKES = 132;
 const DOTS = RINGS * SPOKES;
@@ -27,31 +28,6 @@ interface DotSample {
 interface Ripple {
   age: number;
   strength: number;
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, value));
-}
-
-function clamp01(value: number): number {
-  return clamp(value, 0, 1);
-}
-
-function lerp(a: number, b: number, t: number): number {
-  return a + (b - a) * t;
-}
-
-function mixChannel(a: number, b: number, t: number, shift: number): number {
-  return Math.round(lerp((a >> shift) & 255, (b >> shift) & 255, t));
-}
-
-function mixColor(a: number, b: number, t: number): number {
-  const k = clamp01(t);
-  return (
-    (mixChannel(a, b, k, 16) << 16) |
-    (mixChannel(a, b, k, 8) << 8) |
-    mixChannel(a, b, k, 0)
-  );
 }
 
 function palette(vertical: number, lift: number, audio: number): number {

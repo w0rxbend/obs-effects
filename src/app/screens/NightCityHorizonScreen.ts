@@ -1,180 +1,45 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
-
-const TAU = Math.PI * 2;
-
-const SKY_TOP = 0x050811;
-const SKY_MID = 0x0b1324;
-const SKY_HORIZON = 0x162744;
-const HORIZON_GLOW = 0x32507f;
-const MOON = 0xf6f0d5;
-const MOON_GLOW = 0xc6d8ff;
-const STAR = 0xe7efff;
-const CLOUD = 0x1a2740;
-const WIND = 0x8cb3ff;
-
-const BUILDING_COLORS = [0x172338, 0x121d2f, 0x0c1522] as const;
-const BUILDING_EDGES = [0x223453, 0x1a2a44, 0x101b2d] as const;
-const WINDOW_WARM = [0xffd68a, 0xffc463, 0xffe7af] as const;
-const WINDOW_COOL = [0x95bfff, 0x7aa7f8, 0xa6c9ff] as const;
-
-const STAR_COUNT = 240;
-const WIND_LINE_COUNT = 26;
-const MAX_SMOKE_PUFFS = 180;
-const MAX_METEORS = 3;
-const STELLAR_ROTATION_SPEED = 0.00135;
-const GOOD_NIGHT_CYCLE = 30;
-const GOOD_NIGHT_DURATION = 7.5;
-const GOOD_NIGHT_FIRST_DELAY = 10;
-
-interface StarNode {
-  orbitAngle: number;
-  orbitRadius: number;
-  size: number;
-  alpha: number;
-  twinkle: number;
-  phase: number;
-  glow: number;
-  pulse: number;
-  bright: boolean;
-}
-
-interface CloudPuff {
-  dx: number;
-  dy: number;
-  radius: number;
-}
-
-interface CloudBand {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  alpha: number;
-  speed: number;
-  phase: number;
-  depth: number;
-  puffs: CloudPuff[];
-}
-
-interface WindowLight {
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-  on: boolean;
-  timer: number;
-  interval: number;
-  color: number;
-}
-
-interface SmokeSource {
-  x: number;
-  y: number;
-  layerDepth: number;
-  timer: number;
-  nextSpawn: number;
-}
-
-interface Building {
-  x: number;
-  width: number;
-  height: number;
-  kind: "tower" | "slab" | "midrise" | "walkup";
-  roof: "flat" | "step" | "antenna";
-  bodyInset: number;
-  podiumHeight: number;
-  podiumInset: number;
-  crownHeight: number;
-  crownInset: number;
-  windowDensity: number;
-  windows: WindowLight[];
-  smokeSources: SmokeSource[];
-}
-
-interface BuildingLayer {
-  depth: number;
-  baseY: number;
-  color: number;
-  edge: number;
-  windowAlpha: number;
-  buildings: Building[];
-}
-
-interface SmokePuff {
-  x: number;
-  y: number;
-  size: number;
-  age: number;
-  life: number;
-  drift: number;
-  rise: number;
-  alpha: number;
-  phase: number;
-  layerDepth: number;
-}
-
-interface WindLine {
-  x: number;
-  y: number;
-  length: number;
-  speed: number;
-  alpha: number;
-  thickness: number;
-  phase: number;
-}
-
-interface Meteor {
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  length: number;
-  age: number;
-  life: number;
-  alpha: number;
-  thickness: number;
-}
-
-interface TextMeshPoint {
-  x: number;
-  y: number;
-  phase: number;
-  size: number;
-}
-
-interface TextMeshSegment {
-  a: number;
-  b: number;
-  strength: number;
-}
-
-interface TreeCluster {
-  x: number;
-  width: number;
-  type: "broadleaf" | "poplar" | "conifer";
-  trunkWidth: number;
-  trunkHeight: number;
-  canopyWidth: number;
-  canopyHeight: number;
-  phase: number;
-  lean: number;
-  crownLift: number;
-  crownLeft: number;
-  crownRight: number;
-  lobeCount: number;
-  bushLeft: number;
-  bushRight: number;
-  bushY: number;
-}
-
-function rand(min: number, max: number): number {
-  return min + Math.random() * (max - min);
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, value));
-}
+import { clamp, TAU, randRange as rand } from "../../lib/math";
+import {
+  BUILDING_COLORS,
+  BUILDING_EDGES,
+  CLOUD,
+  GOOD_NIGHT_CYCLE,
+  GOOD_NIGHT_DURATION,
+  GOOD_NIGHT_FIRST_DELAY,
+  HORIZON_GLOW,
+  MAX_METEORS,
+  MAX_SMOKE_PUFFS,
+  MOON,
+  MOON_GLOW,
+  SKY_HORIZON,
+  SKY_MID,
+  SKY_TOP,
+  STAR,
+  STAR_COUNT,
+  STELLAR_ROTATION_SPEED,
+  WIND,
+  WIND_LINE_COUNT,
+  WINDOW_COOL,
+  WINDOW_WARM,
+} from "./nightcity/palette";
+import { drawBroadleaf, drawConifer, drawPoplar } from "./nightcity/trees";
+import type {
+  Building,
+  BuildingLayer,
+  CloudBand,
+  CloudPuff,
+  Meteor,
+  SmokePuff,
+  SmokeSource,
+  StarNode,
+  TextMeshPoint,
+  TextMeshSegment,
+  TreeCluster,
+  WindLine,
+  WindowLight,
+} from "./nightcity/types";
 
 function mixColor(from: number, to: number, t: number): number {
   const r1 = (from >> 16) & 0xff;
@@ -1455,11 +1320,11 @@ export class NightCityHorizonScreen extends Container {
       });
 
       if (tree.type === "conifer") {
-        this.drawConifer(g, tree, trunkX, trunkTop, sway);
+        drawConifer(g, tree, trunkX, trunkTop, sway);
       } else if (tree.type === "poplar") {
-        this.drawPoplar(g, tree, trunkX, trunkTop, sway);
+        drawPoplar(g, tree, trunkX, trunkTop, sway);
       } else {
-        this.drawBroadleaf(g, tree, trunkX, trunkTop, sway);
+        drawBroadleaf(g, tree, trunkX, trunkTop, sway);
       }
 
       if (tree.bushLeft > 0) {
@@ -1481,161 +1346,6 @@ export class NightCityHorizonScreen extends Container {
         });
       }
     }
-  }
-
-  private drawBroadleaf(
-    g: Graphics,
-    tree: TreeCluster,
-    trunkX: number,
-    trunkTop: number,
-    sway: number,
-  ): void {
-    const centerY = trunkTop - tree.canopyHeight * tree.crownLift;
-    const span = tree.canopyWidth * 0.62;
-
-    g.circle(
-      trunkX + sway * 0.24,
-      trunkTop - tree.canopyHeight * 0.02,
-      tree.canopyWidth * 0.2,
-    ).fill({
-      color: 0x04070b,
-      alpha: 0.97,
-    });
-
-    for (let index = 0; index < tree.lobeCount; index++) {
-      const t = tree.lobeCount === 1 ? 0.5 : index / (tree.lobeCount - 1);
-      const x =
-        trunkX +
-        (t - 0.5) * span +
-        sway * (0.55 + t * 0.35) +
-        Math.sin(tree.phase + index * 0.9) * 1.6;
-      const y =
-        centerY -
-        Math.sin(t * Math.PI) * tree.canopyHeight * 0.34 -
-        Math.cos(tree.phase * 0.6 + index) * 2.4;
-      const r =
-        tree.canopyWidth * (0.18 + Math.sin(t * Math.PI) * 0.12) +
-        tree.canopyHeight * 0.1;
-
-      g.circle(x, y, r).fill({
-        color: index % 2 === 0 ? 0x04070b : 0x05080d,
-        alpha: 0.97,
-      });
-    }
-
-    g.circle(
-      trunkX - tree.canopyWidth * tree.crownLeft + sway * 0.55,
-      trunkTop - tree.canopyHeight * 0.32,
-      tree.canopyWidth * 0.28,
-    ).fill({
-      color: 0x04070b,
-      alpha: 0.96,
-    });
-    g.circle(
-      trunkX + tree.canopyWidth * tree.crownRight + sway * 0.72,
-      trunkTop - tree.canopyHeight * 0.38,
-      tree.canopyWidth * 0.24,
-    ).fill({
-      color: 0x05080d,
-      alpha: 0.95,
-    });
-  }
-
-  private drawPoplar(
-    g: Graphics,
-    tree: TreeCluster,
-    trunkX: number,
-    trunkTop: number,
-    sway: number,
-  ): void {
-    const lobeCount = Math.max(5, tree.lobeCount + 1);
-
-    g.circle(
-      trunkX + sway * 0.25,
-      trunkTop - tree.canopyHeight * 0.04,
-      tree.canopyWidth * 0.26,
-    ).fill({
-      color: 0x04070b,
-      alpha: 0.97,
-    });
-
-    for (let index = 0; index < lobeCount; index++) {
-      const t = index / (lobeCount - 1);
-      const y = trunkTop - tree.canopyHeight * (0.04 + t * 0.9);
-      const widthBias = 1 - Math.abs(t - 0.5) * 1.25;
-      const radius = tree.canopyWidth * (0.22 + widthBias * 0.18);
-      const x =
-        trunkX +
-        Math.sin(tree.phase + index * 0.55) * tree.canopyWidth * 0.08 +
-        sway * (0.48 + t * 0.45);
-
-      g.circle(x, y, radius).fill({
-        color: index % 2 === 0 ? 0x04070b : 0x05080d,
-        alpha: 0.97,
-      });
-    }
-
-    g.circle(
-      trunkX + sway * 0.75,
-      trunkTop - tree.canopyHeight * 0.96,
-      tree.canopyWidth * 0.2,
-    ).fill({
-      color: 0x05080d,
-      alpha: 0.95,
-    });
-  }
-
-  private drawConifer(
-    g: Graphics,
-    tree: TreeCluster,
-    trunkX: number,
-    trunkTop: number,
-    sway: number,
-  ): void {
-    const tiers = Math.max(3, Math.floor(tree.lobeCount * 0.8));
-    const crownTop = trunkTop - tree.canopyHeight;
-
-    g.moveTo(trunkX + sway * 0.18, trunkTop - tree.canopyHeight * 0.1)
-      .lineTo(
-        trunkX - tree.canopyWidth * 0.2 + sway * 0.12,
-        trunkTop + tree.canopyHeight * 0.04,
-      )
-      .lineTo(
-        trunkX + tree.canopyWidth * 0.2 + sway * 0.24,
-        trunkTop + tree.canopyHeight * 0.04,
-      )
-      .lineTo(trunkX + sway * 0.18, trunkTop - tree.canopyHeight * 0.1)
-      .fill({
-        color: 0x04070b,
-        alpha: 0.97,
-      });
-
-    for (let tier = 0; tier < tiers; tier++) {
-      const t = tier / Math.max(1, tiers - 1);
-      const tierWidth = tree.canopyWidth * (0.6 - t * 0.22);
-      const tierY =
-        trunkTop + tree.canopyHeight * 0.04 - tree.canopyHeight * (t * 0.74);
-      const tipY = crownTop + tree.canopyHeight * t * 0.26;
-      const offset = sway * (0.35 + t * 0.55);
-
-      g.moveTo(trunkX + offset, tipY)
-        .lineTo(trunkX - tierWidth * 0.5 + offset, tierY)
-        .lineTo(trunkX + tierWidth * 0.5 + offset, tierY)
-        .lineTo(trunkX + offset, tipY)
-        .fill({
-          color: tier % 2 === 0 ? 0x04070b : 0x05080d,
-          alpha: 0.97,
-        });
-    }
-
-    g.circle(
-      trunkX + sway * 0.5,
-      crownTop - tree.canopyHeight * 0.03,
-      tree.canopyWidth * 0.08,
-    ).fill({
-      color: 0x05080d,
-      alpha: 0.96,
-    });
   }
 
   private drawSmoke(g: Graphics): void {

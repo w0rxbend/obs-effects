@@ -1,7 +1,7 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
+import { TAU } from "../../lib/math";
 
-const TAU = Math.PI * 2;
 const BG = 0x12141e;
 const SHADOW = 0x0a0b14;
 const PINK_HOT = 0xff0077;

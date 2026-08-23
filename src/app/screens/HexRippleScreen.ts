@@ -1,5 +1,7 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
+import { lerpHex as lerpColor } from "../../lib/color";
+import { TAU, randRange as rand } from "../../lib/math";
 
 const BG = 0x11111b; // Crust
 const BASE_HEX = 0x11111b; // Crust
@@ -32,26 +34,6 @@ const SINGLE_MIN = 1.5; // s — min gap between individual spawns
 const SINGLE_MAX = 3.2; // s — max gap
 const BURST_MIN = 7.0; // s — min gap between bursts
 const BURST_MAX = 13.0;
-
-const TAU = Math.PI * 2;
-
-function rand(a: number, b: number) {
-  return a + Math.random() * (b - a);
-}
-
-function lerpColor(c1: number, c2: number, t: number): number {
-  const r1 = (c1 >> 16) & 0xff,
-    g1 = (c1 >> 8) & 0xff,
-    b1 = c1 & 0xff;
-  const r2 = (c2 >> 16) & 0xff,
-    g2 = (c2 >> 8) & 0xff,
-    b2 = c2 & 0xff;
-  return (
-    (Math.round(r1 + (r2 - r1) * t) << 16) |
-    (Math.round(g1 + (g2 - g1) * t) << 8) |
-    Math.round(b1 + (b2 - b1) * t)
-  );
-}
 
 interface Ripple {
   x: number;

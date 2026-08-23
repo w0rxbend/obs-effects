@@ -1,5 +1,6 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
+import { TAU } from "../../lib/math";
 
 const W = 800;
 const H = 800;
@@ -7,8 +8,6 @@ const CX = W / 2;
 const CY = H / 2;
 const N_CIRCLES = 10;
 const N_POINTS = 160;
-const TAU = Math.PI * 2;
-
 // Rest radii: 240, 260, ... 420 — 20px apart
 const REST_R = Array.from({ length: N_CIRCLES }, (_, i) => 240 + i * 20);
 

@@ -1,5 +1,6 @@
 import type { Ticker } from "pixi.js";
 import { BlurFilter, Container, Graphics, Text, TextStyle } from "pixi.js";
+import { lerpHex as lerpColor } from "../../lib/color";
 
 // ── Catppuccin Mocha Palette ──────────────────────────────────────────────────
 const C = {
@@ -84,14 +85,6 @@ function rk4Step(x: number, y: number, h: number, pN: Vec2, pS: Vec2): Vec2 {
     x: x + (h / 6) * (k1.x + 2 * k2.x + 2 * k3.x + k4.x),
     y: y + (h / 6) * (k1.y + 2 * k2.y + 2 * k3.y + k4.y),
   };
-}
-
-function lerpColor(c1: number, c2: number, t: number): number {
-  const r =
-    ((c1 >> 16) & 0xff) + (((c2 >> 16) & 0xff) - ((c1 >> 16) & 0xff)) * t;
-  const g = ((c1 >> 8) & 0xff) + (((c2 >> 8) & 0xff) - ((c1 >> 8) & 0xff)) * t;
-  const b = (c1 & 0xff) + ((c2 & 0xff) - (c1 & 0xff)) * t;
-  return (Math.round(r) << 16) | (Math.round(g) << 8) | Math.round(b);
 }
 
 export class MagneticFieldScreen extends Container {

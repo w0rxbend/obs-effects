@@ -2,13 +2,13 @@ import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
 
 import { obsAudio } from "../../lib/obsAudio";
+import { TAU } from "../../lib/math";
 import {
   TOXIC_ACID,
   TOXIC_GREEN,
   TOXIC_LIME,
 } from "../../lib/shaders/toxicGreen";
 
-const TAU = Math.PI * 2;
 const ORBIT_COUNT = 9;
 
 function hexPoint(

@@ -1,8 +1,8 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
 import { obsAudio } from "../../lib";
+import { clamp, lerp, TAU } from "../../lib/math";
 
-const TAU = Math.PI * 2;
 const RING_STEPS = 240;
 const SIZE = 600;
 const HOLE_R = 240;
@@ -25,14 +25,6 @@ function lerpC(
 
 function volumeColor(vol: number): number {
   return lerpC(C_INACTIVE, C_ACTIVE, Math.max(0, Math.min(1, vol)));
-}
-
-function lerp(a: number, b: number, t: number): number {
-  return a + (b - a) * t;
-}
-
-function clamp(v: number, lo: number, hi: number): number {
-  return v < lo ? lo : v > hi ? hi : v;
 }
 
 // ── Harmonics ──────────────────────────────────────────────────────────────

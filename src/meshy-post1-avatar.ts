@@ -356,8 +356,6 @@ new GLTFLoader().load(
     );
     keyPoint.distance = h * 5;
 
-    console.log("[meshy-post1-avatar] bones:", boneNames);
-    console.log("[meshy-post1-avatar] resolved bones:", B);
     loadStatus.textContent = `${boneNames.length} joints loaded`;
     overlay.style.opacity = "0";
     setTimeout(() => overlay.remove(), 900);

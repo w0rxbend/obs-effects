@@ -1,5 +1,6 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics, Sprite, Text, TextStyle, Texture } from "pixi.js";
+import { randRange as rnd } from "../../lib/math";
 
 // ── Canvas ────────────────────────────────────────────────────────────────────
 const W = 1920;
@@ -102,10 +103,6 @@ const TIERS = [
     burst: [5, 10],
   },
 ] as const;
-
-function rnd(lo: number, hi: number) {
-  return lo + Math.random() * (hi - lo);
-}
 
 // ── Realistic cartoon alloy wheel ─────────────────────────────────────────────
 function buildWheelGraphic(r: number): Graphics {

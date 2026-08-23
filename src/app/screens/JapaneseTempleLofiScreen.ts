@@ -1,7 +1,6 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
-
-const TAU = Math.PI * 2;
+import { lerp, TAU, randRange as rand } from "../../lib/math";
 
 const MOON_BODY = 0xe8f4ff;
 const MOON_GLOW_INNER = 0x7aaed4;
@@ -25,16 +24,8 @@ const N_DUST = 48;
 const N_FOG_BANDS = 8;
 const N_GRAIN = 600;
 
-function rand(a: number, b: number) {
-  return a + Math.random() * (b - a);
-}
-
 function pick<T>(arr: readonly T[]) {
   return arr[Math.floor(Math.random() * arr.length)];
-}
-
-function lerp(a: number, b: number, t: number): number {
-  return a + (b - a) * t;
 }
 
 interface Star {

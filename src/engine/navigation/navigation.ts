@@ -3,8 +3,18 @@ import { Assets, BigPool, Container } from "pixi.js";
 
 import type { CreationEngine } from "../engine";
 
-/** Interface for app screens */
-interface AppScreen extends Container {
+/**
+ * Interface for app screens.
+ *
+ * Lifecycle driven by {@link Navigation}:
+ * - show path: `prepare()` -> `resize(width, height)` -> `ticker.add(update)` -> `show()`
+ * - hide path: `hide()` -> `ticker.remove(update)` -> `removeChild` -> `reset()`
+ *
+ * `destroy()` is NEVER called by navigation, and screens are pooled and reused
+ * via `BigPool.get(ctor)`. So anything subscribed in `show()` must be released
+ * in `hide()`, and per-show state must be re-initialised in `reset()` or `show()`.
+ */
+export interface AppScreen extends Container {
   /** Show the screen */
   show?(): Promise<void>;
   /** Hide the screen */
@@ -30,7 +40,7 @@ interface AppScreen extends Container {
 }
 
 /** Interface for app screens constructors */
-interface AppScreenConstructor {
+export interface AppScreenConstructor {
   new (): AppScreen;
   /** List of assets bundles required by the screen */
   assetBundles?: string[];

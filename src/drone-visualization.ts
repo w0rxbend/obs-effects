@@ -303,9 +303,6 @@ loader.load(
       gltf.animations.forEach((clip) => {
         mixer!.clipAction(clip).play();
       });
-      console.log(
-        `[drone] playing ${gltf.animations.length} animation clip(s)`,
-      );
     }
 
     overlay.style.opacity = "0";

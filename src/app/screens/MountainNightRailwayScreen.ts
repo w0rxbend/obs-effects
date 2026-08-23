@@ -1,82 +1,53 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics, Sprite, Texture } from "pixi.js";
-
-// ── Catppuccin Mocha ──────────────────────────────────────────────────────────
-const CP_OVERLAY0 = 0x6c7086;
-const CP_YELLOW = 0xf9e2af;
-const CP_PEACH = 0xfab387;
-
-// ── Sky ───────────────────────────────────────────────────────────────────────
-const SKY_TOP = 0x06060f;
-const SKY_HORIZON = 0x14142a;
-
-// ── Mountains ─────────────────────────────────────────────────────────────────
-const MTN_FAR = 0x10112a;
-const MTN_MID = 0x0b0c20;
-const MTN_NEAR = 0x080916;
-
-// ── Scene ─────────────────────────────────────────────────────────────────────
-const GROUND_COLOR = 0x06060d;
-const CLOUD_COLOR = 0x131328;
-const STAR_COLOR = 0xdce9ff;
-const MOON_COLOR = 0xf0eadb;
-const MOON_GLOW_COLOR = 0xc4deff;
-const RAIL_COLOR = 0x45475a;
-const TIE_COLOR = 0x28293a;
-const BALLAST_COLOR = 0x13142a;
-
-// ── Train (modern speed train) ────────────────────────────────────────────────
-const TRAIN_BODY = 0x1c1e32;
-const TRAIN_ROOF = 0x14162a;
-const TRAIN_STRIPE = 0x2d4a88; // blue accent stripe along body
-const TRAIN_UNDERBELLY = 0x101220;
-const BOGIE_COLOR = 0x1a1b2c;
-const BOGIE_FRAME = 0x252640;
-const WHEEL_COLOR = 0x585b70;
-const HEADLIGHT_COLOR = 0xeef6ff; // cool white LED
-const TAILLIGHT_COLOR = 0xff4444; // red tail
-const WINDOW_DARK = 0x0f1022;
-const GLASS_COLOR = 0x3355aa; // cab windshield tint
-
-// ── Trees ─────────────────────────────────────────────────────────────────────
-const TREE_PALETTE = [
-  [8, 9, 20],
-  [9, 10, 22],
-  [7, 8, 17],
-  [10, 11, 24],
-  [8, 10, 19],
-  [6, 7, 15],
-  [9, 9, 21],
-  [7, 9, 18],
-] as const;
-
-const TREE_W = 175;
-const TREE_H = 255;
-const TREE_COLS = 16;
-const TREE_ROWS = 6;
-const STAR_COUNT = 280;
-const TRAIN_SPEED = 520; // px/s — high-speed rail
-const WIND_COUNT = 42; // atmospheric speed streaks
-
-// Sized so (1920 + 80 + TRAIN_LENGTH + 80) / 100 ≈ 30 s
-const LOCO_W = 180;
-const LOCO_H = 55; // body height above wheels
-const LOCO_NOSE = 44; // length of tapered nose section
-const WAGON_W = 200;
-const WAGON_H = 50;
-const CAR_GAP = 2;
-const NUM_WAGONS = 15;
-const WAGON_WINDOWS = 10;
-const BOGIE_OFFSET = 14; // how far bogies sit from car ends
-const WHEEL_R = 5; // wheel radius (modern train, smaller than steam)
-// TRAIN_LENGTH = 180 + 15*(200+2) + 2 = 3212
-const TRAIN_LENGTH = LOCO_W + NUM_WAGONS * (WAGON_W + CAR_GAP) + CAR_GAP;
-
-const WINDOW_COLORS = [CP_YELLOW, CP_PEACH, 0xffe4a0] as const;
-
-function rand(lo: number, hi: number) {
-  return lo + Math.random() * (hi - lo);
-}
+import { randRange as rand } from "../../lib/math";
+import {
+  BALLAST_COLOR,
+  CLOUD_COLOR,
+  CP_OVERLAY0,
+  GLASS_COLOR,
+  GROUND_COLOR,
+  HEADLIGHT_COLOR,
+  MOON_COLOR,
+  MOON_GLOW_COLOR,
+  MTN_FAR,
+  MTN_MID,
+  MTN_NEAR,
+  RAIL_COLOR,
+  SKY_HORIZON,
+  SKY_TOP,
+  STAR_COLOR,
+  STAR_COUNT,
+  TAILLIGHT_COLOR,
+  TIE_COLOR,
+  TRAIN_BODY,
+  TRAIN_ROOF,
+  TRAIN_SPEED,
+  TRAIN_STRIPE,
+  TRAIN_UNDERBELLY,
+  TREE_COLS,
+  TREE_H,
+  TREE_PALETTE,
+  TREE_ROWS,
+  TREE_W,
+  WIND_COUNT,
+  WINDOW_DARK,
+} from "./mountain-railway/palette";
+import { drawBogie } from "./mountain-railway/train";
+import {
+  BOGIE_OFFSET,
+  CAR_GAP,
+  LOCO_H,
+  LOCO_NOSE,
+  LOCO_W,
+  NUM_WAGONS,
+  TRAIN_LENGTH,
+  WAGON_H,
+  WAGON_W,
+  WAGON_WINDOWS,
+  WHEEL_R,
+  WINDOW_COLORS,
+} from "./mountain-railway/train-geometry";
 
 function mix(a: number, b: number, t: number): number {
   const ar = (a >> 16) & 0xff,
@@ -896,7 +867,7 @@ export class MountainNightRailwayScreen extends Container {
     // ── Bogies (two wheel trucks under the loco) ─────────────────────────
     const bogiePositions = [lx + 22, lx + LOCO_W - 28];
     for (const bx of bogiePositions) {
-      this.drawBogie(g, bx, railSurface, wheelR, spinAngle, true);
+      drawBogie(g, bx, railSurface, wheelR, spinAngle, true);
     }
 
     // ── Coupler at tail ──────────────────────────────────────────────────
@@ -957,8 +928,8 @@ export class MountainNightRailwayScreen extends Container {
     }
 
     // ── Bogie under each end ─────────────────────────────────────────────
-    this.drawBogie(g, wx + BOGIE_OFFSET, railSurface, wheelR, spinAngle, false);
-    this.drawBogie(
+    drawBogie(g, wx + BOGIE_OFFSET, railSurface, wheelR, spinAngle, false);
+    drawBogie(
       g,
       wx + WAGON_W - BOGIE_OFFSET,
       railSurface,
@@ -966,49 +937,5 @@ export class MountainNightRailwayScreen extends Container {
       spinAngle,
       false,
     );
-  }
-
-  // One bogie / wheel truck with two wheels and animated hub spoke
-  private drawBogie(
-    g: Graphics,
-    cx: number,
-    railSurface: number,
-    wheelR: number,
-    spinAngle: number,
-    isLoco: boolean,
-  ): void {
-    const frameH = 5;
-    const frameY = railSurface - wheelR * 2 - frameH;
-    const w1x = cx - wheelR - 1;
-    const w2x = cx + wheelR + 1;
-    const wy = railSurface - wheelR; // wheel center Y
-
-    // Bogie frame bar
-    g.rect(w1x - 2, frameY, w2x - w1x + 4 + wheelR, frameH).fill({
-      color: BOGIE_FRAME,
-    });
-
-    // Draw two wheels per bogie
-    for (const wkx of [w1x, w2x]) {
-      const r = isLoco ? wheelR + 1 : wheelR; // slightly larger on loco
-      g.circle(wkx, wy, r).fill({ color: WHEEL_COLOR });
-      // Hub disc
-      g.circle(wkx, wy, r * 0.44).fill({ color: BOGIE_COLOR });
-      // Animated spoke (single line, rotates with travel)
-      const sa = spinAngle + wkx * 0.07;
-      const sr = r * 0.8;
-      g.moveTo(wkx + Math.cos(sa) * sr * 0.35, wy + Math.sin(sa) * sr * 0.35)
-        .lineTo(wkx + Math.cos(sa) * sr, wy + Math.sin(sa) * sr)
-        .stroke({ color: BOGIE_FRAME, width: 1.5 });
-      g.moveTo(
-        wkx + Math.cos(sa + Math.PI) * sr * 0.35,
-        wy + Math.sin(sa + Math.PI) * sr * 0.35,
-      )
-        .lineTo(
-          wkx + Math.cos(sa + Math.PI) * sr,
-          wy + Math.sin(sa + Math.PI) * sr,
-        )
-        .stroke({ color: BOGIE_FRAME, width: 1.5 });
-    }
   }
 }

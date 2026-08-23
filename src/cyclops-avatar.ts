@@ -125,15 +125,9 @@ loader.load(
       collectBone(obj);
       const sm = obj as THREE.SkinnedMesh;
       if (sm.isSkinnedMesh) {
-        // Log every skeleton's bone names so we can see exact Three.js names
-        console.log(
-          `[cyclops] skeleton on "${sm.name}":`,
-          sm.skeleton.bones.map((b) => b.name),
-        );
         sm.skeleton.bones.forEach(collectBone);
       }
     });
-    console.log("[cyclops] controlled bones found:", [...rig.keys()]);
 
     // ── Glossy blood-red material pass ────────────────────────────────────
     // Converts every MeshStandardMaterial to MeshPhysicalMaterial with

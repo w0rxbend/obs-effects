@@ -1,11 +1,11 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
+import { lerp, TAU } from "../../lib/math";
 
 // Catppuccin Mocha
 const LAVENDER = 0xb4befe;
 const SURFACE1 = 0x45475a;
 
-const TAU = Math.PI * 2;
 const WEBCAM_R = 220;
 const SPHERE_R = 340;
 const FOCAL = 800;
@@ -236,8 +236,4 @@ function segColor(t: number, isLon: boolean): number {
     b = lerp(BLU[2], far[2], s);
   }
   return (Math.round(r) << 16) | (Math.round(g) << 8) | Math.round(b);
-}
-
-function lerp(a: number, b: number, t: number): number {
-  return a + (b - a) * t;
 }

@@ -1,12 +1,11 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
+import { TAU } from "../../lib/math";
 
 // ── Color Wave Ribbons ───────────────────────────────────────────────────────
 // A flowing multicolor "river" of overlapping wave ribbons across a soft peach
 // field, dressed with memphis-style dots, pill outlines and hatch decorations.
 // Each ribbon is a localized horizontal bump that undulates endlessly.
-
-const TAU = Math.PI * 2;
 
 interface Ribbon {
   cx: number; // horizontal center of the bump (0..1)

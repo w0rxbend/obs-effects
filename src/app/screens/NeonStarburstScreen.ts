@@ -1,7 +1,6 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
-
-const TAU = Math.PI * 2;
+import { TAU } from "../../lib/math";
 
 const COLORS_A = [0x99ff00, 0x66ff00, 0xaaff11]; // lime greens
 const COLORS_B = [0xff0077, 0xff0099, 0xff00bb]; // magentas

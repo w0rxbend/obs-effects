@@ -1,7 +1,7 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
+import { lerp, randRange as rnd, TAU } from "../../lib/math";
 
-const TAU = Math.PI * 2;
 const N = 9;
 const HORIZON = 0.68;
 const C_BG = 0x000000;
@@ -18,14 +18,6 @@ const PALETTES: Array<[number, number]> = [
   [0x005890, 0x00a8cc],
   [0x0060b8, 0x0090ee],
 ];
-
-function rnd(lo: number, hi: number): number {
-  return lo + Math.random() * (hi - lo);
-}
-
-function lerp(a: number, b: number, t: number): number {
-  return a + (b - a) * t;
-}
 
 interface Mono {
   ox: number;

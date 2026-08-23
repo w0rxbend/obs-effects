@@ -1,5 +1,6 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
+import { clamp } from "../../lib/math";
 
 const AZURE = 0x89b4fa;
 const GOLD = 0xf9e2af;
@@ -18,10 +19,6 @@ const MOUSE_STRENGTH = 52;
 
 const cosTilt = Math.cos(TILT);
 const sinTilt = Math.sin(TILT);
-
-function clamp(v: number, lo: number, hi: number): number {
-  return Math.max(lo, Math.min(hi, v));
-}
 
 interface Vertex {
   sx: number;
@@ -43,7 +40,6 @@ export class UkrainianWaveMeshScreen extends Container {
   constructor() {
     super();
     this.addChild(this.gfx);
-    window.addEventListener("mousemove", this.onMouse);
   }
 
   private readonly onMouse = (e: MouseEvent): void => {
@@ -51,14 +47,14 @@ export class UkrainianWaveMeshScreen extends Container {
     this.mouseY = e.clientY;
   };
 
-  public override destroy(): void {
-    window.removeEventListener("mousemove", this.onMouse);
-    super.destroy();
-  }
-
   public async show(): Promise<void> {
+    window.addEventListener("mousemove", this.onMouse);
     this.w = window.innerWidth || 1920;
     this.h = window.innerHeight || 1080;
+  }
+
+  public async hide(): Promise<void> {
+    window.removeEventListener("mousemove", this.onMouse);
   }
 
   public resize(w: number, h: number): void {

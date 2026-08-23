@@ -1,5 +1,6 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
+import { clamp } from "../../lib/math";
 
 // Catppuccin Mocha violet palette
 const C_DOT = 0xcba6f7;
@@ -11,10 +12,6 @@ const WAVE_SPEED = 0.55;
 const WAVE_FREQ = 0.024;
 const LIFT_Y = 8;
 const DRIFT_X = 3;
-
-function clamp(v: number, lo: number, hi: number): number {
-  return Math.max(lo, Math.min(hi, v));
-}
 
 interface MeshNode {
   gridCol: number;

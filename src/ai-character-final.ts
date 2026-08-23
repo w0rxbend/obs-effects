@@ -146,11 +146,6 @@ function resolveRig(): void {
     rLeg: findBone(["rightleg", "rightshin"], ["upper", "thigh", "upleg"]),
     rFoot: findBone(["rightfoot"]),
   };
-  const mapped = Object.entries(B)
-    .filter(([, v]) => v !== null)
-    .map(([k, v]) => `${k}=${v!.obj.name}`)
-    .join(", ");
-  console.log("[ai-final] rig:", mapped);
 }
 
 // ── Loading overlay ───────────────────────────────────────────────────────────
@@ -202,7 +197,6 @@ loader.load(
       }
     });
 
-    console.log("[ai-final] all bones:", [...rig.keys()].join(", "));
     resolveRig();
     scene.add(gltf.scene);
 

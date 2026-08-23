@@ -1,4 +1,5 @@
 import { Container, Graphics, Ticker } from "pixi.js";
+import { lerp } from "../../lib/math";
 
 // ── Catppuccin Mocha Palette ──────────────────────────────────────────────────
 const CATT_MAUVE = 0xcba6f7;
@@ -40,9 +41,6 @@ const PERM = (() => {
   return out;
 })();
 
-function lerp(a: number, b: number, t: number) {
-  return a + (b - a) * t;
-}
 function fade(t: number) {
   return t * t * t * (t * (6 * t - 15) + 10);
 }

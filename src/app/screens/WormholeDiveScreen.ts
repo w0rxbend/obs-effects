@@ -1,5 +1,6 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
+import { smoothstep, TAU } from "../../lib/math";
 
 const NUM_RINGS = 26;
 const SPOKES = 42;
@@ -8,14 +9,8 @@ const Z_FAR = 1300;
 const TUBE_RADIUS = 500;
 const DIVE_SPEED = 200;
 const WAVE_AMP = 0.09;
-const TAU = Math.PI * 2;
 const NEAR_ROT_SPEED = 0.07;
 const FAR_ROT_SPEED = 0.44;
-
-function smoothstep(lo: number, hi: number, x: number): number {
-  const t = Math.max(0, Math.min(1, (x - lo) / (hi - lo)));
-  return t * t * (3 - 2 * t);
-}
 
 function lerpColor(
   r1: number,

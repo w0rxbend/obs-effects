@@ -1,7 +1,8 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
+import { lerpHex } from "../../lib/color";
+import { TAU } from "../../lib/math";
 
-const TAU = Math.PI * 2;
 const BG = 0x171a2a;
 const INK = 0x070c16;
 const DEEP_INK = 0x101522;
@@ -109,20 +110,6 @@ const ISLANDS: Island[] = [
 interface Point {
   x: number;
   y: number;
-}
-
-function lerpHex(a: number, b: number, t: number): number {
-  const ar = (a >> 16) & 0xff;
-  const ag = (a >> 8) & 0xff;
-  const ab = a & 0xff;
-  const br = (b >> 16) & 0xff;
-  const bg = (b >> 8) & 0xff;
-  const bb = b & 0xff;
-  return (
-    (Math.round(ar + (br - ar) * t) << 16) |
-    (Math.round(ag + (bg - ag) * t) << 8) |
-    Math.round(ab + (bb - ab) * t)
-  );
 }
 
 export class PinkFluidMarbleScreen extends Container {

@@ -1,7 +1,6 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
-
-const TAU = Math.PI * 2;
+import { TAU, randRange as rand } from "../../lib/math";
 
 const NEBULA_PALETTE = [
   0x6d28d9, 0x4f46e5, 0x1d4ed8, 0x9333ea, 0x0891b2, 0xc026d3,
@@ -13,10 +12,6 @@ const FLOAT_PALETTE = [
 
 const N_STARS = 240;
 const N_FLOAT = 90;
-
-function rand(a: number, b: number) {
-  return a + Math.random() * (b - a);
-}
 
 function pick<T>(arr: readonly T[]) {
   return arr[Math.floor(Math.random() * arr.length)];

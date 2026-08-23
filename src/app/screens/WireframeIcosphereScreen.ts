@@ -1,5 +1,6 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
+import { TAU, randRange as rand } from "../../lib/math";
 
 // Catppuccin Mocha
 const CRUST = 0x11111b;
@@ -29,7 +30,6 @@ const PALETTE = [
   PINK,
 ] as const;
 
-const TAU = Math.PI * 2;
 const PHI = (1 + Math.sqrt(5)) / 2;
 const TILT = 0.38;
 const ROT_SPEED = 0.14;
@@ -134,9 +134,6 @@ function buildIcosphere(subs: number): {
 // Precompute at load time — subdivision 2 gives 162 verts, 480 edges
 const ICOSPHERE = buildIcosphere(2);
 
-function rand(a: number, b: number) {
-  return a + Math.random() * (b - a);
-}
 function pick<T>(arr: readonly T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }

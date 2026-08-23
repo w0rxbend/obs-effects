@@ -1,5 +1,6 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
+import { randRange as rand } from "../../lib/math";
 
 // ── Catppuccin Mocha palette ──────────────────────────────────────────────────
 const C_CRUST = 0x11111b;
@@ -367,8 +368,4 @@ export class ParticleSplashScreen extends Container {
       });
     }
   }
-}
-
-function rand(min: number, max: number): number {
-  return min + Math.random() * (max - min);
 }

@@ -1,5 +1,6 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
+import { randRange as rand } from "../../lib/math";
 
 // ── Catppuccin Mocha ──────────────────────────────────────────────────────────
 
@@ -67,10 +68,6 @@ const MAX_IMPULSES = 35;
 function pick<T>(arr: readonly T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
-function rand(lo: number, hi: number): number {
-  return lo + Math.random() * (hi - lo);
-}
-
 // ── Screen ────────────────────────────────────────────────────────────────────
 
 export class GraphBgScreen extends Container {

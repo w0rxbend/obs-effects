@@ -1,12 +1,12 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
+import { clamp, clamp01, lerp, smooth01, TAU } from "../../lib/math";
 
 import {
   blobOverlayController,
   type BlobReactionCommand,
 } from "../blobOverlayController";
 
-const TAU = Math.PI * 2;
 const PATH_STEPS = 72;
 const SQUIRCLE_POWER = 4.2;
 
@@ -29,23 +29,6 @@ const BLINK_DURATION = 0.2;
 const HMM_DURATION = 1.2;
 const NOD_DURATION = 0.95;
 const NO_NO_DURATION = 1.05;
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, value));
-}
-
-function clamp01(value: number): number {
-  return clamp(value, 0, 1);
-}
-
-function lerp(start: number, end: number, amount: number): number {
-  return start + (end - start) * amount;
-}
-
-function smooth01(value: number): number {
-  const clamped = clamp01(value);
-  return clamped * clamped * (3 - 2 * clamped);
-}
 
 function heldEnvelope(
   timeLeft: number,

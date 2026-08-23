@@ -234,9 +234,6 @@ loader.load(
       if (sm.isSkinnedMesh) sm.skeleton.bones.forEach(registerBone);
     });
 
-    console.log("[meshy-avatar] bones:", allBoneNames);
-    console.log("[meshy-avatar] groups:", boneGroups);
-
     scene.add(gltf.scene);
 
     // ── Gloss pass — upgrade every mesh material to MeshPhysicalMaterial ──

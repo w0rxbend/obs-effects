@@ -1,5 +1,6 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
+import { clamp, TAU } from "../../lib/math";
 
 const BG = 0x070b13;
 const AURA = 0x1e2f52;
@@ -9,7 +10,6 @@ const GRID_FRONT = 0x89b4fa;
 const DOT_COLOR = 0xb4befe;
 const DOT_HIGHLIGHT = 0xf5e0dc;
 
-const TAU = Math.PI * 2;
 const HALF_PI = Math.PI * 0.5;
 const LAT_STEPS = 20;
 const LON_STEPS = 38;
@@ -39,10 +39,6 @@ interface Segment {
   b: ProjectedNode;
   depth: number;
   strength: number;
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, value));
 }
 
 export class WavyPlanetMeshScreen extends Container {

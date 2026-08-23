@@ -1,11 +1,11 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics, Sprite, Texture } from "pixi.js";
+import { randRange as rnd, TAU } from "../../lib/math";
 
 const W = 1920;
 const H = 1080;
 const CX = W / 2;
 const CY = H / 2;
-const TAU = Math.PI * 2;
 const FOV = 1100;
 
 // Catppuccin Mocha
@@ -36,10 +36,6 @@ const HELIX_HEIGHT = 460;
 // Rotation speeds (rad/ms)
 const Y_ROT_SPEED = TAU / 11_000;
 const HELIX_ROT_SPEED = TAU / 8_500;
-
-function rnd(lo: number, hi: number): number {
-  return lo + Math.random() * (hi - lo);
-}
 
 function lemniscate(t: number): [number, number] {
   const s = Math.sin(t);

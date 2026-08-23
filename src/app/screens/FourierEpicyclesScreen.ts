@@ -1,8 +1,8 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
+import { TAU } from "../../lib/math";
 
 const BG = 0x11111b;
-const TAU = Math.PI * 2;
 const N_SAMPLES = 256;
 const N_CYCLES = 56; // epicycles to show (sorted by amplitude)
 const T_PERIOD = 12; // seconds for one full shape cycle

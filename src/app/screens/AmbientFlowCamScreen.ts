@@ -1,7 +1,6 @@
 import type { Ticker } from "pixi.js";
 import { BlurFilter, Container, Graphics } from "pixi.js";
-
-const TAU = Math.PI * 2;
+import { clamp, TAU } from "../../lib/math";
 
 const ICE = 0xeafcff;
 const TEAL = 0x53f2dc;
@@ -57,10 +56,6 @@ interface AccentParticle {
   phase: number;
   color: number;
   alpha: number;
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, value));
 }
 
 export class AmbientFlowCamScreen extends Container {

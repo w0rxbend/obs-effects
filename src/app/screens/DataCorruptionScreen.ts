@@ -1,13 +1,6 @@
 import { Container, Graphics } from "pixi.js";
 import type { Ticker } from "pixi.js";
-
-function rand(lo: number, hi: number): number {
-  return lo + Math.random() * (hi - lo);
-}
-
-function clamp(v: number, lo: number, hi: number): number {
-  return v < lo ? lo : v > hi ? hi : v;
-}
+import { clamp, randRange as rand } from "../../lib/math";
 
 type EventKind = "tear" | "block" | "combined";
 

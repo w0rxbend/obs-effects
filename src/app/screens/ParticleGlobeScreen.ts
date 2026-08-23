@@ -1,5 +1,6 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
+import { TAU, randRange as rand } from "../../lib/math";
 
 const PALETTE = [
   0xcba6f7, // Mauve
@@ -16,8 +17,6 @@ const PALETTE = [
 ] as const;
 
 const BG = 0x11111b;
-const TAU = Math.PI * 2;
-
 const LAT_RINGS = 8;
 const LON_MERIDIANS = 12;
 const SEGS = 60; // segments per lat ring / meridian
@@ -27,9 +26,6 @@ const FOCAL = 2000;
 const TILT = 0.42; // X-axis tilt (rad)
 const ROT_SPEED = 0.18; // Y-axis rotation (rad / s)
 
-function rand(a: number, b: number) {
-  return a + Math.random() * (b - a);
-}
 function pick<T>(arr: readonly T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }

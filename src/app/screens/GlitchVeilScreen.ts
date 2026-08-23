@@ -1,5 +1,6 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
+import { randRange as rand } from "../../lib/math";
 
 const RGB_SPLIT = [0xff2244, 0x22ff88, 0x2266ff] as const;
 
@@ -10,10 +11,6 @@ const BURST_LEN_MIN = 0.18;
 const BURST_LEN_MAX = 0.55;
 
 const MICRO_TICK = 1 / 18; // burst contents re-roll at a stuttery low rate
-
-function rand(a: number, b: number): number {
-  return a + Math.random() * (b - a);
-}
 
 export class GlitchVeilScreen extends Container {
   public static assetBundles: string[] = [];

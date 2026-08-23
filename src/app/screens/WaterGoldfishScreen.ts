@@ -1,4 +1,5 @@
 import type { Ticker } from "pixi.js";
+import { lerp } from "../../lib/math";
 import {
   Container,
   Filter,
@@ -130,10 +131,6 @@ void main() {
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
 // ─────────────────────────────────────────────────────────────────────────────
-
-function lerp(a: number, b: number, t: number): number {
-  return a + (b - a) * t;
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Fish state

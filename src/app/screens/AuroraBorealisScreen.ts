@@ -1,9 +1,8 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
+import { TAU, randRange as rand } from "../../lib/math";
 
 const BG = 0x11111b;
-const TAU = Math.PI * 2;
-
 const BAND_DEFS = [
   { cx: 0.12, color: 0xa6e3a1, coreW: 18, glowW: 120 }, // Green
   { cx: 0.3, color: 0x94e2d5, coreW: 22, glowW: 150 }, // Teal
@@ -15,10 +14,6 @@ const BAND_DEFS = [
 const SCAN_STEP = 4;
 const STAR_COUNT = 100;
 const RISE_COUNT = 20; // rising streamer particles per band
-
-function rand(a: number, b: number) {
-  return a + Math.random() * (b - a);
-}
 
 interface SineComp {
   freq: number;

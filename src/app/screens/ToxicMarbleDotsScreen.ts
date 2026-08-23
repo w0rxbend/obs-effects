@@ -1,11 +1,10 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
+import { TAU } from "../../lib/math";
 
 // Halftone dots over a domain-warped toxic green marble field.
 
 const SPACING = 12;
-const TAU = Math.PI * 2;
-
 const TIERS = [
   { threshold: 0.72, color: 0x39ff14 }, // toxic green accent
   { threshold: 0.48, color: 0x9cff70 }, // acid glow

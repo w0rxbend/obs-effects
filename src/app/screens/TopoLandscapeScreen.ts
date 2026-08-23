@@ -1,10 +1,9 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics, Sprite, Texture } from "pixi.js";
+import { TAU } from "../../lib/math";
 
 const W = 1920;
 const H = 1080;
-const TAU = Math.PI * 2;
-
 // Catppuccin Mocha
 const CRUST = 0x11111b;
 const MANTLE = 0x181825;

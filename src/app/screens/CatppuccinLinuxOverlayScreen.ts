@@ -1,5 +1,6 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
+import { clamp, TAU } from "../../lib/math";
 
 const C_CRUST = 0x11111b;
 const C_MANTLE = 0x181825;
@@ -13,7 +14,6 @@ const C_TEAL = 0x94e2d5;
 const C_PEACH = 0xfab387;
 const C_ROSEWATER = 0xf5e0dc;
 
-const TAU = Math.PI * 2;
 const MAX_DT = 0.05;
 const ALPHA_THRESHOLD = 24;
 const SEGMENT_DOT_STEP = 4;
@@ -75,10 +75,6 @@ interface FloatingMeshCluster {
   speed: number;
   alpha: number;
   color: number;
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, value));
 }
 
 export class CatppuccinLinuxOverlayScreen extends Container {

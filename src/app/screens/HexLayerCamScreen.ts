@@ -1,43 +1,6 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
-
-// ── Catppuccin Mocha ──────────────────────────────────────────────────────────
-const CATT_ROSEWATER = 0xf5e0dc;
-const CATT_FLAMINGO = 0xf2cdcd;
-const CATT_PINK = 0xf5c2e7;
-const CATT_MAUVE = 0xcba6f7;
-const CATT_RED = 0xf38ba8;
-const CATT_MAROON = 0xeba0ac;
-const CATT_PEACH = 0xfab387;
-const CATT_YELLOW = 0xf9e2af;
-const CATT_GREEN = 0xa6e3a1;
-const CATT_TEAL = 0x94e2d5;
-const CATT_SKY = 0x89dceb;
-const CATT_SAPPHIRE = 0x74c7ec;
-const CATT_BLUE = 0x89b4fa;
-const CATT_LAVENDER = 0xb4befe;
-const CATT_TEXT = 0xcdd6f4;
-
-const PALETTE = [
-  CATT_ROSEWATER,
-  CATT_FLAMINGO,
-  CATT_PINK,
-  CATT_MAUVE,
-  CATT_RED,
-  CATT_MAROON,
-  CATT_PEACH,
-  CATT_YELLOW,
-  CATT_GREEN,
-  CATT_TEAL,
-  CATT_SKY,
-  CATT_SAPPHIRE,
-  CATT_BLUE,
-  CATT_LAVENDER,
-] as const;
-
-function palColor(i: number): number {
-  return PALETTE[Math.abs(Math.floor(i)) % PALETTE.length];
-}
+import { CATT_BLUE, CATT_TEXT, PALETTE, palColor } from "./hex/palette";
 
 // ── Geometry ──────────────────────────────────────────────────────────────────
 const WEBCAM_R = 200;

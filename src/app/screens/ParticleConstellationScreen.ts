@@ -1,6 +1,7 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
 import { obsAudio } from "../../lib";
+import { clamp, randRange as rand } from "../../lib/math";
 
 const BG = 0x03050f;
 
@@ -23,13 +24,6 @@ const BASE_DIST = 88;
 const MAX_DIST = 140;
 const GRID_CELL = 100;
 const SPARKLE_DECAY = 3.8;
-
-function rand(a: number, b: number) {
-  return a + Math.random() * (b - a);
-}
-function clamp(v: number, lo: number, hi: number) {
-  return Math.max(lo, Math.min(hi, v));
-}
 
 interface Particle {
   x: number;

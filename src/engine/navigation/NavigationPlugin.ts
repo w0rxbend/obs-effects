@@ -36,6 +36,10 @@ export class CreationNavigationPlugin {
    */
   public static destroy(): void {
     const app = this as unknown as Application;
+    if (this._onResize) {
+      app.renderer?.off("resize", this._onResize);
+      this._onResize = null;
+    }
     app.navigation = null as unknown as Navigation;
   }
 }

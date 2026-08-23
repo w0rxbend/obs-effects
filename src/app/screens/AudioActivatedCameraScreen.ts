@@ -19,7 +19,6 @@ export class AudioActivatedCameraScreen extends Container {
     this.cameraBorder.attachLogo(Texture.from("worxbend-logo.png"));
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public update(_time: Ticker): void {
     this.cameraBorder.update();
   }

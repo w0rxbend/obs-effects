@@ -1,8 +1,8 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
 import { obsAudio } from "../../lib";
+import { clamp, TAU } from "../../lib/math";
 
-const TAU = Math.PI * 2;
 const STEPS = 200;
 
 const SIZE = 600;
@@ -32,10 +32,6 @@ function volumeColor(vol: number): number {
   const v = Math.max(0, Math.min(1, vol));
   if (v < 0.45) return lerpC(C_CALM, C_MID, v / 0.45);
   return lerpC(C_MID, C_HOT, (v - 0.45) / 0.55);
-}
-
-function clamp(v: number, lo: number, hi: number): number {
-  return v < lo ? lo : v > hi ? hi : v;
 }
 
 interface Harmonic {

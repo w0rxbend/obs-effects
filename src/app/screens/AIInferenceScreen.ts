@@ -1,5 +1,6 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
+import { lerpHex } from "../../lib/color";
 
 // ── Palette ───────────────────────────────────────────────────────────────────
 // Attention cell gradient: 5 stops from near-black → bright cyan-white
@@ -17,20 +18,6 @@ const N_PULSES = 3; // max concurrent pulse rings
 const DT_MAX = 0.05;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-function lerpHex(a: number, b: number, t: number): number {
-  const ar = (a >> 16) & 0xff,
-    ag = (a >> 8) & 0xff,
-    ab = a & 0xff;
-  const br = (b >> 16) & 0xff,
-    bg = (b >> 8) & 0xff,
-    bb = b & 0xff;
-  return (
-    (Math.round(ar + (br - ar) * t) << 16) |
-    (Math.round(ag + (bg - ag) * t) << 8) |
-    Math.round(ab + (bb - ab) * t)
-  );
-}
-
 function cellColor(w: number): number {
   const n = RAMP.length - 1;
   const s = Math.max(0, Math.min(1, w)) * n;

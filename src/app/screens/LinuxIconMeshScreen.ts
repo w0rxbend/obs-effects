@@ -1,4 +1,5 @@
 import type { Ticker } from "pixi.js";
+import { clamp } from "../../lib/math";
 import {
   Assets,
   ColorMatrixFilter,
@@ -62,10 +63,6 @@ interface AtmosphereMote {
   speed: number;
   alpha: number;
   color: number;
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, value));
 }
 
 export class LinuxIconMeshScreen extends Container {

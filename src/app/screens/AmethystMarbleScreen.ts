@@ -7,6 +7,7 @@ import {
   Texture,
   UniformGroup,
 } from "pixi.js";
+import { HASH12_GLSL, VNOISE_GLSL } from "../../lib/shaders/noise";
 
 const VERT = `in vec2 aPosition;
 out vec2 vTextureCoord;
@@ -27,8 +28,8 @@ out vec4 fragColor;
 uniform float uTime;
 uniform vec2 uResolution;
 
-float hash12(vec2 p){vec3 p3=fract(vec3(p.xyx)*0.1031);p3+=dot(p3,p3.yzx+33.33);return fract((p3.x+p3.y)*p3.z);}
-float vnoise(vec2 p){vec2 i=floor(p);vec2 f=fract(p);vec2 u=f*f*(3.0-2.0*f);float a=hash12(i);float b=hash12(i+vec2(1,0));float c=hash12(i+vec2(0,1));float d=hash12(i+vec2(1,1));return mix(mix(a,b,u.x),mix(c,d,u.x),u.y);}
+${HASH12_GLSL}
+${VNOISE_GLSL}
 const mat2 R=mat2(0.80,0.60,-0.60,0.80);
 float fbm(vec2 p){float v=0.;float a=0.5;for(int i=0;i<7;i++){v+=a*vnoise(p);p=R*p*2.01+vec2(5.7,3.3);a*=0.48;}return v;}
 

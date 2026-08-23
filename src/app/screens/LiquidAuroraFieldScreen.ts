@@ -1,9 +1,9 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
 import { obsAudio } from "../../lib";
+import { clamp, TAU, randRange as rand } from "../../lib/math";
 
 const BG = 0x030508;
-const TAU = Math.PI * 2;
 const SCAN_STEP = 4;
 
 // Teal → electric blue → violet cycle
@@ -24,14 +24,6 @@ function auroraColor(phase: number): number {
     (Math.round(a.g + (b.g - a.g) * t) << 8) |
     Math.round(a.b + (b.b - a.b) * t)
   );
-}
-
-function clamp(v: number, lo: number, hi: number): number {
-  return v < lo ? lo : v > hi ? hi : v;
-}
-
-function rand(a: number, b: number): number {
-  return a + Math.random() * (b - a);
 }
 
 interface WaveComp {

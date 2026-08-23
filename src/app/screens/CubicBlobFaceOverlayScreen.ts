@@ -1,7 +1,7 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
+import { clamp, clamp01, lerp, smooth01, TAU } from "../../lib/math";
 
-const TAU = Math.PI * 2;
 const BLOB_STEPS = 84;
 const SQUIRCLE_POWER = 4.6;
 
@@ -17,23 +17,6 @@ const PUPIL = 0x2d2c31;
 const TONGUE = 0xc92d62;
 const MOUTH_FILL = 0x25161b;
 const SPARK = 0xffffff;
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, value));
-}
-
-function clamp01(value: number): number {
-  return clamp(value, 0, 1);
-}
-
-function lerp(start: number, end: number, amount: number): number {
-  return start + (end - start) * amount;
-}
-
-function smooth01(value: number): number {
-  const clamped = clamp01(value);
-  return clamped * clamped * (3 - 2 * clamped);
-}
 
 function pulse(timeLeft: number, duration: number): number {
   if (timeLeft <= 0 || duration <= 0) {

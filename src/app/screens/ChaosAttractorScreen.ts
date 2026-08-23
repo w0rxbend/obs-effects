@@ -1,5 +1,6 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
+import { clamp } from "../../lib/math";
 
 // Catppuccin Mocha
 const BG = 0x11111b; // Crust
@@ -28,10 +29,6 @@ const SIM_DT = 0.003;
 const CAM_DIST = 12;
 const ROT_SPEED = 0.15;
 const GHOST_LEN = 800;
-
-function clamp(v: number, lo: number, hi: number): number {
-  return v < lo ? lo : v > hi ? hi : v;
-}
 
 interface Vec3 {
   x: number;

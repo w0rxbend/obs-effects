@@ -1,8 +1,8 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
 import { obsAudio } from "../../lib";
+import { clamp, TAU } from "../../lib/math";
 
-const TAU = Math.PI * 2;
 const BLOB_COUNT = 8;
 const SHAPE_STEPS = 72;
 const BG = 0x020108;
@@ -18,10 +18,6 @@ const PALETTE = [
   0x880055, // dark magenta
   0x005544, // emerald
 ];
-
-function clamp(v: number, lo: number, hi: number): number {
-  return v < lo ? lo : v > hi ? hi : v;
-}
 
 interface Blob {
   x: number;

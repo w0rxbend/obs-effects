@@ -1,7 +1,7 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics, Text, TextStyle } from "pixi.js";
+import { clamp, TAU } from "../../lib/math";
 
-const TAU = Math.PI * 2;
 const HALF_PI = Math.PI * 0.5;
 
 // White-on-blueprint palette
@@ -25,10 +25,6 @@ const ROT_SPEED = 0.11;
 const BASE_TILT = -0.4;
 const POLAR_INSET = 0.1;
 const PARTICLE_COUNT = 65;
-
-function clamp(v: number, lo: number, hi: number): number {
-  return v < lo ? lo : v > hi ? hi : v;
-}
 
 // ── Interfaces ────────────────────────────────────────────────────────────────
 
@@ -178,7 +174,6 @@ class BlueprintGrid extends Graphics {
     this.stroke();
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   update(_ticker: Ticker): void {}
 }
 

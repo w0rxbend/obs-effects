@@ -1,5 +1,6 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics, Sprite, Texture } from "pixi.js";
+import { randRange as rnd } from "../../lib/math";
 
 const W = 800;
 const H = 800;
@@ -47,10 +48,6 @@ interface Particle {
   baseSize: number;
   driftDir: number;
   driftSpeed: number;
-}
-
-function rnd(lo: number, hi: number): number {
-  return lo + Math.random() * (hi - lo);
 }
 
 function colorForSize(size: number): { color: number; maxAlpha: number } {

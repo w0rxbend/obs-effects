@@ -1,12 +1,12 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
+import { TAU } from "../../lib/math";
 
 // ── Liquid Paper Frame ───────────────────────────────────────────────────────
 // Layered paper-cut wave bands flowing in from the top and bottom in purple /
 // orange / yellow / cream, framing a clean white center textured with a beige
 // halftone screen and floating memphis dots. Edges undulate on an endless loop.
 
-const TAU = Math.PI * 2;
 const AMP = 0.028;
 const AMP2 = 0.014;
 const AMP3 = 0.022;

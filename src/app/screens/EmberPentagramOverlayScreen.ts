@@ -1,5 +1,6 @@
 import type { Ticker } from "pixi.js";
 import { Assets, Container, Graphics, Sprite, Texture } from "pixi.js";
+import { clamp, TAU } from "../../lib/math";
 
 const BG = 0x080304;
 const BG_DEEP = 0x120405;
@@ -15,7 +16,6 @@ const BACKGROUND_PENTAGRAM_COUNT = 4;
 const BACKGROUND_ASSET_PENTAGRAM_COUNT = 3;
 const BACKGROUND_SIGIL_SIZE = 460;
 
-const TAU = Math.PI * 2;
 const MAX_DT = 0.05;
 const SEGMENT_DOT_STEP = 6;
 
@@ -105,10 +105,6 @@ interface FloatingAssetPentagram {
   orbitRadius: number;
   angularSpeed: number;
   radialWobble: number;
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, value));
 }
 
 export class EmberPentagramOverlayScreen extends Container {

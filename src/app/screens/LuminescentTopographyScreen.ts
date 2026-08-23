@@ -1,5 +1,6 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics, Text, TextStyle } from "pixi.js";
+import { mixHex as lerpColor } from "../../lib/color";
 
 // ── Palette (Catppuccin Mocha) ──────────────────────────────────────────────
 const RED = 0xf38ba8;
@@ -17,21 +18,6 @@ const TEXT_LIFT = 160;
 const FOCAL_LENGTH = 2200; // Flatter perspective to reduce side-sway
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
-
-function lerpColor(a: number, b: number, t: number): number {
-  t = Math.max(0, Math.min(1, t));
-  const ar = (a >> 16) & 0xff,
-    ag = (a >> 8) & 0xff,
-    ab = a & 0xff;
-  const br = (b >> 16) & 0xff,
-    bg = (b >> 8) & 0xff,
-    bb = b & 0xff;
-  return (
-    (Math.round(ar + (br - ar) * t) << 16) |
-    (Math.round(ag + (bg - ag) * t) << 8) |
-    Math.round(ab + (bb - ab) * t)
-  );
-}
 
 interface Point3D {
   x: number;

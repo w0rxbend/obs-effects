@@ -1,5 +1,6 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
+import { mixHex as mixColor } from "../../lib/color";
 
 const BG = 0x03050b;
 const CARVE = 0x03050b;
@@ -9,26 +10,6 @@ const VIOLET = 0x7a3d9b;
 const LINE_ANGLE = -0.91;
 const STRIPE_GAP = 24;
 const BASE_LINE_WIDTH = 7.5;
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, value));
-}
-
-function mixColor(a: number, b: number, t: number): number {
-  const amount = clamp(t, 0, 1);
-  const ar = (a >> 16) & 0xff;
-  const ag = (a >> 8) & 0xff;
-  const ab = a & 0xff;
-  const br = (b >> 16) & 0xff;
-  const bg = (b >> 8) & 0xff;
-  const bb = b & 0xff;
-
-  return (
-    (Math.round(ar + (br - ar) * amount) << 16) |
-    (Math.round(ag + (bg - ag) * amount) << 8) |
-    Math.round(ab + (bb - ab) * amount)
-  );
-}
 
 export class NeonRibbonPatternScreen extends Container {
   public static assetBundles: string[] = [];

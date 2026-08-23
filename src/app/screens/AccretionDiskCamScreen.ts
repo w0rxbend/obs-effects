@@ -1,8 +1,7 @@
 import type { Ticker } from "pixi.js";
 import { Container, Graphics } from "pixi.js";
 import { obsAudio } from "../../lib";
-
-const TAU = Math.PI * 2;
+import { TAU } from "../../lib/math";
 
 const WEBCAM_R = 220;
 const N_PTS = 128;
