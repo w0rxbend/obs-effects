@@ -1644,11 +1644,6 @@
       "tags": ["Shader", "Water", "Caustics", "Boids", "Goldfish"]
     },
     {
-      "href": "water-splash-ring-cam.html",
-      "category": "Webcam Borders",
-      "tags": ["Shader", "Water", "Splash", "Ring", "Transparent"]
-    },
-    {
       "href": "wave-border-cam.html",
       "category": "Webcam Borders",
       "tags": ["Fluid", "Border"]
