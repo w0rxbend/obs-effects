@@ -294,11 +294,6 @@
       "tags": ["Audio-Reactive", "Waveform", "Razer", "Ribbons", "Overlay"]
     },
     {
-      "href": "aurora-borealis.html",
-      "category": "Backgrounds",
-      "tags": ["Shader", "Atmospheric"]
-    },
-    {
       "href": "background.html",
       "category": "Backgrounds",
       "tags": ["Loop"]
@@ -657,11 +652,6 @@
       "tags": ["Scene", "Space"]
     },
     {
-      "href": "gas-cam.html",
-      "category": "Webcam Borders",
-      "tags": ["Fluid", "Overlay"]
-    },
-    {
       "href": "generative.html",
       "category": "Backgrounds",
       "tags": ["Generative"]
@@ -875,11 +865,6 @@
       "tags": ["Generative"]
     },
     {
-      "href": "grass.html",
-      "category": "Backgrounds",
-      "tags": ["Scene", "Nature"]
-    },
-    {
       "href": "gravity-sphere.html",
       "category": "Particle Systems",
       "tags": ["Particles", "Physics"]
@@ -1005,11 +990,6 @@
       "tags": ["Geometric", "Border"]
     },
     {
-      "href": "life.html",
-      "category": "Particle Systems",
-      "tags": ["WebGPU", "Particles"]
-    },
-    {
       "href": "linux-blueprint.html",
       "category": "Uncategorized",
       "tags": []
@@ -1030,11 +1010,6 @@
       "tags": ["Blobs", "Paper Cut", "Halftone", "Frame"]
     },
     {
-      "href": "lissajous.html",
-      "category": "Particle Systems",
-      "tags": ["Generative", "Math"]
-    },
-    {
       "href": "logo.html",
       "category": "Particle Systems",
       "tags": ["Brand", "Loop"]
@@ -1043,11 +1018,6 @@
       "href": "magenta-dot-flow.html",
       "category": "Backgrounds",
       "tags": ["Halftone", "Dots", "Magenta", "Pink", "Fluid", "Abstract"]
-    },
-    {
-      "href": "magnetic-field.html",
-      "category": "Particle Systems",
-      "tags": ["Physics", "Generative"]
     },
     {
       "href": "main-audio-activated-border.html",
@@ -1322,11 +1292,6 @@
       "tags": ["Overlay", "Border"]
     },
     {
-      "href": "smoke-bar.html",
-      "category": "Webcam Borders",
-      "tags": ["Fluid", "Overlay"]
-    },
-    {
       "href": "smoke-ring-cam.html",
       "category": "Webcam Borders",
       "tags": ["Fluid", "Border"]
@@ -1382,11 +1347,6 @@
       "href": "space-war-boids.html",
       "category": "Particle Systems",
       "tags": ["Boids", "Combat"]
-    },
-    {
-      "href": "sph.html",
-      "category": "Particle Systems",
-      "tags": ["Physics", "Fluid"]
     },
     {
       "href": "spiral-pull.html",
@@ -1480,11 +1440,6 @@
       "href": "trapnation.html",
       "category": "Audio Visualizers",
       "tags": ["Audio-Reactive", "Visualizer"]
-    },
-    {
-      "href": "triangulation.html",
-      "category": "Particle Systems",
-      "tags": ["Mesh", "Generative"]
     },
     {
       "href": "tunnel-vortex.html",

@@ -266,15 +266,6 @@
     "createdAt": "2026-06-23T12:24:03+03:00"
   },
   {
-    "slug": "aurora-borealis",
-    "title": "Aurora Borealis",
-    "href": "aurora-borealis.html",
-    "category": "Backgrounds",
-    "tags": ["shader", "atmospheric"],
-    "description": "",
-    "createdAt": "2026-04-19T13:13:02+03:00"
-  },
-  {
     "slug": "background",
     "title": "Background",
     "href": "background.html",
@@ -893,15 +884,6 @@
     "createdAt": "2026-04-19T20:18:29+03:00"
   },
   {
-    "slug": "gas-cam",
-    "title": "Gas Cam",
-    "href": "gas-cam.html",
-    "category": "Webcam Borders",
-    "tags": ["fluid", "overlay"],
-    "description": "",
-    "createdAt": "2026-04-22T23:33:09+03:00"
-  },
-  {
     "slug": "generative",
     "title": "Generative",
     "href": "generative.html",
@@ -1034,15 +1016,6 @@
     "tags": ["generative"],
     "description": "",
     "createdAt": "2026-04-18T18:25:49+03:00"
-  },
-  {
-    "slug": "grass",
-    "title": "Grass",
-    "href": "grass.html",
-    "category": "Backgrounds",
-    "tags": ["scene", "nature"],
-    "description": "",
-    "createdAt": "2026-04-18T11:51:21+03:00"
   },
   {
     "slug": "gravity-sphere",
@@ -1261,15 +1234,6 @@
     "createdAt": "2026-05-01T02:26:17+03:00"
   },
   {
-    "slug": "life",
-    "title": "Life",
-    "href": "life.html",
-    "category": "Particle Systems",
-    "tags": ["webgpu", "particles"],
-    "description": "",
-    "createdAt": "2026-04-19T03:33:23+03:00"
-  },
-  {
     "slug": "linux-blueprint",
     "title": "Linux Blueprint",
     "href": "linux-blueprint.html",
@@ -1306,15 +1270,6 @@
     "createdAt": "2026-06-14T16:26:59+03:00"
   },
   {
-    "slug": "lissajous",
-    "title": "Lissajous",
-    "href": "lissajous.html",
-    "category": "Particle Systems",
-    "tags": ["generative", "math"],
-    "description": "",
-    "createdAt": "2026-04-19T13:13:02+03:00"
-  },
-  {
     "slug": "logo",
     "title": "Logo",
     "href": "logo.html",
@@ -1340,15 +1295,6 @@
     "tags": ["halftone", "dots", "magenta", "pink", "fluid", "abstract"],
     "description": "",
     "createdAt": "2026-06-19T18:57:59+03:00"
-  },
-  {
-    "slug": "magnetic-field",
-    "title": "Magnetic Field",
-    "href": "magnetic-field.html",
-    "category": "Particle Systems",
-    "tags": ["physics", "generative"],
-    "description": "",
-    "createdAt": "2026-04-19T03:01:01+03:00"
   },
   {
     "slug": "main-audio-activated-border",
@@ -2043,15 +1989,6 @@
     "createdAt": "2026-04-18T18:28:36+03:00"
   },
   {
-    "slug": "smoke-bar",
-    "title": "Smoke Bar",
-    "href": "smoke-bar.html",
-    "category": "Webcam Borders",
-    "tags": ["fluid", "overlay"],
-    "description": "",
-    "createdAt": "2026-04-19T15:37:53+03:00"
-  },
-  {
     "slug": "smoke-ring-cam",
     "title": "Smoke Ring Cam",
     "href": "smoke-ring-cam.html",
@@ -2139,15 +2076,6 @@
     "tags": ["boids", "combat"],
     "description": "",
     "createdAt": "2026-04-30T20:35:55+03:00"
-  },
-  {
-    "slug": "sph",
-    "title": "Sph",
-    "href": "sph.html",
-    "category": "Particle Systems",
-    "tags": ["physics", "fluid"],
-    "description": "",
-    "createdAt": "2026-04-19T13:58:14+03:00"
   },
   {
     "slug": "spiral-pull",
@@ -2408,15 +2336,6 @@
     "tags": ["audio-reactive", "visualizer"],
     "description": "",
     "createdAt": "2026-04-24T01:54:08+03:00"
-  },
-  {
-    "slug": "triangulation",
-    "title": "Triangulation",
-    "href": "triangulation.html",
-    "category": "Particle Systems",
-    "tags": ["mesh", "generative"],
-    "description": "",
-    "createdAt": "2026-04-17T22:36:07+03:00"
   },
   {
     "slug": "tunnel-vortex",

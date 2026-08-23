@@ -58,16 +58,15 @@ Output goes to `dist/`. You can then serve it with any static file server and po
 
 ### Background / Full-Scene Overlays
 
-| URL                   | Description                                                       |
-| --------------------- | ----------------------------------------------------------------- |
-| `/background.html`    | Tech-symbol boids flocking with comets and ambient particles      |
-| `/matrix-dots.html`   | Catppuccin grid dots repelled by particles, with connection lines |
-| `/generative.html`    | Sinusoidal phase-trail dots drawing colorful procedural paths     |
-| `/triangulation.html` | Delaunay-style triangulation network with flowing geometry        |
-| `/rain.html`          | Water ripple/splash effects with expanding circles                |
-| `/atom.html`          | Atomic model — nucleus, electron orbits, quantum particle effects |
-| `/planet.html`        | Planetary orbital simulation with gravitational dynamics          |
-| `/aquarium.html`      | Ambient aquarium-style particle visualization                     |
+| URL                 | Description                                                       |
+| ------------------- | ----------------------------------------------------------------- |
+| `/background.html`  | Tech-symbol boids flocking with comets and ambient particles      |
+| `/matrix-dots.html` | Catppuccin grid dots repelled by particles, with connection lines |
+| `/generative.html`  | Sinusoidal phase-trail dots drawing colorful procedural paths     |
+| `/rain.html`        | Water ripple/splash effects with expanding circles                |
+| `/atom.html`        | Atomic model — nucleus, electron orbits, quantum particle effects |
+| `/planet.html`      | Planetary orbital simulation with gravitational dynamics          |
+| `/aquarium.html`    | Ambient aquarium-style particle visualization                     |
 
 ### Branding / Transition Screens
 
