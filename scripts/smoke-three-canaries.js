@@ -17,11 +17,6 @@ const VIEWPORTS = [
 
 const canaries = [
   {
-    name: "discord-robot",
-    path: "discord-robot.html",
-    expectEffectComposerRequest: true,
-  },
-  {
     name: "dji-fpv",
     path: "dji-fpv.html",
     expectDjiOverlayRemoved: true,

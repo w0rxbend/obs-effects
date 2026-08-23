@@ -228,11 +228,6 @@
       "tags": ["Scene", "WebGL"]
     },
     {
-      "href": "artificial-life.html",
-      "category": "Backgrounds",
-      "tags": ["Biology", "Swarm", "AI", "GPU"]
-    },
-    {
       "href": "atom.html",
       "category": "Particle Systems",
       "tags": ["Physics", "Loop"]
@@ -407,11 +402,6 @@
       "tags": ["Mesh", "Mascot"]
     },
     {
-      "href": "cellular-slime.html",
-      "category": "Backgrounds",
-      "tags": ["Biology", "Swarm", "GPU", "Shader"]
-    },
-    {
       "href": "chaos-attractor.html",
       "category": "Uncategorized",
       "tags": []
@@ -573,26 +563,9 @@
       "tags": ["Audio-Reactive", "OBS", "White", "Ice", "Lines"]
     },
     {
-      "href": "digital-fluid-ink.html",
-      "category": "Backgrounds",
-      "tags": ["Fluid", "Shader", "Artistic"]
-    },
-    {
       "href": "digital-rain.html",
       "category": "Backgrounds",
       "tags": ["Shader", "Matrix", "Loop"]
-    },
-    {
-      "href": "discord-robot.html",
-      "category": "3D",
-      "tags": [
-        "Three.js",
-        "Robot",
-        "Discord",
-        "Cinematic",
-        "Procedural",
-        "Bloom"
-      ]
     },
     {
       "href": "distributed-systems.html",
@@ -648,11 +621,6 @@
       "href": "energy-orb.html",
       "category": "3D",
       "tags": ["Three.js", "GLB", "Energy", "Orb", "Transparent"]
-    },
-    {
-      "href": "ergodox-showroom.html",
-      "category": "3D",
-      "tags": ["Three.js", "GLB", "Keyboard", "Transparent", "Showroom"]
     },
     {
       "href": "figure-eight-torus.html",
@@ -981,11 +949,6 @@
       "tags": ["Fire", "Audio"]
     },
     {
-      "href": "gunan-skeleton.html",
-      "category": "3D",
-      "tags": ["Three.js", "FBX", "Transparent", "Bust", "Skeleton"]
-    },
-    {
       "href": "halftone-fade.html",
       "category": "Backgrounds",
       "tags": ["Halftone", "Dots", "Monochrome", "Fade", "Minimal", "Abstract"]
@@ -1009,18 +972,6 @@
       "href": "hex-ripple.html",
       "category": "Particle Systems",
       "tags": ["Geometric", "Wave"]
-    },
-    {
-      "href": "hex-water-island.html",
-      "category": "3D",
-      "tags": [
-        "Three.js",
-        "Water",
-        "Hexagonal",
-        "Island",
-        "Transparent",
-        "Simulation"
-      ]
     },
     {
       "href": "hexcam.html",
@@ -1208,16 +1159,6 @@
       "tags": ["Math", "Generative"]
     },
     {
-      "href": "meshy-avatar.html",
-      "category": "3D",
-      "tags": ["Three.js", "GLB", "Rigged", "Skeleton", "Transparent", "Avatar"]
-    },
-    {
-      "href": "meshy-post1-avatar.html",
-      "category": "Uncategorized",
-      "tags": []
-    },
-    {
       "href": "meta-blobs.html",
       "category": "Particle Systems",
       "tags": ["SDF", "Fluid"]
@@ -1241,11 +1182,6 @@
       "href": "minimalist-gradient-breathing.html",
       "category": "Audio Visualizers",
       "tags": ["Audio-Reactive", "Shader"]
-    },
-    {
-      "href": "monolithic-black-geometry.html",
-      "category": "Backgrounds",
-      "tags": ["Geometry", "Dark", "Emissive", "Procedural", "High-End"]
     },
     {
       "href": "mountain-night-railway.html",
@@ -1440,11 +1376,6 @@
       "tags": ["Shader", "Rainbow", "Lightning", "Ring", "Transparent"]
     },
     {
-      "href": "reactive-energy-membrane.html",
-      "category": "Backgrounds",
-      "tags": ["Mesh", "Organic", "Procedural", "Purple", "Breathing"]
-    },
-    {
       "href": "retro-screen-filter.html",
       "category": "Overlays",
       "tags": ["CRT", "Grid", "Transparent", "Subtle"]
@@ -1485,20 +1416,6 @@
       "tags": ["Overlay", "Border"]
     },
     {
-      "href": "slime-mold-network.html",
-      "category": "Backgrounds",
-      "tags": [
-        "Biology",
-        "Network",
-        "Particles",
-        "Organic",
-        "Bioluminescent",
-        "Slime Mold",
-        "Growth",
-        "Particle"
-      ]
-    },
-    {
       "href": "smoke-bar.html",
       "category": "Webcam Borders",
       "tags": ["Fluid", "Overlay"]
@@ -1512,11 +1429,6 @@
       "href": "smolder.html",
       "category": "Backgrounds",
       "tags": ["Shader", "Fire", "Atmospheric"]
-    },
-    {
-      "href": "smolder(1).html",
-      "category": "Uncategorized",
-      "tags": []
     },
     {
       "href": "soft-body-cube.html",
@@ -1831,11 +1743,6 @@
       "href": "worxbend-text.html",
       "category": "Particle Systems",
       "tags": ["Particles", "Text"]
-    },
-    {
-      "href": "zombie-fbx.html",
-      "category": "3D",
-      "tags": ["Three.js", "FBX", "Zombie", "Transparent", "Animation"]
     }
   ]
 }

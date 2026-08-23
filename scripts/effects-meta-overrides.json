@@ -82,17 +82,6 @@
     "description": "High-density flocking simulation using GPU-style motion, emergent swarms, and fast particle coordination.",
     "tags": ["Boids", "GPU", "Particle", "Simulation", "Swarm", "Motion"]
   },
-  "slime-mold-network": {
-    "description": "Organic slime-mold network with branching trails, glowing paths, and adaptive colony-like growth.",
-    "tags": [
-      "Organic",
-      "Network",
-      "Slime Mold",
-      "Growth",
-      "Particle",
-      "Biology"
-    ]
-  },
   "physarum-gol": {
     "description": "Hybrid cellular automata and physarum-inspired growth pattern with living texture and emergent structure.",
     "tags": [

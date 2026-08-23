@@ -156,15 +156,6 @@
     "createdAt": "2026-06-20T17:59:20+03:00"
   },
   {
-    "slug": "artificial-life",
-    "title": "Artificial Life",
-    "href": "artificial-life.html",
-    "category": "Backgrounds",
-    "tags": ["biology", "swarm", "ai", "gpu"],
-    "description": "",
-    "createdAt": "2026-05-17T01:42:36+03:00"
-  },
-  {
     "slug": "atom",
     "title": "Atom",
     "href": "atom.html",
@@ -478,15 +469,6 @@
     "createdAt": "2026-04-24T19:48:12+03:00"
   },
   {
-    "slug": "cellular-slime",
-    "title": "Cellular Slime",
-    "href": "cellular-slime.html",
-    "category": "Backgrounds",
-    "tags": ["biology", "swarm", "gpu", "shader"],
-    "description": "",
-    "createdAt": "2026-05-17T01:42:36+03:00"
-  },
-  {
     "slug": "chaos-attractor",
     "title": "Chaos Attractor",
     "href": "chaos-attractor.html",
@@ -755,15 +737,6 @@
     "createdAt": "2026-06-14T16:26:59+03:00"
   },
   {
-    "slug": "digital-fluid-ink",
-    "title": "Digital Fluid Ink",
-    "href": "digital-fluid-ink.html",
-    "category": "Backgrounds",
-    "tags": ["fluid", "shader", "artistic"],
-    "description": "",
-    "createdAt": "2026-05-17T15:34:25+03:00"
-  },
-  {
     "slug": "digital-rain",
     "title": "Digital Rain",
     "href": "digital-rain.html",
@@ -771,22 +744,6 @@
     "tags": ["shader", "matrix", "loop"],
     "description": "",
     "createdAt": "2026-05-23T18:24:51+03:00"
-  },
-  {
-    "slug": "discord-robot",
-    "title": "Discord Robot",
-    "href": "discord-robot.html",
-    "category": "3D",
-    "tags": [
-      "three.js",
-      "robot",
-      "discord",
-      "cinematic",
-      "procedural",
-      "bloom"
-    ],
-    "description": "",
-    "createdAt": "2026-05-18T21:49:36+03:00"
   },
   {
     "slug": "distributed-systems",
@@ -868,15 +825,6 @@
     "tags": ["three.js", "glb", "energy", "orb", "transparent"],
     "description": "",
     "createdAt": "2026-05-20T14:55:14+03:00"
-  },
-  {
-    "slug": "ergodox-showroom",
-    "title": "Ergodox Showroom",
-    "href": "ergodox-showroom.html",
-    "category": "3D",
-    "tags": ["three.js", "glb", "keyboard", "transparent", "showroom"],
-    "description": "",
-    "createdAt": "2026-05-20T12:34:16+03:00"
   },
   {
     "slug": "figure-eight-torus",
@@ -1201,15 +1149,6 @@
     "createdAt": "2026-05-08T17:47:06+03:00"
   },
   {
-    "slug": "gunan-skeleton",
-    "title": "Gunan Skeleton",
-    "href": "gunan-skeleton.html",
-    "category": "3D",
-    "tags": ["three.js", "fbx", "transparent", "bust", "skeleton"],
-    "description": "",
-    "createdAt": "2026-05-19T02:18:45+03:00"
-  },
-  {
     "slug": "halftone-fade",
     "title": "Halftone Fade",
     "href": "halftone-fade.html",
@@ -1244,22 +1183,6 @@
     "tags": ["geometric", "wave"],
     "description": "",
     "createdAt": "2026-04-19T13:13:02+03:00"
-  },
-  {
-    "slug": "hex-water-island",
-    "title": "Hex Water Island",
-    "href": "hex-water-island.html",
-    "category": "3D",
-    "tags": [
-      "three.js",
-      "water",
-      "hexagonal",
-      "island",
-      "transparent",
-      "simulation"
-    ],
-    "description": "",
-    "createdAt": "2026-05-20T02:08:38+03:00"
   },
   {
     "slug": "hexcam",
@@ -1604,24 +1527,6 @@
     "createdAt": "2026-04-18T23:38:25+03:00"
   },
   {
-    "slug": "meshy-avatar",
-    "title": "Meshy Avatar",
-    "href": "meshy-avatar.html",
-    "category": "3D",
-    "tags": ["three.js", "glb", "rigged", "skeleton", "transparent", "avatar"],
-    "description": "",
-    "createdAt": "2026-05-20T02:30:23+03:00"
-  },
-  {
-    "slug": "meshy-post1-avatar",
-    "title": "Meshy Post1 Avatar",
-    "href": "meshy-post1-avatar.html",
-    "category": "Uncategorized",
-    "tags": [],
-    "description": "",
-    "createdAt": "2026-05-20T14:55:14+03:00"
-  },
-  {
     "slug": "meta-blobs",
     "title": "Meta Blobs",
     "href": "meta-blobs.html",
@@ -1665,15 +1570,6 @@
     "tags": ["audio-reactive", "shader"],
     "description": "",
     "createdAt": "2026-05-03T14:17:11+03:00"
-  },
-  {
-    "slug": "monolithic-black-geometry",
-    "title": "Monolithic Black Geometry",
-    "href": "monolithic-black-geometry.html",
-    "category": "Backgrounds",
-    "tags": ["geometry", "dark", "emissive", "procedural", "high-end"],
-    "description": "",
-    "createdAt": "2026-05-17T15:34:25+03:00"
   },
   {
     "slug": "mountain-night-railway",
@@ -2207,15 +2103,6 @@
     "createdAt": "2026-06-20T17:59:20+03:00"
   },
   {
-    "slug": "reactive-energy-membrane",
-    "title": "Reactive Energy Membrane",
-    "href": "reactive-energy-membrane.html",
-    "category": "Backgrounds",
-    "tags": ["mesh", "organic", "procedural", "purple", "breathing"],
-    "description": "",
-    "createdAt": "2026-05-17T15:34:25+03:00"
-  },
-  {
     "slug": "red-corrupt",
     "title": "Red Corrupt",
     "href": "red-corrupt.html",
@@ -2305,24 +2192,6 @@
     "createdAt": "2026-04-18T18:28:36+03:00"
   },
   {
-    "slug": "slime-mold-network",
-    "title": "Slime Mold Network",
-    "href": "slime-mold-network.html",
-    "category": "Backgrounds",
-    "tags": [
-      "biology",
-      "network",
-      "particles",
-      "organic",
-      "bioluminescent",
-      "slime mold",
-      "growth",
-      "particle"
-    ],
-    "description": "Organic slime-mold network with branching trails, glowing paths, and adaptive colony-like growth.",
-    "createdAt": "2026-05-17T15:34:25+03:00"
-  },
-  {
     "slug": "smoke-bar",
     "title": "Smoke Bar",
     "href": "smoke-bar.html",
@@ -2346,15 +2215,6 @@
     "href": "smolder.html",
     "category": "Backgrounds",
     "tags": ["shader", "fire", "atmospheric"],
-    "description": "",
-    "createdAt": "2026-05-23T18:24:51+03:00"
-  },
-  {
-    "slug": "smolder(1)",
-    "title": "Smolder(1)",
-    "href": "smolder(1).html",
-    "category": "Uncategorized",
-    "tags": [],
     "description": "",
     "createdAt": "2026-05-23T18:24:51+03:00"
   },
@@ -3001,14 +2861,5 @@
     "tags": ["particles", "text"],
     "description": "",
     "createdAt": "2026-04-23T17:08:46+03:00"
-  },
-  {
-    "slug": "zombie-fbx",
-    "title": "Zombie Fbx",
-    "href": "zombie-fbx.html",
-    "category": "3D",
-    "tags": ["three.js", "fbx", "zombie", "transparent", "animation"],
-    "description": "",
-    "createdAt": "2026-05-19T02:18:45+03:00"
   }
 ]
