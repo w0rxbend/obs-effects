@@ -300,7 +300,10 @@
 
       .controls-inner {
         display: grid;
-        grid-template-columns: minmax(240px, 1fr) minmax(170px, 220px);
+        grid-template-columns: minmax(240px, 1fr) minmax(150px, 190px) minmax(
+            140px,
+            180px
+          );
         gap: 14px;
         padding-block: 16px;
       }
@@ -345,27 +348,148 @@
         box-shadow: 0 0 0 1px var(--accent) inset;
       }
 
-      .tagbar {
-        display: flex;
-        align-items: flex-start;
-        gap: 12px;
-        padding: 0 0 18px;
+      /* The tag picker is a dropdown: the trigger sits in the controls row and the
+         scrollable list of every tag only exists while the panel is open, so the
+         directory no longer loses several rows of vertical space to it. */
+      .tag-menu {
+        position: relative;
       }
 
-      .tagbar-label {
-        flex: 0 0 auto;
-        padding-top: 7px;
+      .tag-toggle {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+        min-height: 38px;
+        border: 1px solid var(--line);
+        background: var(--panel);
+        color: var(--fg);
+        padding: 0 12px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 12px;
+      }
+
+      .tag-toggle:hover,
+      .tag-toggle[aria-expanded="true"] {
+        border-color: var(--line-strong);
+      }
+
+      .tag-toggle[aria-expanded="true"] {
+        border-color: var(--accent);
+      }
+
+      .tag-toggle-label {
+        margin-right: auto;
+      }
+
+      .tag-toggle-count {
+        min-width: 18px;
+        border-radius: 999px;
+        background: var(--accent);
+        color: var(--ink);
+        padding: 1px 6px;
+        font-size: 10px;
+        text-align: center;
+      }
+
+      .tag-toggle-chevron {
+        width: 12px;
+        height: 12px;
         color: var(--muted);
+        transition: transform 0.15s ease;
+      }
+
+      .tag-toggle[aria-expanded="true"] .tag-toggle-chevron {
+        transform: rotate(180deg);
+      }
+
+      .tag-panel {
+        position: absolute;
+        z-index: 30;
+        top: calc(100% + 6px);
+        right: 0;
+        width: min(420px, calc(100vw - 48px));
+        border: 1px solid var(--line-strong);
+        background: var(--panel);
+        box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+      }
+
+      .tag-panel[hidden] {
+        display: none;
+      }
+
+      .tag-panel-head {
+        display: flex;
+        gap: 8px;
+        border-bottom: 1px solid var(--line);
+        padding: 10px;
+      }
+
+      .tag-search {
+        flex: 1 1 auto;
+        min-width: 0;
+        min-height: 30px;
+        border: 1px solid var(--line);
+        background: var(--ink);
+        color: var(--fg);
+        padding: 0 10px;
         font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
         font-size: 11px;
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
+      }
+
+      .tag-search:focus {
+        border-color: var(--accent);
+        outline: none;
       }
 
       .tag-list {
         display: flex;
         flex-wrap: wrap;
         gap: 8px;
+        max-height: 260px;
+        overflow-y: auto;
+        padding: 10px;
+      }
+
+      .tag-empty {
+        color: var(--muted);
+        padding: 4px 2px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 11px;
+      }
+
+      /* Selected tags stay visible under the controls so the current filter is
+         obvious even while the dropdown is closed. */
+      .active-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 0 0 16px;
+      }
+
+      .active-tags[hidden] {
+        display: none;
+      }
+
+      .active-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        min-height: 26px;
+        border: 1px solid var(--accent);
+        background: color-mix(in srgb, var(--accent) 16%, var(--panel));
+        color: var(--fg);
+        padding: 0 8px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 11px;
+      }
+
+      .active-tag span {
+        color: var(--muted);
+      }
+
+      .active-tag:hover span {
+        color: var(--fg);
       }
 
       .tag-filter,
@@ -630,8 +754,10 @@
           grid-template-columns: 1fr;
         }
 
-        .tagbar {
-          display: grid;
+        .tag-panel {
+          left: 0;
+          right: 0;
+          width: auto;
         }
 
         .status-pill {
@@ -754,11 +880,53 @@
               <option value="za">Z to A</option>
             </select>
           </label>
+          <div class="tag-menu" id="tagMenu">
+            <button
+              class="tag-toggle"
+              id="tagToggle"
+              type="button"
+              aria-expanded="false"
+              aria-controls="tagPanel"
+            >
+              <span class="tag-toggle-label">Tags</span>
+              <span class="tag-toggle-count" id="tagToggleCount" hidden>0</span>
+              <svg class="tag-toggle-chevron" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="m6 9 6 6 6-6"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                />
+              </svg>
+            </button>
+            <div class="tag-panel" id="tagPanel" hidden>
+              <div class="tag-panel-head">
+                <label class="sr-only" for="tagSearch">Filter tag list</label>
+                <input
+                  class="tag-search"
+                  id="tagSearch"
+                  type="search"
+                  placeholder="Filter tags"
+                  autocomplete="off"
+                />
+                <button class="tag-filter" id="tagReset" type="button">
+                  Reset
+                </button>
+              </div>
+              <div
+                class="tag-list"
+                id="tagFilters"
+                aria-label="Tag filters"
+              ></div>
+            </div>
+          </div>
         </div>
-        <div class="tagbar">
-          <div class="tagbar-label">Tags</div>
-          <div class="tag-list" id="tagFilters" aria-label="Tag filters"></div>
-        </div>
+        <div
+          class="active-tags"
+          id="activeTags"
+          aria-label="Active tags"
+          hidden
+        ></div>
       </div>
     </section>
 
@@ -1351,6 +1519,8 @@
         query: "",
         sort: "newest",
         activeTags: new Set(),
+        tagQuery: "",
+        tagMenuOpen: false,
         source: "loading",
       };
 
@@ -1359,6 +1529,13 @@
         searchInput: document.getElementById("searchInput"),
         sortSelect: document.getElementById("sortSelect"),
         tagFilters: document.getElementById("tagFilters"),
+        tagMenu: document.getElementById("tagMenu"),
+        tagToggle: document.getElementById("tagToggle"),
+        tagToggleCount: document.getElementById("tagToggleCount"),
+        tagPanel: document.getElementById("tagPanel"),
+        tagSearch: document.getElementById("tagSearch"),
+        tagReset: document.getElementById("tagReset"),
+        activeTags: document.getElementById("activeTags"),
         clearFilters: document.getElementById("clearFilters"),
         effectsGrid: document.getElementById("effectsGrid"),
         totalCount: document.getElementById("totalCount"),
@@ -1587,15 +1764,68 @@
       }
 
       function renderTagFilters() {
-        const tags = uniqueSortedTags(state.effects);
         const active = state.activeTags;
-        els.tagFilters.innerHTML = tags
-          .map((tag) => {
-            const key = tag.toLowerCase();
-            const pressed = active.has(key);
-            return `<button class="tag-filter${pressed ? " is-active" : ""}" type="button" data-tag="${escapeHtml(key)}" aria-pressed="${pressed}">${escapeHtml(tag)}</button>`;
+        const needle = state.tagQuery.trim().toLowerCase();
+        const tags = uniqueSortedTags(state.effects).filter(
+          (tag) => needle === "" || tag.toLowerCase().includes(needle),
+        );
+
+        els.tagFilters.innerHTML =
+          tags.length === 0
+            ? `<p class="tag-empty">No tags match "${escapeHtml(state.tagQuery.trim())}".</p>`
+            : tags
+                .map((tag) => {
+                  const key = tag.toLowerCase();
+                  const pressed = active.has(key);
+                  return `<button class="tag-filter${pressed ? " is-active" : ""}" type="button" data-tag="${escapeHtml(key)}" aria-pressed="${pressed}">${escapeHtml(tag)}</button>`;
+                })
+                .join("");
+
+        renderActiveTags();
+      }
+
+      // The chips below the controls mirror `state.activeTags`, so a closed
+      // dropdown never hides which filters are switched on. Clicking a chip
+      // removes that tag.
+      function renderActiveTags() {
+        const active = Array.from(state.activeTags);
+        els.tagToggleCount.textContent = active.length;
+        els.tagToggleCount.hidden = active.length === 0;
+        els.activeTags.hidden = active.length === 0;
+        els.activeTags.innerHTML = active
+          .map((key) => {
+            const label = tagLabel(key);
+            return `<button class="active-tag" type="button" data-tag="${escapeHtml(key)}" aria-label="Remove tag ${escapeHtml(label)}">${escapeHtml(label)}<span aria-hidden="true">x</span></button>`;
           })
           .join("");
+      }
+
+      // Tags are matched case-insensitively but displayed in their original
+      // casing, so recover that casing from the catalog for the chip label.
+      function tagLabel(key) {
+        const match = uniqueSortedTags(state.effects).find(
+          (tag) => tag.toLowerCase() === key,
+        );
+        return match || key;
+      }
+
+      function setTagMenuOpen(open) {
+        state.tagMenuOpen = open;
+        els.tagPanel.hidden = !open;
+        els.tagToggle.setAttribute("aria-expanded", String(open));
+        if (open) {
+          els.tagSearch.focus();
+        }
+      }
+
+      function toggleTag(tag) {
+        if (state.activeTags.has(tag)) {
+          state.activeTags.delete(tag);
+        } else {
+          state.activeTags.add(tag);
+        }
+        renderTagFilters();
+        renderResults();
       }
 
       function renderCards(effects) {
@@ -1676,25 +1906,61 @@
           renderResults();
         });
 
-        els.tagFilters.addEventListener("click", (event) => {
-          const button = event.target.closest("[data-tag]");
-          if (!button) {
-            return;
-          }
-          const tag = button.dataset.tag;
-          if (state.activeTags.has(tag)) {
-            state.activeTags.delete(tag);
-          } else {
-            state.activeTags.add(tag);
-          }
+        els.tagToggle.addEventListener("click", () => {
+          setTagMenuOpen(!state.tagMenuOpen);
+        });
+
+        els.tagSearch.addEventListener(
+          "input",
+          debounce((event) => {
+            state.tagQuery = event.target.value;
+            renderTagFilters();
+          }, 120),
+        );
+
+        els.tagReset.addEventListener("click", () => {
+          state.activeTags.clear();
+          state.tagQuery = "";
+          els.tagSearch.value = "";
           renderTagFilters();
           renderResults();
+        });
+
+        els.tagFilters.addEventListener("click", (event) => {
+          const button = event.target.closest("[data-tag]");
+          if (button) {
+            toggleTag(button.dataset.tag);
+          }
+        });
+
+        els.activeTags.addEventListener("click", (event) => {
+          const button = event.target.closest("[data-tag]");
+          if (button) {
+            toggleTag(button.dataset.tag);
+          }
+        });
+
+        // Close the dropdown on an outside click or Escape, the behaviour people
+        // expect from a menu that overlaps the page content.
+        document.addEventListener("click", (event) => {
+          if (state.tagMenuOpen && !els.tagMenu.contains(event.target)) {
+            setTagMenuOpen(false);
+          }
+        });
+
+        document.addEventListener("keydown", (event) => {
+          if (event.key === "Escape" && state.tagMenuOpen) {
+            setTagMenuOpen(false);
+            els.tagToggle.focus();
+          }
         });
 
         els.clearFilters.addEventListener("click", () => {
           state.query = "";
           state.activeTags.clear();
+          state.tagQuery = "";
           els.searchInput.value = "";
+          els.tagSearch.value = "";
           renderTagFilters();
           renderResults();
         });
