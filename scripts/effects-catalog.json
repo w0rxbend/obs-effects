@@ -174,30 +174,6 @@
       ]
     },
     {
-      "href": "ai-character-final.html",
-      "category": "3D",
-      "tags": [
-        "Three.js",
-        "GLB",
-        "Avatar",
-        "Gesture",
-        "Expressive",
-        "Transparent"
-      ]
-    },
-    {
-      "href": "ai-character-natural.html",
-      "category": "3D",
-      "tags": [
-        "Three.js",
-        "GLB",
-        "Avatar",
-        "Gesture",
-        "Conversation",
-        "Transparent"
-      ]
-    },
-    {
       "href": "ai-inference.html",
       "category": "Backgrounds",
       "tags": ["AI", "Neural", "Ambient", "Sci-Fi"]
@@ -323,19 +299,9 @@
       "tags": ["Shader", "Atmospheric"]
     },
     {
-      "href": "avatar.html",
-      "category": "Particle Systems",
-      "tags": ["3D", "Mascot"]
-    },
-    {
       "href": "background.html",
       "category": "Backgrounds",
       "tags": ["Loop"]
-    },
-    {
-      "href": "bioluminescent-cell.html",
-      "category": "Particle Systems",
-      "tags": ["Mascot", "Fluid"]
     },
     {
       "href": "black-hole-cam.html",
@@ -403,11 +369,6 @@
     },
     {
       "href": "chaos-attractor.html",
-      "category": "Uncategorized",
-      "tags": []
-    },
-    {
-      "href": "chaotic-particles.html",
       "category": "Uncategorized",
       "tags": []
     },
@@ -681,16 +642,6 @@
       "tags": ["Fluid", "Mesh", "Webcam", "Border", "Ring", "Transparent"]
     },
     {
-      "href": "fluid-paint.html",
-      "category": "Particle Systems",
-      "tags": ["WebGPU", "Fluid"]
-    },
-    {
-      "href": "forest-ambient-bg.html",
-      "category": "Backgrounds",
-      "tags": ["Scene", "Parallax"]
-    },
-    {
       "href": "fourier-epicycles.html",
       "category": "Particle Systems",
       "tags": ["Math", "Generative"]
@@ -709,11 +660,6 @@
       "href": "gas-cam.html",
       "category": "Webcam Borders",
       "tags": ["Fluid", "Overlay"]
-    },
-    {
-      "href": "gaussian-distribution-bg.html",
-      "category": "Backgrounds",
-      "tags": ["Generative", "Mesh"]
     },
     {
       "href": "generative.html",
@@ -959,11 +905,6 @@
       "tags": ["Shader", "Halftone", "Gradient", "Retro"]
     },
     {
-      "href": "handwritten-notebook.html",
-      "category": "Particle Systems",
-      "tags": ["Scene", "Text"]
-    },
-    {
       "href": "hex-ripple.html",
       "category": "Particle Systems",
       "tags": ["Geometric", "Wave"]
@@ -1039,16 +980,6 @@
       "tags": ["Fluid", "Artistic", "Atmospheric"]
     },
     {
-      "href": "ink-in-water.html",
-      "category": "Audio Visualizers",
-      "tags": ["Audio-Reactive", "Fluid"]
-    },
-    {
-      "href": "iridescent-blobs.html",
-      "category": "Particle Systems",
-      "tags": ["Fluid", "Overlay"]
-    },
-    {
       "href": "japanese-temple-lofi.html",
       "category": "Backgrounds",
       "tags": ["Scene", "Ambient", "Lofi"]
@@ -1094,11 +1025,6 @@
       "tags": ["Mesh", "Mascot"]
     },
     {
-      "href": "liquid-aurora-field.html",
-      "category": "Audio Visualizers",
-      "tags": ["Audio-Reactive", "Fluid"]
-    },
-    {
       "href": "liquid-paper-frame.html",
       "category": "Backgrounds",
       "tags": ["Blobs", "Paper Cut", "Halftone", "Frame"]
@@ -1117,16 +1043,6 @@
       "href": "magenta-dot-flow.html",
       "category": "Backgrounds",
       "tags": ["Halftone", "Dots", "Magenta", "Pink", "Fluid", "Abstract"]
-    },
-    {
-      "href": "magma-core.html",
-      "category": "Backgrounds",
-      "tags": ["Shader", "Fire", "Atmospheric"]
-    },
-    {
-      "href": "magma-core(1).html",
-      "category": "Uncategorized",
-      "tags": []
     },
     {
       "href": "magnetic-field.html",
@@ -1207,11 +1123,6 @@
       "href": "neon-drip.html",
       "category": "Backgrounds",
       "tags": ["Shader", "Neon", "Artistic"]
-    },
-    {
-      "href": "neon-drip(1).html",
-      "category": "Uncategorized",
-      "tags": []
     },
     {
       "href": "network-surge.html",
@@ -1431,11 +1342,6 @@
       "tags": ["Three.js", "Physics", "Soft Body", "3D"]
     },
     {
-      "href": "soft-body-organisms.html",
-      "category": "Backgrounds",
-      "tags": ["Physics", "Soft-Body", "Verlet"]
-    },
-    {
       "href": "soft-vol-fog.html",
       "category": "Overlays",
       "tags": ["Fog", "Ambient", "Transparent", "Interactive"]
@@ -1594,11 +1500,6 @@
       ]
     },
     {
-      "href": "tux-blob.html",
-      "category": "Particle Systems",
-      "tags": ["Mascot", "Fluid"]
-    },
-    {
       "href": "tux-penguin.html",
       "category": "3D",
       "tags": ["Three.js", "GLB", "Linux", "Tux", "Transparent", "Character"]
@@ -1642,11 +1543,6 @@
       "href": "wave-border-cam.html",
       "category": "Webcam Borders",
       "tags": ["Fluid", "Border"]
-    },
-    {
-      "href": "wave-interference.html",
-      "category": "Backgrounds",
-      "tags": ["Physics", "Waves", "Scientific"]
     },
     {
       "href": "wave-simulation.html",

@@ -26,38 +26,6 @@
     "createdAt": "2026-06-14T13:10:36+03:00"
   },
   {
-    "slug": "ai-character-final",
-    "title": "Ai Character Final",
-    "href": "ai-character-final.html",
-    "category": "3D",
-    "tags": [
-      "three.js",
-      "glb",
-      "avatar",
-      "gesture",
-      "expressive",
-      "transparent"
-    ],
-    "description": "",
-    "createdAt": "2026-05-22T18:17:00+03:00"
-  },
-  {
-    "slug": "ai-character-natural",
-    "title": "Ai Character Natural",
-    "href": "ai-character-natural.html",
-    "category": "3D",
-    "tags": [
-      "three.js",
-      "glb",
-      "avatar",
-      "gesture",
-      "conversation",
-      "transparent"
-    ],
-    "description": "",
-    "createdAt": "2026-05-22T18:17:00+03:00"
-  },
-  {
     "slug": "ai-inference",
     "title": "Ai Inference",
     "href": "ai-inference.html",
@@ -307,15 +275,6 @@
     "createdAt": "2026-04-19T13:13:02+03:00"
   },
   {
-    "slug": "avatar",
-    "title": "Avatar",
-    "href": "avatar.html",
-    "category": "Particle Systems",
-    "tags": ["3d", "mascot"],
-    "description": "",
-    "createdAt": "2026-04-23T23:39:14+03:00"
-  },
-  {
     "slug": "background",
     "title": "Background",
     "href": "background.html",
@@ -323,15 +282,6 @@
     "tags": ["loop"],
     "description": "",
     "createdAt": "2026-04-16T02:42:20+03:00"
-  },
-  {
-    "slug": "bioluminescent-cell",
-    "title": "Bioluminescent Cell",
-    "href": "bioluminescent-cell.html",
-    "category": "Particle Systems",
-    "tags": ["mascot", "fluid"],
-    "description": "",
-    "createdAt": "2026-04-29T00:47:10+03:00"
   },
   {
     "slug": "bioluminescent-marble",
@@ -472,15 +422,6 @@
     "slug": "chaos-attractor",
     "title": "Chaos Attractor",
     "href": "chaos-attractor.html",
-    "category": "Uncategorized",
-    "tags": [],
-    "description": "",
-    "createdAt": "2026-05-08T00:37:27+03:00"
-  },
-  {
-    "slug": "chaotic-particles",
-    "title": "Chaotic Particles",
-    "href": "chaotic-particles.html",
     "category": "Uncategorized",
     "tags": [],
     "description": "",
@@ -925,24 +866,6 @@
     "createdAt": "2026-04-24T19:48:12+03:00"
   },
   {
-    "slug": "fluid-paint",
-    "title": "Fluid Paint",
-    "href": "fluid-paint.html",
-    "category": "Particle Systems",
-    "tags": ["webgpu", "fluid"],
-    "description": "",
-    "createdAt": "2026-04-25T08:07:59+03:00"
-  },
-  {
-    "slug": "forest-ambient-bg",
-    "title": "Forest Ambient Bg",
-    "href": "forest-ambient-bg.html",
-    "category": "Backgrounds",
-    "tags": ["scene", "parallax"],
-    "description": "",
-    "createdAt": "2026-05-07T22:47:32+03:00"
-  },
-  {
     "slug": "fourier-epicycles",
     "title": "Fourier Epicycles",
     "href": "fourier-epicycles.html",
@@ -977,15 +900,6 @@
     "tags": ["fluid", "overlay"],
     "description": "",
     "createdAt": "2026-04-22T23:33:09+03:00"
-  },
-  {
-    "slug": "gaussian-distribution-bg",
-    "title": "Gaussian Distribution Bg",
-    "href": "gaussian-distribution-bg.html",
-    "category": "Backgrounds",
-    "tags": ["generative", "mesh"],
-    "description": "",
-    "createdAt": "2026-05-03T14:17:11+03:00"
   },
   {
     "slug": "generative",
@@ -1167,15 +1081,6 @@
     "createdAt": "2026-06-14T16:26:59+03:00"
   },
   {
-    "slug": "handwritten-notebook",
-    "title": "Handwritten Notebook",
-    "href": "handwritten-notebook.html",
-    "category": "Particle Systems",
-    "tags": ["scene", "text"],
-    "description": "",
-    "createdAt": "2026-05-08T17:47:06+03:00"
-  },
-  {
     "slug": "hex-ripple",
     "title": "Hex Ripple",
     "href": "hex-ripple.html",
@@ -1311,24 +1216,6 @@
     "createdAt": "2026-06-21T00:30:31+03:00"
   },
   {
-    "slug": "ink-in-water",
-    "title": "Ink In Water",
-    "href": "ink-in-water.html",
-    "category": "Audio Visualizers",
-    "tags": ["audio-reactive", "fluid"],
-    "description": "",
-    "createdAt": "2026-05-03T14:17:11+03:00"
-  },
-  {
-    "slug": "iridescent-blobs",
-    "title": "Iridescent Blobs",
-    "href": "iridescent-blobs.html",
-    "category": "Particle Systems",
-    "tags": ["fluid", "overlay"],
-    "description": "",
-    "createdAt": "2026-04-30T09:40:19+03:00"
-  },
-  {
     "slug": "japanese-temple-lofi",
     "title": "Japanese Temple Lofi",
     "href": "japanese-temple-lofi.html",
@@ -1410,15 +1297,6 @@
     "createdAt": "2026-04-24T19:48:12+03:00"
   },
   {
-    "slug": "liquid-aurora-field",
-    "title": "Liquid Aurora Field",
-    "href": "liquid-aurora-field.html",
-    "category": "Audio Visualizers",
-    "tags": ["audio-reactive", "fluid"],
-    "description": "",
-    "createdAt": "2026-05-03T14:17:11+03:00"
-  },
-  {
     "slug": "liquid-paper-frame",
     "title": "Liquid Paper Frame",
     "href": "liquid-paper-frame.html",
@@ -1462,24 +1340,6 @@
     "tags": ["halftone", "dots", "magenta", "pink", "fluid", "abstract"],
     "description": "",
     "createdAt": "2026-06-19T18:57:59+03:00"
-  },
-  {
-    "slug": "magma-core",
-    "title": "Magma Core",
-    "href": "magma-core.html",
-    "category": "Backgrounds",
-    "tags": ["shader", "fire", "atmospheric"],
-    "description": "",
-    "createdAt": "2026-05-23T18:24:51+03:00"
-  },
-  {
-    "slug": "magma-core(1)",
-    "title": "Magma Core(1)",
-    "href": "magma-core(1).html",
-    "category": "Uncategorized",
-    "tags": [],
-    "description": "",
-    "createdAt": "2026-05-23T18:24:51+03:00"
   },
   {
     "slug": "magnetic-field",
@@ -1622,15 +1482,6 @@
     "href": "neon-drip.html",
     "category": "Backgrounds",
     "tags": ["shader", "neon", "artistic"],
-    "description": "",
-    "createdAt": "2026-05-23T18:24:51+03:00"
-  },
-  {
-    "slug": "neon-drip(1)",
-    "title": "Neon Drip(1)",
-    "href": "neon-drip(1).html",
-    "category": "Uncategorized",
-    "tags": [],
     "description": "",
     "createdAt": "2026-05-23T18:24:51+03:00"
   },
@@ -2228,15 +2079,6 @@
     "createdAt": "2026-05-17T01:42:36+03:00"
   },
   {
-    "slug": "soft-body-organisms",
-    "title": "Soft Body Organisms",
-    "href": "soft-body-organisms.html",
-    "category": "Backgrounds",
-    "tags": ["physics", "soft-body", "verlet"],
-    "description": "",
-    "createdAt": "2026-05-17T01:42:36+03:00"
-  },
-  {
     "slug": "soft-vol-fog",
     "title": "Soft Vol Fog",
     "href": "soft-vol-fog.html",
@@ -2594,15 +2436,6 @@
     "createdAt": "2026-04-19T13:28:28+03:00"
   },
   {
-    "slug": "tux-blob",
-    "title": "Tux Blob",
-    "href": "tux-blob.html",
-    "category": "Particle Systems",
-    "tags": ["mascot", "fluid"],
-    "description": "",
-    "createdAt": "2026-04-28T23:57:18+03:00"
-  },
-  {
     "slug": "tux-penguin",
     "title": "Tux Penguin",
     "href": "tux-penguin.html",
@@ -2691,15 +2524,6 @@
     "tags": ["fluid", "border"],
     "description": "",
     "createdAt": "2026-04-25T08:07:59+03:00"
-  },
-  {
-    "slug": "wave-interference",
-    "title": "Wave Interference",
-    "href": "wave-interference.html",
-    "category": "Backgrounds",
-    "tags": ["physics", "waves", "scientific"],
-    "description": "",
-    "createdAt": "2026-05-17T01:42:36+03:00"
   },
   {
     "slug": "wave-simulation",
