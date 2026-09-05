@@ -1,5 +1,12 @@
 import type { Ticker } from "pixi.js";
-import { Assets, Container, Graphics, Sprite, Texture } from "pixi.js";
+import {
+  Assets,
+  Container,
+  Graphics,
+  GraphicsPath,
+  Sprite,
+  Texture,
+} from "pixi.js";
 import { clamp, TAU } from "../../lib/math";
 
 const BG = 0x080304;
@@ -18,6 +25,23 @@ const BACKGROUND_SIGIL_SIZE = 460;
 
 const MAX_DT = 0.05;
 const SEGMENT_DOT_STEP = 6;
+
+/** Number of `Float64Array` slots {@link EmberPentagramOverlayScreen} keeps per node. */
+const WAVE_STRIDE = 20;
+
+/**
+ * Scratch objects reused by the frame loop.
+ *
+ * Pixi copies a fill/stroke input into its own style object the moment it is
+ * handed over, so passing the same mutable object on every call behaves exactly
+ * like passing a fresh literal — it just does not allocate one per draw.
+ * `segmentDotPath` is reused the same way: `Graphics.path()` clones whatever it
+ * is given, so the buffer is free to be cleared and refilled for the next
+ * segment.
+ */
+const fillScratch = { color: 0, alpha: 1 };
+const strokeScratch = { color: 0, alpha: 1, width: 1 };
+const segmentDotPath = new GraphicsPath();
 
 interface ShapeBounds {
   minX: number;
@@ -107,6 +131,25 @@ interface FloatingAssetPentagram {
   radialWobble: number;
 }
 
+/**
+ * One orbiting backdrop sigil, drawn sigil or sprite alike, plus the position
+ * the separation passes push around. Built once and mutated in place.
+ */
+interface OrbitBody {
+  display: Container;
+  orbitAngle: number;
+  orbitRadius: number;
+  angularSpeed: number;
+  radialWobble: number;
+  phase: number;
+  alphaSpeed: number;
+  baseAlpha: number;
+  spin: number;
+  x: number;
+  y: number;
+  sizeRadius: number;
+}
+
 export class EmberPentagramOverlayScreen extends Container {
   public static assetBundles = ["main"];
 
@@ -121,6 +164,17 @@ export class EmberPentagramOverlayScreen extends Container {
   private floatingMeshes: FloatingMeshCluster[] = [];
   private readonly backgroundPentagrams: FloatingPentagram[] = [];
   private readonly backgroundAssetPentagrams: FloatingAssetPentagram[] = [];
+  private readonly orbitBodies: OrbitBody[] = [];
+
+  /**
+   * Layout-fixed inputs of {@link updateNodes}, packed `WAVE_STRIDE` numbers per
+   * node. Rebuilt by {@link layoutShape}; see {@link rebuildWaveTable}.
+   */
+  private waveTable = new Float64Array(0);
+
+  /** Ring of cluster points reused by {@link drawFloatingMesh}, as x/y pairs. */
+  private meshPointBuffer = new Float64Array(0);
+
   private bounds: ShapeBounds = {
     minX: -1,
     maxX: 1,
@@ -466,6 +520,67 @@ export class EmberPentagramOverlayScreen extends Container {
       node.x = this.centerX + node.relX;
       node.y = this.centerY + node.relY;
     }
+
+    this.rebuildWaveTable();
+  }
+
+  /**
+   * Precomputes everything {@link updateNodes} needs that only depends on the
+   * layout, so the frame loop never has to touch `sqrt`, `atan2` or a division.
+   *
+   * The five displacement waves and the two drift terms all have the shape
+   * `sin(fixedPhase + speed * time)`. Splitting that with the angle-addition
+   * identity — `sin(a + b) = sin(a)cos(b) + cos(a)sin(b)` — lets the sine and
+   * cosine of the node-fixed half be cached here, leaving the frame loop with
+   * seven trig calls in total instead of seven per node.
+   */
+  private rebuildWaveTable(): void {
+    const count = this.nodes.length;
+
+    if (this.waveTable.length !== count * WAVE_STRIDE) {
+      this.waveTable = new Float64Array(count * WAVE_STRIDE);
+    }
+
+    const table = this.waveTable;
+    const halfWidth = Math.max(this.renderWidth * 0.5, 1);
+    const halfHeight = Math.max(this.renderHeight * 0.5, 1);
+
+    for (let index = 0; index < count; index++) {
+      const node = this.nodes[index];
+      const normX = node.relX / halfWidth;
+      const normY = node.relY / halfHeight;
+      const radial = Math.sqrt(normX * normX + normY * normY);
+      const angle = Math.atan2(normY, normX);
+      const primaryPhase = normX * 3.4 + node.phase;
+      const diagonalPhase = (normX * 0.9 + normY * 1.2) * 4.8 + node.drift;
+      const ringPhase = radial * 7.2 + Math.sin(angle * 3);
+      const spiralPhase = angle * 4 + radial * 3.8 + node.phase;
+      const ripplePhase = radial * 18 + node.phase * 1.4 + node.drift * 0.3;
+      const swayPhase = normY * 3.2 + node.phase;
+      const bobPhase = normX * 2.8 + node.drift;
+      const base = index * WAVE_STRIDE;
+
+      table[base] = Math.sin(primaryPhase);
+      table[base + 1] = Math.cos(primaryPhase);
+      table[base + 2] = Math.sin(diagonalPhase);
+      table[base + 3] = Math.cos(diagonalPhase);
+      table[base + 4] = Math.sin(ringPhase);
+      table[base + 5] = Math.cos(ringPhase);
+      table[base + 6] = Math.sin(spiralPhase);
+      table[base + 7] = Math.cos(spiralPhase);
+      table[base + 8] = Math.sin(ripplePhase);
+      table[base + 9] = Math.cos(ripplePhase);
+      table[base + 10] = Math.sin(swayPhase);
+      table[base + 11] = Math.cos(swayPhase);
+      table[base + 12] = Math.sin(bobPhase);
+      table[base + 13] = Math.cos(bobPhase);
+      table[base + 14] = radial > 0.0001 ? -normY / radial : 0;
+      table[base + 15] = radial > 0.0001 ? normX / radial : 0;
+      table[base + 16] = radial > 0.0001 ? normX / radial : 0;
+      table[base + 17] = radial > 0.0001 ? normY / radial : 0;
+      table[base + 18] = 0.2 + node.interiorBias * 0.8;
+      table[base + 19] = 3.4 + node.interiorBias * 4.2;
+    }
   }
 
   private layoutBackgroundPentagrams(): void {
@@ -508,9 +623,10 @@ export class EmberPentagramOverlayScreen extends Container {
     }
 
     const meshCount = Math.max(6, Math.floor(8 * densityScale));
+    let maxMeshPoints = 0;
 
     for (let index = 0; index < meshCount; index++) {
-      this.floatingMeshes.push({
+      const cluster: FloatingMeshCluster = {
         xNorm: Math.random(),
         yNorm: Math.random(),
         radiusNorm: 0.03 + Math.random() * 0.09,
@@ -522,26 +638,34 @@ export class EmberPentagramOverlayScreen extends Container {
         speed: 0.05 + Math.random() * 0.18,
         alpha: 0.08 + Math.random() * 0.13,
         color: meshColors[index % meshColors.length],
-      });
+      };
+
+      this.floatingMeshes.push(cluster);
+      maxMeshPoints = Math.max(maxMeshPoints, cluster.pointCount);
+    }
+
+    if (this.meshPointBuffer.length < maxMeshPoints * 2) {
+      this.meshPointBuffer = new Float64Array(maxMeshPoints * 2);
     }
   }
 
-  private updateBackgroundSigils(): void {
-    type Body = {
-      display: Container;
-      orbitAngle: number;
-      orbitRadius: number;
-      angularSpeed: number;
-      radialWobble: number;
-      phase: number;
-      alphaSpeed: number;
-      baseAlpha: number;
-      spin: number;
-    };
+  /**
+   * Collects the drawn sigils and the sprite sigils into one persistent list,
+   * drawn sigils first. None of the copied orbit values ever change after their
+   * `ensure*` pass, so this only has to run when the population changes — the
+   * frame loop then resolves overlaps inside these same objects rather than
+   * rebuilding the list and a parallel position list every tick.
+   */
+  private ensureOrbitBodies(): void {
+    const total =
+      this.backgroundPentagrams.length + this.backgroundAssetPentagrams.length;
 
-    const bodies: Body[] = [];
+    if (this.orbitBodies.length === total) return;
+
+    this.orbitBodies.length = 0;
+
     for (const pentagram of this.backgroundPentagrams) {
-      bodies.push({
+      this.orbitBodies.push({
         display: pentagram.container,
         orbitAngle: pentagram.orbitAngle,
         orbitRadius: pentagram.orbitRadius,
@@ -551,10 +675,14 @@ export class EmberPentagramOverlayScreen extends Container {
         alphaSpeed: pentagram.alphaSpeed,
         baseAlpha: pentagram.baseAlpha,
         spin: pentagram.spin,
+        x: 0,
+        y: 0,
+        sizeRadius: 0,
       });
     }
+
     for (const pentagram of this.backgroundAssetPentagrams) {
-      bodies.push({
+      this.orbitBodies.push({
         display: pentagram.sprite,
         orbitAngle: pentagram.orbitAngle,
         orbitRadius: pentagram.orbitRadius,
@@ -564,30 +692,38 @@ export class EmberPentagramOverlayScreen extends Container {
         alphaSpeed: pentagram.alphaSpeed,
         baseAlpha: pentagram.baseAlpha,
         spin: pentagram.spin,
+        x: 0,
+        y: 0,
+        sizeRadius: 0,
       });
     }
+  }
 
+  private updateBackgroundSigils(): void {
+    this.ensureOrbitBodies();
+
+    const bodies = this.orbitBodies;
     const orbitBase = Math.max(this.renderWidth, this.renderHeight) * 0.52;
-    const positions = bodies.map((body) => {
+
+    for (let index = 0; index < bodies.length; index++) {
+      const body = bodies[index];
       const angle = body.orbitAngle + this.time * body.angularSpeed;
       const radius =
         orbitBase * body.orbitRadius +
         Math.sin(this.time * body.alphaSpeed * 1.2 + body.phase) *
           body.radialWobble;
 
-      return {
-        body,
-        x: this.centerX + Math.cos(angle) * radius,
-        y: this.centerY + Math.sin(angle) * radius * 0.82,
-        sizeRadius: Math.max(body.display.width, body.display.height) * 0.32,
-      };
-    });
+      body.x = this.centerX + Math.cos(angle) * radius;
+      body.y = this.centerY + Math.sin(angle) * radius * 0.82;
+      body.sizeRadius =
+        Math.max(body.display.width, body.display.height) * 0.32;
+    }
 
     for (let pass = 0; pass < 3; pass++) {
-      for (let i = 0; i < positions.length; i++) {
-        for (let j = i + 1; j < positions.length; j++) {
-          const a = positions[i];
-          const b = positions[j];
+      for (let i = 0; i < bodies.length; i++) {
+        for (let j = i + 1; j < bodies.length; j++) {
+          const a = bodies[i];
+          const b = bodies[j];
           const dx = b.x - a.x;
           const dy = b.y - a.y;
           const distance = Math.sqrt(dx * dx + dy * dy) || 0.0001;
@@ -607,46 +743,73 @@ export class EmberPentagramOverlayScreen extends Container {
       }
     }
 
-    for (const entry of positions) {
-      entry.body.display.x = entry.x;
-      entry.body.display.y = entry.y;
-      entry.body.display.rotation =
-        Math.sin(this.time * entry.body.alphaSpeed + entry.body.phase) * 0.08 +
-        this.time * entry.body.spin;
-      entry.body.display.alpha =
-        entry.body.baseAlpha *
-        (0.7 +
-          Math.sin(this.time * entry.body.alphaSpeed * 2.2 + entry.body.phase) *
-            0.22);
+    for (let index = 0; index < bodies.length; index++) {
+      const body = bodies[index];
+
+      body.display.x = body.x;
+      body.display.y = body.y;
+      body.display.rotation =
+        Math.sin(this.time * body.alphaSpeed + body.phase) * 0.08 +
+        this.time * body.spin;
+      body.display.alpha =
+        body.baseAlpha *
+        (0.7 + Math.sin(this.time * body.alphaSpeed * 2.2 + body.phase) * 0.22);
     }
   }
 
   private updateNodes(): void {
+    const nodes = this.nodes;
+    const table = this.waveTable;
+    const centerX = this.centerX;
+    const centerY = this.centerY;
     const pulse = 1 + Math.sin(this.time * 0.18) * 0.01;
     const shear = Math.sin(this.time * 0.16) * 0.014;
-    const halfWidth = Math.max(this.renderWidth * 0.5, 1);
-    const halfHeight = Math.max(this.renderHeight * 0.5, 1);
 
-    for (const node of this.nodes) {
-      const normX = node.relX / halfWidth;
-      const normY = node.relY / halfHeight;
-      const radial = Math.sqrt(normX * normX + normY * normY);
-      const angle = Math.atan2(normY, normX);
+    // Time-varying half of each wave, paired with the node-fixed half that
+    // rebuildWaveTable() cached. Seven trig calls cover every node.
+    const primaryTime = -this.time * 0.42;
+    const primaryTimeSin = Math.sin(primaryTime);
+    const primaryTimeCos = Math.cos(primaryTime);
+    const diagonalTime = -this.time * 0.34;
+    const diagonalTimeSin = Math.sin(diagonalTime);
+    const diagonalTimeCos = Math.cos(diagonalTime);
+    const ringTime = -this.time * 0.56;
+    const ringTimeSin = Math.sin(ringTime);
+    const ringTimeCos = Math.cos(ringTime);
+    const spiralTime = -this.time * 0.28;
+    const spiralTimeSin = Math.sin(spiralTime);
+    const spiralTimeCos = Math.cos(spiralTime);
+    const rippleTime = -this.time * 0.92;
+    const rippleTimeSin = Math.sin(rippleTime);
+    const rippleTimeCos = Math.cos(rippleTime);
+    const swayTime = this.time * 0.18;
+    const swayTimeSin = Math.sin(swayTime);
+    const swayTimeCos = Math.cos(swayTime);
+    const bobTime = this.time * 0.2;
+    const bobTimeSin = Math.sin(bobTime);
+    const bobTimeCos = Math.cos(bobTime);
+
+    for (let index = 0; index < nodes.length; index++) {
+      const node = nodes[index];
+      const base = index * WAVE_STRIDE;
       const primarySwell =
-        Math.sin(normX * 3.4 - this.time * 0.42 + node.phase) * 0.72;
+        (table[base] * primaryTimeCos + table[base + 1] * primaryTimeSin) *
+        0.72;
       const diagonalSwell =
-        Math.sin(
-          (normX * 0.9 + normY * 1.2) * 4.8 - this.time * 0.34 + node.drift,
-        ) * 0.44;
+        (table[base + 2] * diagonalTimeCos +
+          table[base + 3] * diagonalTimeSin) *
+        0.44;
       const ringCurrent =
-        Math.cos(radial * 7.2 - this.time * 0.56 + Math.sin(angle * 3)) * 0.34;
+        (table[base + 5] * ringTimeCos - table[base + 4] * ringTimeSin) * 0.34;
       const spiralCurrent =
-        Math.sin(angle * 4 + radial * 3.8 - this.time * 0.28 + node.phase) *
+        (table[base + 6] * spiralTimeCos + table[base + 7] * spiralTimeSin) *
         0.26;
       const microRipple =
-        Math.sin(
-          radial * 18 - this.time * 0.92 + node.phase * 1.4 + node.drift * 0.3,
-        ) * 0.08;
+        (table[base + 8] * rippleTimeCos + table[base + 9] * rippleTimeSin) *
+        0.08;
+      const sway =
+        table[base + 11] * swayTimeCos - table[base + 10] * swayTimeSin;
+      const bob = table[base + 12] * bobTimeCos + table[base + 13] * bobTimeSin;
       const swell =
         primarySwell +
         diagonalSwell +
@@ -657,29 +820,25 @@ export class EmberPentagramOverlayScreen extends Container {
         0,
         primarySwell * 0.64 + diagonalSwell * 0.28 + ringCurrent * 0.38,
       );
-      const damping = 0.2 + node.interiorBias * 0.8;
-      const elevation =
-        swell * 0.18 + crest * crest * 0.9 + Math.max(0, ringCurrent) * 0.12;
+      const rise = Math.max(0, ringCurrent);
+      const damping = table[base + 18];
+      const elevation = swell * 0.18 + crest * crest * 0.9 + rise * 0.12;
 
       const stretchedX = node.relX * pulse + node.relY * shear;
       const stretchedY = node.relY * (1 - pulse * 0.01);
-      const tangentX = radial > 0.0001 ? -normY / radial : 0;
-      const tangentY = radial > 0.0001 ? normX / radial : 0;
-      const radialX = radial > 0.0001 ? normX / radial : 0;
-      const radialY = radial > 0.0001 ? normY / radial : 0;
       const flowX =
-        tangentX * (4 + crest * 10 + Math.max(0, ringCurrent) * 6) * damping +
-        radialX * elevation * 7 * damping +
-        Math.cos(this.time * 0.18 + normY * 3.2 + node.phase) * 1.6 * damping;
+        table[base + 14] * (4 + crest * 10 + rise * 6) * damping +
+        table[base + 16] * elevation * 7 * damping +
+        sway * 1.6 * damping;
       const flowY =
-        tangentY * (4 + crest * 10 + Math.max(0, ringCurrent) * 6) * damping +
-        radialY * elevation * 9 * damping -
-        crest * (3.4 + node.interiorBias * 4.2) +
-        Math.sin(this.time * 0.2 + normX * 2.8 + node.drift) * 1.8 * damping;
+        table[base + 15] * (4 + crest * 10 + rise * 6) * damping +
+        table[base + 17] * elevation * 9 * damping -
+        crest * table[base + 19] +
+        bob * 1.8 * damping;
 
       node.elevation = elevation;
-      node.x = this.centerX + stretchedX + flowX;
-      node.y = this.centerY + stretchedY + flowY;
+      node.x = centerX + stretchedX + flowX;
+      node.y = centerY + stretchedY + flowY;
     }
   }
 
@@ -696,17 +855,22 @@ export class EmberPentagramOverlayScreen extends Container {
       return;
     }
 
-    for (const segment of this.segments) {
+    const nodes = this.nodes;
+    const segments = this.segments;
+
+    for (let index = 0; index < segments.length; index++) {
+      const segment = segments[index];
+
       this.drawSegment(
         sigil,
-        this.nodes[segment.a],
-        this.nodes[segment.b],
+        nodes[segment.a],
+        nodes[segment.b],
         segment.strength,
       );
     }
 
-    for (const node of this.nodes) {
-      this.drawNode(sigil, node);
+    for (let index = 0; index < nodes.length; index++) {
+      this.drawNode(sigil, nodes[index]);
     }
   }
 
@@ -744,10 +908,9 @@ export class EmberPentagramOverlayScreen extends Container {
       const twinkle =
         0.54 + Math.sin(this.time * (mote.speed * 2.6) + mote.phase) * 0.3;
 
-      g.circle(x, y, mote.radius * (0.8 + twinkle * 0.34)).fill({
-        color: mote.color,
-        alpha: mote.alpha * twinkle,
-      });
+      fillScratch.color = mote.color;
+      fillScratch.alpha = mote.alpha * twinkle;
+      g.circle(x, y, mote.radius * (0.8 + twinkle * 0.34)).fill(fillScratch);
     }
   }
 
@@ -769,53 +932,48 @@ export class EmberPentagramOverlayScreen extends Container {
       mesh.radiusNorm *
       (0.92 + Math.sin(this.time * mesh.speed * 1.9 + mesh.phase) * 0.1);
     const rotation = this.time * mesh.spin + mesh.phase;
-    const points: Point2D[] = [];
+    const count = mesh.pointCount;
+    const points = this.meshPointBuffer;
 
-    for (let index = 0; index < mesh.pointCount; index++) {
-      const angle = rotation + (index / mesh.pointCount) * TAU;
+    for (let index = 0; index < count; index++) {
+      const angle = rotation + (index / count) * TAU;
       const wobble =
         0.66 +
         Math.sin(this.time * 0.74 + mesh.phase + index * 0.92) * 0.18 +
         Math.cos(this.time * 0.39 + index * 0.62) * 0.08;
 
-      points.push({
-        x: centerX + Math.cos(angle) * clusterRadius * wobble,
-        y: centerY + Math.sin(angle) * clusterRadius * (0.62 + wobble * 0.32),
-      });
+      points[index * 2] = centerX + Math.cos(angle) * clusterRadius * wobble;
+      points[index * 2 + 1] =
+        centerY + Math.sin(angle) * clusterRadius * (0.62 + wobble * 0.32);
     }
 
-    g.circle(centerX, centerY, clusterRadius * 1.16).fill({
-      color: mesh.color,
-      alpha: mesh.alpha * 0.11,
-    });
+    fillScratch.color = mesh.color;
+    fillScratch.alpha = mesh.alpha * 0.11;
+    g.circle(centerX, centerY, clusterRadius * 1.16).fill(fillScratch);
 
-    for (let index = 0; index < points.length; index++) {
-      const point = points[index];
-      const next = points[(index + 1) % points.length];
-      const skip = points[(index + 2) % points.length];
+    for (let index = 0; index < count; index++) {
+      const pointX = points[index * 2];
+      const pointY = points[index * 2 + 1];
+      const next = ((index + 1) % count) * 2;
+      const skip = ((index + 2) % count) * 2;
 
-      g.moveTo(point.x, point.y)
-        .lineTo(next.x, next.y)
-        .stroke({
-          color: mesh.color,
-          alpha: mesh.alpha * 0.74,
-          width: 1,
-        });
+      strokeScratch.color = mesh.color;
+      strokeScratch.alpha = mesh.alpha * 0.74;
+      strokeScratch.width = 1;
+      g.moveTo(pointX, pointY)
+        .lineTo(points[next], points[next + 1])
+        .stroke(strokeScratch);
 
       if (index % 2 === 0) {
-        g.moveTo(point.x, point.y)
-          .lineTo(skip.x, skip.y)
-          .stroke({
-            color: mesh.color,
-            alpha: mesh.alpha * 0.3,
-            width: 1,
-          });
+        strokeScratch.alpha = mesh.alpha * 0.3;
+        g.moveTo(pointX, pointY)
+          .lineTo(points[skip], points[skip + 1])
+          .stroke(strokeScratch);
       }
 
-      g.circle(point.x, point.y, 1.15).fill({
-        color: mesh.color,
-        alpha: mesh.alpha * 1.08,
-      });
+      fillScratch.color = mesh.color;
+      fillScratch.alpha = mesh.alpha * 1.08;
+      g.circle(pointX, pointY, 1.15).fill(fillScratch);
     }
   }
 
@@ -1053,14 +1211,21 @@ export class EmberPentagramOverlayScreen extends Container {
     const radius = 0.34 + strength * 0.12 + lift * 0.22 + relief * 0.06;
     const color = lift > 0.82 ? CHOT : lift > 0.26 ? CEMBER : CRED_CORE;
 
+    // Every dot on a segment shares one colour, so they go into a single path
+    // and a single fill. Collecting them here also skips the identity matrix
+    // that `Graphics.circle()` clones — and re-applies to every vertex — once
+    // per dot, which at a few thousand segments a frame is the bulk of the work.
+    segmentDotPath.clear();
+
     for (let index = 0; index <= count; index++) {
       const t = index / count;
 
-      g.circle(a.x + dx * t, a.y + dy * t, radius).fill({
-        color,
-        alpha,
-      });
+      segmentDotPath.circle(a.x + dx * t, a.y + dy * t, radius);
     }
+
+    fillScratch.color = color;
+    fillScratch.alpha = alpha;
+    g.path(segmentDotPath).fill(fillScratch);
   }
 
   private drawNode(g: Graphics, node: ShapeNode): void {
@@ -1071,14 +1236,13 @@ export class EmberPentagramOverlayScreen extends Container {
     const color = lift > 0.9 ? CHOT : lift > 0.34 ? CEMBER : CRED;
 
     if (node.interiorBias > 0.78 && lift > 0.1) {
-      g.circle(node.x, node.y, glowRadius * 1.6).fill({
-        color: CRED,
-        alpha: 0.02 + lift * 0.048,
-      });
+      fillScratch.color = CRED;
+      fillScratch.alpha = 0.02 + lift * 0.048;
+      g.circle(node.x, node.y, glowRadius * 1.6).fill(fillScratch);
     }
-    g.circle(node.x, node.y, dotRadius).fill({
-      color,
-      alpha,
-    });
+
+    fillScratch.color = color;
+    fillScratch.alpha = alpha;
+    g.circle(node.x, node.y, dotRadius).fill(fillScratch);
   }
 }

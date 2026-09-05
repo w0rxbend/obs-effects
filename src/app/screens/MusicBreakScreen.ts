@@ -1,4 +1,4 @@
-import type { Ticker } from "pixi.js";
+import type { LineCap, Ticker } from "pixi.js";
 import { Container, Graphics, Sprite, Text, TextStyle, Texture } from "pixi.js";
 
 // ── Palette ───────────────────────────────────────────────────────────────────
@@ -34,6 +34,12 @@ const NET_MAX_DIST = 180; // px — max distance to draw a connection line
 
 // ── Fluid stains ──────────────────────────────────────────────────────────────
 const STAIN_COUNT = 7;
+const STAIN_VERTS = 80; // enough for silky smooth curves
+const STAIN_PASSES = 5; // 3 concentric primary fills + 2 secondary-blob fills
+
+// ── Ring geometry ─────────────────────────────────────────────────────────────
+const TAU = Math.PI * 2;
+const RING_STEPS = 120; // vertices of the fluid-background blobs and glitch ring
 
 /**
  * Fixed simulation step, in seconds. This screen is deliberately frame-rate
@@ -155,6 +161,102 @@ function lerpColor(a: number, b: number, t: number): number {
   );
 }
 
+/** Tabulated `sin(k · angle)` / `cos(k · angle)` for one ring of fixed angles. */
+interface Harmonic {
+  sin: Float64Array;
+  cos: Float64Array;
+}
+
+/**
+ * Build a harmonic lookup table for `count` angles spaced `1 / steps` of a turn
+ * apart, starting at `offset`.
+ *
+ * Every ring in this screen samples the same angles on every frame and only the
+ * phase moves, so `sin(k · angle + phase)` is expanded with the angle-sum
+ * identity `sin(A + B) = sinA·cosB + cosA·sinB`. The phase's own sine/cosine is
+ * then computed once per ring and each vertex costs two table lookups and two
+ * multiplies instead of a `Math.sin` call.
+ */
+function harmonicLut(
+  count: number,
+  steps: number,
+  k: number,
+  offset = 0,
+): Harmonic {
+  const sin = new Float64Array(count);
+  const cos = new Float64Array(count);
+  for (let i = 0; i < count; i++) {
+    const a = k * ((i / steps) * TAU + offset);
+    sin[i] = Math.sin(a);
+    cos[i] = Math.cos(a);
+  }
+  return { sin, cos };
+}
+
+// Closed rings (last vertex repeats the first) — fluid background + glitch ring
+const RING_H1 = harmonicLut(RING_STEPS + 1, RING_STEPS, 1);
+const RING_H2 = harmonicLut(RING_STEPS + 1, RING_STEPS, 2);
+const RING_H3 = harmonicLut(RING_STEPS + 1, RING_STEPS, 3);
+const RING_H4 = harmonicLut(RING_STEPS + 1, RING_STEPS, 4);
+const RING_H5 = harmonicLut(RING_STEPS + 1, RING_STEPS, 5);
+const RING_H9 = harmonicLut(RING_STEPS + 1, RING_STEPS, 9);
+const RING_H11 = harmonicLut(RING_STEPS + 1, RING_STEPS, 11);
+const RING_H17 = harmonicLut(RING_STEPS + 1, RING_STEPS, 17);
+
+// Stain outlines — one entry per Fourier mode built in `createStains()`
+const STAIN_H: readonly Harmonic[] = [1, 2, 3].map((k) =>
+  harmonicLut(STAIN_VERTS + 1, STAIN_VERTS, k),
+);
+
+// Visualizer bars — open ring of BAR_COUNT angles starting at -90°
+const BAR_OFFSET = -Math.PI / 2;
+const BAR_ANGLE = new Float64Array(BAR_COUNT);
+for (let i = 0; i < BAR_COUNT; i++) {
+  BAR_ANGLE[i] = (i / BAR_COUNT) * TAU + BAR_OFFSET;
+}
+const BAR_H1 = harmonicLut(BAR_COUNT, BAR_COUNT, 1, BAR_OFFSET);
+const BAR_H4 = harmonicLut(BAR_COUNT, BAR_COUNT, 4, BAR_OFFSET);
+const BAR_H9 = harmonicLut(BAR_COUNT, BAR_COUNT, 9, BAR_OFFSET);
+const BAR_H17 = harmonicLut(BAR_COUNT, BAR_COUNT, 17, BAR_OFFSET);
+const BAR_H31 = harmonicLut(BAR_COUNT, BAR_COUNT, 31, BAR_OFFSET);
+
+/**
+ * Reusable draw-style records.
+ *
+ * Pixi copies whatever object is handed to `fill()` / `stroke()` into a fresh
+ * internal style before storing it, so the object passed in is never retained.
+ * Mutating one shared record per style kind — instead of writing a new object
+ * literal at each of the ~2 800 draw calls this screen makes per frame — keeps
+ * that many short-lived objects out of every frame.
+ */
+const FILL_STYLE = { color: WHITE, alpha: 1 };
+const STROKE_STYLE: {
+  color: number;
+  alpha: number;
+  width: number;
+  cap: LineCap;
+} = { color: WHITE, alpha: 1, width: 1, cap: "butt" };
+
+function fillStyle(color: number, alpha: number) {
+  FILL_STYLE.color = color;
+  FILL_STYLE.alpha = alpha;
+  return FILL_STYLE;
+}
+
+/** `cap` is always explicit — the record is shared, so it never resets itself. */
+function strokeStyle(
+  color: number,
+  alpha: number,
+  width: number,
+  cap: LineCap,
+) {
+  STROKE_STYLE.color = color;
+  STROKE_STYLE.alpha = alpha;
+  STROKE_STYLE.width = width;
+  STROKE_STYLE.cap = cap;
+  return STROKE_STYLE;
+}
+
 // Full Catppuccin Mocha palette for normal bar colours
 const CATT_ALL = [
   0xcba6f7, // mauve
@@ -177,6 +279,17 @@ const TOXIC_SPIKE = [
   0xc050ff, // violet
   0x7fff00, // chartreuse
 ] as const;
+
+// Palettes picked from on every beat / glitch frame — hoisted so the pick does
+// not rebuild the array each time
+const SPARK_COLORS = [
+  TOXIC_GREEN,
+  LOL_VIOLET,
+  CATT_MAUVE,
+  WHITE,
+  CATT_PINK,
+] as const;
+const GLITCH_BLOCK_COLORS = [CATT_SKY, CATT_MAUVE, WHITE, CATT_PINK] as const;
 
 /**
  * Returns a bar colour that:
@@ -350,6 +463,25 @@ export class MusicBreakScreen extends Container {
   // ── Fluid stains ───────────────────────────────────────────────────────────
   private readonly stains: FluidStain[];
 
+  // ── Pre-allocated buffers — avoid per-frame allocations ────────────────────
+  /** One point buffer per polygon drawn in a frame (see the constructor). */
+  private readonly fluidPts: number[][] = [];
+  private readonly stainPts: number[][] = [];
+
+  /** Fluid-background layer parameters, rewritten in place every frame. */
+  private readonly fluidLayers = [
+    { scale: 1, alpha: 0 },
+    { scale: 1, alpha: 0 },
+    { scale: 1, alpha: 0 },
+  ];
+
+  /** Amplitude-scaled sine/cosine of one stain's Fourier phases. */
+  private readonly stainModeSin = new Float64Array(STAIN_H.length);
+  private readonly stainModeCos = new Float64Array(STAIN_H.length);
+
+  /** Blended colour of every network-dot pair — dot colours never change. */
+  private readonly netPairColor = new Int32Array(NET_DOT_COUNT * NET_DOT_COUNT);
+
   constructor() {
     super();
 
@@ -386,6 +518,25 @@ export class MusicBreakScreen extends Container {
     this.netDots = this.createNetDots();
     this.stains = this.createStains();
     this.rainDrops = this.createRainDrops();
+
+    // `poly()` keeps a reference to the array it is handed until the next
+    // `clear()`, so every polygon drawn within one frame needs its own buffer.
+    for (let i = 0; i < this.fluidLayers.length; i++) {
+      this.fluidPts.push(new Array<number>((RING_STEPS + 1) * 2).fill(0));
+    }
+    for (let i = 0; i < STAIN_COUNT * STAIN_PASSES; i++) {
+      this.stainPts.push(new Array<number>((STAIN_VERTS + 1) * 2).fill(0));
+    }
+
+    for (let i = 0; i < NET_DOT_COUNT; i++) {
+      for (let j = 0; j < NET_DOT_COUNT; j++) {
+        this.netPairColor[i * NET_DOT_COUNT + j] = lerpColor(
+          this.netDots[i].color,
+          this.netDots[j].color,
+          0.5,
+        );
+      }
+    }
   }
 
   // ── Lifecycle ──────────────────────────────────────────────────────────────
@@ -600,12 +751,11 @@ export class MusicBreakScreen extends Container {
   }
 
   private spawnSparks(count: number): void {
-    const colors = [TOXIC_GREEN, LOL_VIOLET, CATT_MAUVE, WHITE, CATT_PINK];
     const originAngle = Math.random() * Math.PI * 2;
     const r = BASE_RADIUS + (Math.random() - 0.5) * 30;
     const ox = Math.cos(originAngle) * r;
     const oy = Math.sin(originAngle) * r;
-    const col = randomFrom(colors);
+    const col = randomFrom(SPARK_COLORS);
 
     for (let i = 0; i < count; i++) {
       const ang = originAngle + (Math.random() - 0.5) * Math.PI * 0.8;
@@ -722,9 +872,9 @@ export class MusicBreakScreen extends Container {
       v += (Math.random() - 0.5) * 0.08;
       v *= 0.35 + this.activityLevel * 0.85;
 
-      this.bins[i].target = Math.max(0, Math.min(1, v / 3.0));
-
       const bin = this.bins[i];
+      bin.target = Math.max(0, Math.min(1, v / 3.0));
+
       const ease = bin.target > bin.value ? 0.45 : 0.1;
       bin.value += (bin.target - bin.value) * ease;
     }
@@ -741,39 +891,65 @@ export class MusicBreakScreen extends Container {
   private drawFluidBackground(breathe: number): void {
     this.fluidBgGfx.clear();
 
-    const STEPS = 120;
     const baseR = BASE_RADIUS * breathe * this.ringScalePulse * 0.7;
 
     // Mega-beat inflates the fluid blob visually
     const megaScale = 1 + this.megaBeatDecay * 0.12;
 
-    const layers = [
-      {
-        scale: 1.0 * megaScale,
-        alpha: 0.22 + this.beatDecay * 0.1 + this.megaBeatDecay * 0.08,
-      },
-      { scale: 0.88 * megaScale, alpha: 0.36 + this.megaBeatDecay * 0.06 },
-      { scale: 0.74 * megaScale, alpha: 0.52 },
-    ];
+    const layers = this.fluidLayers;
+    layers[0].scale = 1.0 * megaScale;
+    layers[0].alpha = 0.22 + this.beatDecay * 0.1 + this.megaBeatDecay * 0.08;
+    layers[1].scale = 0.88 * megaScale;
+    layers[1].alpha = 0.36 + this.megaBeatDecay * 0.06;
+    layers[2].scale = 0.74 * megaScale;
+    layers[2].alpha = 0.52;
 
-    for (const layer of layers) {
+    // Beat swell — same phase on every layer, so resolved once per frame
+    const p2 = this.time * 1.8;
+    const swell = this.beatDecay * 6;
+    const s2 = Math.sin(p2) * swell;
+    const c2 = Math.cos(p2) * swell;
+
+    for (let li = 0; li < layers.length; li++) {
+      const layer = layers[li];
       const r = baseR * layer.scale;
-      const pts: number[] = [];
+      const pts = this.fluidPts[li];
 
-      for (let i = 0; i <= STEPS; i++) {
-        const angle = (i / STEPS) * Math.PI * 2;
+      // Each harmonic's phase and amplitude fold into one sine/cosine pair,
+      // hoisted out of the vertex loop (see `harmonicLut`).
+      const p3 = this.time * 0.42 + layer.scale * 2.1;
+      const s3 = Math.sin(p3) * 8;
+      const c3 = Math.cos(p3) * 8;
+      const p5 = -this.time * 0.6 + layer.scale * 1.3;
+      const s5 = Math.sin(p5) * 5;
+      const c5 = Math.cos(p5) * 5;
+      const p11 = this.time * 0.25 + layer.scale * 3.7;
+      const s11 = Math.sin(p11) * 3;
+      const c11 = Math.cos(p11) * 3;
+      const p17 = -this.time * 0.2 + layer.scale * 0.9;
+      const s17 = Math.sin(p17) * 1.5;
+      const c17 = Math.cos(p17) * 1.5;
+
+      for (let i = 0; i <= RING_STEPS; i++) {
         const disp =
-          Math.sin(angle * 3 + this.time * 0.42 + layer.scale * 2.1) * 8 +
-          Math.sin(angle * 5 - this.time * 0.6 + layer.scale * 1.3) * 5 +
-          Math.sin(angle * 11 + this.time * 0.25 + layer.scale * 3.7) * 3 +
-          Math.sin(angle * 17 - this.time * 0.2 + layer.scale * 0.9) * 1.5 +
+          RING_H3.sin[i] * c3 +
+          RING_H3.cos[i] * s3 +
+          RING_H5.sin[i] * c5 +
+          RING_H5.cos[i] * s5 +
+          RING_H11.sin[i] * c11 +
+          RING_H11.cos[i] * s11 +
+          RING_H17.sin[i] * c17 +
+          RING_H17.cos[i] * s17 +
           // Beat adds extra organic swell
-          Math.sin(angle * 2 + this.time * 1.8) * this.beatDecay * 6;
+          RING_H2.sin[i] * c2 +
+          RING_H2.cos[i] * s2;
 
-        pts.push(Math.cos(angle) * (r + disp), Math.sin(angle) * (r + disp));
+        const rr = r + disp;
+        pts[i * 2] = RING_H1.cos[i] * rr;
+        pts[i * 2 + 1] = RING_H1.sin[i] * rr;
       }
 
-      this.fluidBgGfx.poly(pts).fill({ color: CRUST, alpha: layer.alpha });
+      this.fluidBgGfx.poly(pts).fill(fillStyle(CRUST, layer.alpha));
     }
   }
 
@@ -787,27 +963,27 @@ export class MusicBreakScreen extends Container {
     // Base radial glows
     this.atmGfx
       .circle(0, 0, r * 2.4)
-      .fill({ color: TOXIC_GREEN, alpha: 0.02 * act + md * 0.025 });
+      .fill(fillStyle(TOXIC_GREEN, 0.02 * act + md * 0.025));
     this.atmGfx
       .circle(0, 0, r * 1.6)
-      .fill({ color: TOXIC_GREEN, alpha: 0.042 * act + md * 0.04 });
+      .fill(fillStyle(TOXIC_GREEN, 0.042 * act + md * 0.04));
     this.atmGfx
       .circle(0, 0, r * 1.1)
-      .fill({ color: LOL_VIOLET, alpha: 0.05 * act + md * 0.05 });
+      .fill(fillStyle(LOL_VIOLET, 0.05 * act + md * 0.05));
 
     // Beat flash
     if (bd > 0) {
       this.atmGfx
         .circle(0, 0, r * (1.0 + bd * 0.6))
-        .fill({ color: WHITE, alpha: bd * 0.06 });
+        .fill(fillStyle(WHITE, bd * 0.06));
       this.atmGfx
         .circle(0, 0, r * (1.0 + bd * 0.2))
-        .fill({ color: TOXIC_GREEN, alpha: bd * 0.12 });
+        .fill(fillStyle(TOXIC_GREEN, bd * 0.12));
     }
 
     // Mega-beat white flash
     if (md > 0) {
-      this.atmGfx.circle(0, 0, r * 1.8).fill({ color: WHITE, alpha: md * 0.1 });
+      this.atmGfx.circle(0, 0, r * 1.8).fill(fillStyle(WHITE, md * 0.1));
     }
 
     // Ripple rings
@@ -815,10 +991,10 @@ export class MusicBreakScreen extends Container {
       const w = 2.5 * rip.alpha;
       this.atmGfx
         .circle(0, 0, rip.radius)
-        .stroke({ color: rip.color, alpha: rip.alpha * 0.85, width: w });
+        .stroke(strokeStyle(rip.color, rip.alpha * 0.85, w, "butt"));
       this.atmGfx
         .circle(0, 0, rip.radius)
-        .stroke({ color: rip.color, alpha: rip.alpha * 0.2, width: w * 6 });
+        .stroke(strokeStyle(rip.color, rip.alpha * 0.2, w * 6, "butt"));
     }
   }
 
@@ -827,20 +1003,45 @@ export class MusicBreakScreen extends Container {
 
     const rsp = this.ringScalePulse;
 
+    // Turbulence — more aggressive amplitude, mega-beat adds extra warp.
+    // Amplitudes and phases are the same for every bar, so they fold into one
+    // sine/cosine pair per harmonic ahead of the loop (see `harmonicLut`).
+    const megaWarp = this.megaBeatDecay * 14;
+    const a4 = 4.0 + megaWarp;
+    const a9 = 2.0 + megaWarp * 0.5;
+    const p4 = this.time * 1.1;
+    const s4 = Math.sin(p4) * a4;
+    const c4 = Math.cos(p4) * a4;
+    const p9 = -this.time * 1.9;
+    const s9 = Math.sin(p9) * a9;
+    const c9 = Math.cos(p9) * a9;
+    const p17 = this.time * 2.7;
+    const s17 = Math.sin(p17);
+    const c17 = Math.cos(p17);
+    const p31 = -this.time * 3.5;
+    const s31 = Math.sin(p31) * 0.5;
+    const c31 = Math.cos(p31) * 0.5;
+
+    // Inward butterfly — colour shifts with sub-beat
+    const innerCol = this.subBeatDecay > 0.3 ? CATT_PINK : LOL_VIOLET;
+    const innerFade = 0.4 + this.subBeatDecay * 0.25;
+
     for (let i = 0; i < BAR_COUNT; i++) {
-      const angle = (i / BAR_COUNT) * Math.PI * 2 - Math.PI / 2;
-      const cos = Math.cos(angle);
-      const sin = Math.sin(angle);
+      const angle = BAR_ANGLE[i];
+      const cos = BAR_H1.cos[i];
+      const sin = BAR_H1.sin[i];
       const bin = this.bins[i];
       const v = bin.value;
 
-      // Turbulence — more aggressive amplitude, mega-beat adds extra warp
-      const megaWarp = this.megaBeatDecay * 14;
       const turb =
-        Math.sin(angle * 4 + this.time * 1.1) * (4.0 + megaWarp) +
-        Math.sin(angle * 9 - this.time * 1.9) * (2.0 + megaWarp * 0.5) +
-        Math.sin(angle * 17 + this.time * 2.7) * 1.0 +
-        Math.sin(angle * 31 - this.time * 3.5) * 0.5;
+        BAR_H4.sin[i] * c4 +
+        BAR_H4.cos[i] * s4 +
+        BAR_H9.sin[i] * c9 +
+        BAR_H9.cos[i] * s9 +
+        BAR_H17.sin[i] * c17 +
+        BAR_H17.cos[i] * s17 +
+        BAR_H31.sin[i] * c31 +
+        BAR_H31.cos[i] * s31;
 
       const baseR = (BASE_RADIUS + turb) * breathe * rsp;
 
@@ -861,34 +1062,27 @@ export class MusicBreakScreen extends Container {
       this.vizGfx
         .moveTo(ox, oy)
         .lineTo(ex, ey)
-        .stroke({ color, alpha: alpha * 0.1, width: BAR_W * 8, cap: "butt" });
+        .stroke(strokeStyle(color, alpha * 0.1, BAR_W * 8, "butt"));
       this.vizGfx
         .moveTo(ox, oy)
         .lineTo(ex, ey)
-        .stroke({ color, alpha: alpha * 0.3, width: BAR_W * 2.8, cap: "butt" });
+        .stroke(strokeStyle(color, alpha * 0.3, BAR_W * 2.8, "butt"));
       this.vizGfx
         .moveTo(ox, oy)
         .lineTo(ex, ey)
-        .stroke({ color, alpha, width: BAR_W, cap: "butt" });
+        .stroke(strokeStyle(color, alpha, BAR_W, "butt"));
 
       // Bright tip
       if (v > 0.5) {
         this.vizGfx
           .circle(ex, ey, BAR_W * 2.0)
-          .fill({ color, alpha: alpha * 0.95 });
+          .fill(fillStyle(color, alpha * 0.95));
       }
 
-      // Inward butterfly — colour shifts with sub-beat
-      const innerCol = this.subBeatDecay > 0.3 ? CATT_PINK : LOL_VIOLET;
       this.vizGfx
         .moveTo(ox, oy)
         .lineTo(ix, iy)
-        .stroke({
-          color: innerCol,
-          alpha: alpha * (0.4 + this.subBeatDecay * 0.25),
-          width: BAR_W * 0.8,
-          cap: "butt",
-        });
+        .stroke(strokeStyle(innerCol, alpha * innerFade, BAR_W * 0.8, "butt"));
     }
 
     // Base ring — flickers on glitch
@@ -899,7 +1093,7 @@ export class MusicBreakScreen extends Container {
       : 0.2 + this.beatDecay * 0.4;
     this.vizGfx
       .circle(0, 0, BASE_RADIUS * breathe * rsp)
-      .stroke({ color: TOXIC_GREEN, alpha: ringAlpha, width: 1.5 });
+      .stroke(strokeStyle(TOXIC_GREEN, ringAlpha, 1.5, "butt"));
   }
 
   private drawParticles(dt: number): void {
@@ -923,11 +1117,11 @@ export class MusicBreakScreen extends Container {
 
       this.particleGfx
         .circle(p.x, p.y, p.size)
-        .fill({ color: p.color, alpha: Math.min(1, a) });
+        .fill(fillStyle(p.color, Math.min(1, a)));
       if (p.size > 1.5) {
         this.particleGfx
           .circle(p.x, p.y, p.size * 3.0)
-          .fill({ color: p.color, alpha: a * 0.18 });
+          .fill(fillStyle(p.color, a * 0.18));
       }
     }
   }
@@ -953,10 +1147,10 @@ export class MusicBreakScreen extends Container {
       this.sparkGfx
         .moveTo(tx, ty)
         .lineTo(s.x, s.y)
-        .stroke({ color: s.color, alpha: s.life, width: s.size, cap: "round" });
+        .stroke(strokeStyle(s.color, s.life, s.size, "round"));
       this.sparkGfx
         .circle(s.x, s.y, s.size * 1.4)
-        .fill({ color: s.color, alpha: s.life * 0.9 });
+        .fill(fillStyle(s.color, s.life * 0.9));
     }
   }
 
@@ -984,29 +1178,19 @@ export class MusicBreakScreen extends Container {
           (r + 20) * 2,
           band.height,
         )
-        .fill({ color: 0x000000, alpha: band.alpha * 0.65 * gd });
+        .fill(fillStyle(0x000000, band.alpha * 0.65 * gd));
       this.glitchGfx
         .rect(band.shiftX - r - 20, y - 1, (r + 20) * 2, 1.5)
-        .fill({ color: CATT_SKY, alpha: band.alpha * gd });
+        .fill(fillStyle(CATT_SKY, band.alpha * gd));
     }
 
     // Red channel — offset right
     this.buildRingPath(r, sx);
-    this.glitchGfx.stroke({
-      color: 0xff2244,
-      alpha: 0.55 * gd,
-      width: 1.8,
-      cap: "round",
-    });
+    this.glitchGfx.stroke(strokeStyle(0xff2244, 0.55 * gd, 1.8, "round"));
 
     // Cyan channel — offset left
     this.buildRingPath(r, -sx);
-    this.glitchGfx.stroke({
-      color: 0x00ffee,
-      alpha: 0.55 * gd,
-      width: 1.8,
-      cap: "round",
-    });
+    this.glitchGfx.stroke(strokeStyle(0x00ffee, 0.55 * gd, 1.8, "round"));
 
     // Pixel blocks
     const blockCount = 4 + Math.floor(Math.random() * 7);
@@ -1017,24 +1201,32 @@ export class MusicBreakScreen extends Container {
       const by = Math.sin(ang) * dist;
       const bw = 4 + Math.random() * 24;
       const bh = 2 + Math.random() * 8;
-      const col = randomFrom([CATT_SKY, CATT_MAUVE, WHITE, CATT_PINK] as const);
+      const col = randomFrom(GLITCH_BLOCK_COLORS);
       this.glitchGfx
         .rect(bx, by, bw, bh)
-        .fill({ color: col, alpha: (0.5 + Math.random() * 0.5) * gd });
+        .fill(fillStyle(col, (0.5 + Math.random() * 0.5) * gd));
     }
   }
 
   /** Trace the displaced ring path for glitch chromatic split. */
   private buildRingPath(r: number, offsetX: number): void {
-    const STEPS = 120;
-    for (let i = 0; i <= STEPS; i++) {
-      const angle = (i / STEPS) * Math.PI * 2;
+    // Both turbulence harmonics share one phase per frame (see `harmonicLut`)
+    const p4 = this.time * 1.1;
+    const s4 = Math.sin(p4) * 4;
+    const c4 = Math.cos(p4) * 4;
+    const p9 = -this.time * 1.9;
+    const s9 = Math.sin(p9) * 2;
+    const c9 = Math.cos(p9) * 2;
+
+    for (let i = 0; i <= RING_STEPS; i++) {
       const turb =
-        Math.sin(angle * 4 + this.time * 1.1) * 4 +
-        Math.sin(angle * 9 - this.time * 1.9) * 2;
+        RING_H4.sin[i] * c4 +
+        RING_H4.cos[i] * s4 +
+        RING_H9.sin[i] * c9 +
+        RING_H9.cos[i] * s9;
       const rr = r + turb;
-      const x = Math.cos(angle) * rr + offsetX;
-      const y = Math.sin(angle) * rr;
+      const x = RING_H1.cos[i] * rr + offsetX;
+      const y = RING_H1.sin[i] * rr;
       if (i === 0) this.glitchGfx.moveTo(x, y);
       else this.glitchGfx.lineTo(x, y);
     }
@@ -1157,30 +1349,34 @@ export class MusicBreakScreen extends Container {
     const cy = float;
 
     this.logoGfx.clear();
-    this.logoGfx.circle(0, cy, aura * 2.8).fill({
-      color: TOXIC_GREEN,
-      alpha: 0.022 + this.beatDecay * 0.04 + this.megaBeatDecay * 0.06,
-    });
+    this.logoGfx
+      .circle(0, cy, aura * 2.8)
+      .fill(
+        fillStyle(
+          TOXIC_GREEN,
+          0.022 + this.beatDecay * 0.04 + this.megaBeatDecay * 0.06,
+        ),
+      );
     this.logoGfx
       .circle(0, cy, aura * 1.8)
-      .fill({ color: TOXIC_GREEN, alpha: 0.055 + this.beatDecay * 0.065 });
+      .fill(fillStyle(TOXIC_GREEN, 0.055 + this.beatDecay * 0.065));
     this.logoGfx
       .circle(0, cy, aura * 1.0)
-      .fill({ color: LOL_VIOLET, alpha: 0.048 + this.beatDecay * 0.055 });
+      .fill(fillStyle(LOL_VIOLET, 0.048 + this.beatDecay * 0.055));
 
     const r0 = aura + 6,
       a0 = this.time * 0.72 + this.ringRotation * 0.3;
     this.logoGfx
       .moveTo(Math.cos(a0) * r0, cy + Math.sin(a0) * r0)
       .arc(0, cy, r0, a0, a0 + Math.PI * 1.35)
-      .stroke({ color: TOXIC_GREEN, alpha: 0.88, width: 1.5, cap: "round" });
+      .stroke(strokeStyle(TOXIC_GREEN, 0.88, 1.5, "round"));
 
     const r1 = r0 - 7,
       a1 = -this.time * 0.46 + Math.PI * 0.55;
     this.logoGfx
       .moveTo(Math.cos(a1) * r1, cy + Math.sin(a1) * r1)
       .arc(0, cy, r1, a1, a1 + Math.PI * 0.75)
-      .stroke({ color: LOL_VIOLET, alpha: 0.62, width: 1.0, cap: "round" });
+      .stroke(strokeStyle(LOL_VIOLET, 0.62, 1.0, "round"));
 
     // Extra arc on mega-beat
     if (this.megaBeatDecay > 0) {
@@ -1189,12 +1385,7 @@ export class MusicBreakScreen extends Container {
       this.logoGfx
         .moveTo(Math.cos(a2) * r2, cy + Math.sin(a2) * r2)
         .arc(0, cy, r2, a2, a2 + Math.PI * 0.9)
-        .stroke({
-          color: WHITE,
-          alpha: this.megaBeatDecay * 0.7,
-          width: 1.2,
-          cap: "round",
-        });
+        .stroke(strokeStyle(WHITE, this.megaBeatDecay * 0.7, 1.2, "round"));
     }
   }
 
@@ -1268,35 +1459,23 @@ export class MusicBreakScreen extends Container {
       this.scratchGfx
         .moveTo(x1, y1)
         .lineTo(x2, y2)
-        .stroke({
-          color: s.color,
-          alpha: visible * 0.1,
-          width: s.width * 7,
-          cap: "round",
-        });
+        .stroke(strokeStyle(s.color, visible * 0.1, s.width * 7, "round"));
       this.scratchGfx
         .moveTo(x1, y1)
         .lineTo(x2, y2)
-        .stroke({
-          color: s.color,
-          alpha: visible * 0.28,
-          width: s.width * 2.5,
-          cap: "round",
-        });
-      this.scratchGfx.moveTo(x1, y1).lineTo(x2, y2).stroke({
-        color: s.color,
-        alpha: visible,
-        width: s.width,
-        cap: "round",
-      });
+        .stroke(strokeStyle(s.color, visible * 0.28, s.width * 2.5, "round"));
+      this.scratchGfx
+        .moveTo(x1, y1)
+        .lineTo(x2, y2)
+        .stroke(strokeStyle(s.color, visible, s.width, "round"));
 
       // Bright endpoint dots
       this.scratchGfx
         .circle(x1, y1, s.width * 1.4)
-        .fill({ color: s.color, alpha: visible * 0.8 });
+        .fill(fillStyle(s.color, visible * 0.8));
       this.scratchGfx
         .circle(x2, y2, s.width * 1.4)
-        .fill({ color: s.color, alpha: visible * 0.8 });
+        .fill(fillStyle(s.color, visible * 0.8));
     }
   }
 
@@ -1354,23 +1533,33 @@ export class MusicBreakScreen extends Container {
     }
 
     // ── Draw connections ───────────────────────────────────────────────────
+    // Rejecting on squared distance keeps the sqrt off the pairs that are out
+    // of range, and the blended pair colours were resolved in the constructor.
+    const maxDistSq = NET_MAX_DIST * NET_MAX_DIST;
     for (let i = 0; i < this.netDots.length; i++) {
       const a = this.netDots[i];
+      const row = i * NET_DOT_COUNT;
       for (let j = i + 1; j < this.netDots.length; j++) {
         const b = this.netDots[j];
         const dx = b.x - a.x;
         const dy = b.y - a.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist >= NET_MAX_DIST) continue;
+        const distSq = dx * dx + dy * dy;
+        if (distSq >= maxDistSq) continue;
 
-        const t = 1 - dist / NET_MAX_DIST; // 1 = very close, 0 = at limit
+        const t = 1 - Math.sqrt(distSq) / NET_MAX_DIST; // 1 = close, 0 = limit
         const alpha = t * t * 0.3; // quadratic fade
-        const col = lerpColor(a.color, b.color, 0.5);
 
         this.networkGfx
           .moveTo(a.x, a.y)
           .lineTo(b.x, b.y)
-          .stroke({ color: col, alpha, width: 0.6 + t * 0.8, cap: "round" });
+          .stroke(
+            strokeStyle(
+              this.netPairColor[row + j],
+              alpha,
+              0.6 + t * 0.8,
+              "round",
+            ),
+          );
       }
     }
 
@@ -1382,11 +1571,11 @@ export class MusicBreakScreen extends Container {
       // Glow halo
       this.networkGfx
         .circle(d.x, d.y, d.size * 3.5)
-        .fill({ color: d.color, alpha: a * 0.12 });
+        .fill(fillStyle(d.color, a * 0.12));
       // Core
       this.networkGfx
         .circle(d.x, d.y, d.size)
-        .fill({ color: d.color, alpha: Math.min(1, a) });
+        .fill(fillStyle(d.color, Math.min(1, a)));
     }
   }
 
@@ -1411,7 +1600,6 @@ export class MusicBreakScreen extends Container {
 
     const hw = this.w * 0.5;
     const hh = this.h * 0.5;
-    const VERTS = 80; // enough for silky smooth curves
 
     // ── Stain separation — push overlapping stains apart ──────────────────────
     for (let i = 0; i < this.stains.length; i++) {
@@ -1420,9 +1608,11 @@ export class MusicBreakScreen extends Container {
         const b = this.stains[j];
         const dx = b.cx - a.cx;
         const dy = b.cy - a.cy;
-        const dist = Math.sqrt(dx * dx + dy * dy) || 0.001;
+        const distSq = dx * dx + dy * dy;
         const minDist = a.baseRadius * 1.1 + b.baseRadius * 1.1;
-        if (dist < minDist) {
+        // Squared compare first — only overlapping pairs need the sqrt
+        if (distSq < minDist * minDist) {
+          const dist = Math.sqrt(distSq) || 0.001;
           // Repulsion force — stronger the more they overlap
           const overlap = (minDist - dist) / minDist;
           const force = overlap * 280; // px/s² push
@@ -1446,7 +1636,9 @@ export class MusicBreakScreen extends Container {
       }
     }
 
-    for (const s of this.stains) {
+    for (let si = 0; si < this.stains.length; si++) {
+      const s = this.stains[si];
+
       // Drift main centre
       s.cx += s.vcx * dt;
       s.cy += s.vcy * dt;
@@ -1470,70 +1662,117 @@ export class MusicBreakScreen extends Container {
 
       const beatSwell = 1 + this.megaBeatDecay * 0.12 + this.beatDecay * 0.06;
 
-      /** Build a smooth polygon at (cx, cy) with given radius scale. */
-      const buildPts = (cx: number, cy: number, rScale: number): number[] => {
-        const pts: number[] = [];
-        for (let i = 0; i <= VERTS; i++) {
-          const a = (i / VERTS) * Math.PI * 2;
-          let r = s.baseRadius * rScale * beatSwell;
-          for (let mi = 0; mi < s.modes.length; mi++) {
-            r +=
-              s.modes[mi].amp *
-              rScale *
-              Math.sin((mi + 1) * a + s.modes[mi].phase);
-          }
-          pts.push(cx + Math.cos(a) * r, cy + Math.sin(a) * r);
-        }
-        return pts;
-      };
-
       const a = s.alpha;
+      const pass = si * STAIN_PASSES; // this stain's slice of `stainPts`
 
       // ── Primary blob — 3 concentric passes: wide dim → mid → core ──────────
       this.stainGfx
-        .poly(buildPts(s.cx, s.cy, 1.4))
-        .fill({ color: s.color, alpha: a * 0.3 });
+        .poly(this.buildStainPts(pass, s, s.cx, s.cy, 1.4, beatSwell))
+        .fill(fillStyle(s.color, a * 0.3));
       this.stainGfx
-        .poly(buildPts(s.cx, s.cy, 1.0))
-        .fill({ color: s.color, alpha: a * 0.55 });
+        .poly(this.buildStainPts(pass + 1, s, s.cx, s.cy, 1.0, beatSwell))
+        .fill(fillStyle(s.color, a * 0.55));
       this.stainGfx
-        .poly(buildPts(s.cx, s.cy, 0.6))
-        .fill({ color: s.color, alpha: a * 0.9 });
+        .poly(this.buildStainPts(pass + 2, s, s.cx, s.cy, 0.6, beatSwell))
+        .fill(fillStyle(s.color, a * 0.9));
 
       // ── Secondary offset blob — lighter, adds asymmetric paint-splash feel ──
       const sx2 = s.cx + s.ox;
       const sy2 = s.cy + s.oy;
       this.stainGfx
-        .poly(buildPts(sx2, sy2, 0.85))
-        .fill({ color: s.color, alpha: a * 0.35 });
+        .poly(this.buildStainPts(pass + 3, s, sx2, sy2, 0.85, beatSwell))
+        .fill(fillStyle(s.color, a * 0.35));
       this.stainGfx
-        .poly(buildPts(sx2, sy2, 0.5))
-        .fill({ color: s.color, alpha: a * 0.55 });
+        .poly(this.buildStainPts(pass + 4, s, sx2, sy2, 0.5, beatSwell))
+        .fill(fillStyle(s.color, a * 0.55));
     }
+  }
+
+  /**
+   * Build one smooth stain polygon at (cx, cy) into the pre-allocated buffer
+   * `stainPts[slot]` and return it.
+   *
+   * Each Fourier mode's amplitude and phase collapse into a single sine/cosine
+   * pair before the vertex loop, so the loop itself is table lookups and
+   * multiply-adds with no `Math.sin` calls and no array growth.
+   */
+  private buildStainPts(
+    slot: number,
+    s: FluidStain,
+    cx: number,
+    cy: number,
+    rScale: number,
+    beatSwell: number,
+  ): number[] {
+    const pts = this.stainPts[slot];
+    const modeCount = s.modes.length;
+
+    for (let mi = 0; mi < modeCount; mi++) {
+      const m = s.modes[mi];
+      const amp = m.amp * rScale;
+      this.stainModeSin[mi] = amp * Math.sin(m.phase);
+      this.stainModeCos[mi] = amp * Math.cos(m.phase);
+    }
+
+    const base = STAIN_H[0];
+    const baseR = s.baseRadius * rScale * beatSwell;
+
+    for (let i = 0; i <= STAIN_VERTS; i++) {
+      let r = baseR;
+      for (let mi = 0; mi < modeCount; mi++) {
+        const h = STAIN_H[mi];
+        r +=
+          h.sin[i] * this.stainModeCos[mi] + h.cos[i] * this.stainModeSin[mi];
+      }
+      pts[i * 2] = cx + base.cos[i] * r;
+      pts[i * 2 + 1] = cy + base.sin[i] * r;
+    }
+
+    return pts;
   }
 
   // ── Rain ───────────────────────────────────────────────────────────────────
 
   private createRainDrops(): RainDrop[] {
-    return Array.from({ length: RAIN_COUNT }, () => this.makeRainDrop(true));
+    return Array.from({ length: RAIN_COUNT }, () =>
+      this.resetRainDrop(
+        {
+          x: 0,
+          y: 0,
+          vy: 0,
+          vx: 0,
+          length: 0,
+          width: 0,
+          color: 0,
+          alpha: 0,
+          phase: 0,
+        },
+        true,
+      ),
+    );
   }
 
-  /** Spawn a single raindrop. `scattered` = true means random Y across full screen height. */
-  private makeRainDrop(scattered = false): RainDrop {
+  /**
+   * Randomise a raindrop in place. `scattered` = true means random Y across the
+   * full screen height. Recycling the existing drop keeps the wrap-around in
+   * `drawRain()` from allocating a replacement object every time one exits.
+   */
+  private resetRainDrop(d: RainDrop, scattered: boolean): RainDrop {
     const hw = this.w > 0 ? this.w * 0.5 : 960;
     const hh = this.h > 0 ? this.h * 0.5 : 540;
-    const speed = 280 + Math.random() * 420; // px/s
-    return {
-      x: (Math.random() - 0.5) * hw * 2.4,
-      y: scattered ? (Math.random() - 0.5) * hh * 2 : -hh - Math.random() * 200, // spawn just above top edge
-      vy: speed,
-      vx: (Math.random() - 0.5) * 40, // slight lateral drift
-      length: 28 + Math.random() * 80,
-      width: 0.4 + Math.random() * 1.2,
-      color: randomFrom(CATT_ALL),
-      alpha: 0.12 + Math.random() * 0.3,
-      phase: Math.random() * Math.PI * 2,
-    };
+    d.vy = 280 + Math.random() * 420; // px/s
+    d.x = (Math.random() - 0.5) * hw * 2.4;
+    // Not scattered → spawn just above the top edge
+    d.y = scattered
+      ? (Math.random() - 0.5) * hh * 2
+      : -hh - Math.random() * 200;
+    d.vx = (Math.random() - 0.5) * 40; // slight lateral drift
+    d.length = 28 + Math.random() * 80;
+    d.width = 0.4 + Math.random() * 1.2;
+    d.color = randomFrom(CATT_ALL);
+    d.alpha = 0.12 + Math.random() * 0.3;
+    d.phase = Math.random() * Math.PI * 2;
+    return d;
   }
 
   /**
@@ -1571,16 +1810,7 @@ export class MusicBreakScreen extends Container {
 
       // Wrap — when the head passes below the bottom edge, re-spawn at top
       if (d.y - d.length > hh + 20) {
-        const fresh = this.makeRainDrop(false);
-        d.x = fresh.x;
-        d.y = fresh.y;
-        d.vy = fresh.vy;
-        d.vx = fresh.vx;
-        d.length = fresh.length;
-        d.width = fresh.width;
-        d.color = fresh.color;
-        d.alpha = fresh.alpha;
-        d.phase = fresh.phase;
+        this.resetRainDrop(d, false);
         continue;
       }
 
@@ -1603,27 +1833,17 @@ export class MusicBreakScreen extends Container {
       this.rainGfx
         .moveTo(tx, ty)
         .lineTo(hx, hy)
-        .stroke({
-          color: d.color,
-          alpha: a * 0.08,
-          width: d.width * 6,
-          cap: "round",
-        });
+        .stroke(strokeStyle(d.color, a * 0.08, d.width * 6, "round"));
       // Pass 2 — medium soft body
       this.rainGfx
         .moveTo(tx, ty)
         .lineTo(hx, hy)
-        .stroke({
-          color: d.color,
-          alpha: a * 0.28,
-          width: d.width * 2.2,
-          cap: "round",
-        });
+        .stroke(strokeStyle(d.color, a * 0.28, d.width * 2.2, "round"));
       // Pass 3 — sharp core
       this.rainGfx
         .moveTo(tx, ty)
         .lineTo(hx, hy)
-        .stroke({ color: d.color, alpha: a, width: d.width, cap: "round" });
+        .stroke(strokeStyle(d.color, a, d.width, "round"));
 
       // ── Simulate gradient: secondary short segment near head is brighter ──
       const gradLen = d.length * 0.3;
@@ -1632,31 +1852,22 @@ export class MusicBreakScreen extends Container {
       this.rainGfx
         .moveTo(gx, gy)
         .lineTo(hx, hy)
-        .stroke({
-          color: 0xffffff,
-          alpha: a * 0.22,
-          width: d.width * 1.5,
-          cap: "round",
-        });
+        .stroke(strokeStyle(0xffffff, a * 0.22, d.width * 1.5, "round"));
 
       // ── Leading-edge head dot — bright tip ───────────────────────────────
       const headR = d.width * 1.8;
       this.rainGfx
         .circle(hx, hy, headR * 3.0)
-        .fill({ color: d.color, alpha: a * 0.12 }); // outer bloom
-      this.rainGfx
-        .circle(hx, hy, headR)
-        .fill({ color: 0xffffff, alpha: a * 0.55 }); // white core
+        .fill(fillStyle(d.color, a * 0.12)); // outer bloom
+      this.rainGfx.circle(hx, hy, headR).fill(fillStyle(0xffffff, a * 0.55)); // white core
 
       // ── Splash dot on beat when near the "floor" (lower 15% of screen) ──
       if (hy > hh * 0.7 && this.beatDecay > 0.3 && Math.random() < 0.04) {
         const splashR = 1.5 + Math.random() * 3;
         this.rainGfx
           .circle(hx, hy, splashR * 2.5)
-          .fill({ color: d.color, alpha: a * 0.18 });
-        this.rainGfx
-          .circle(hx, hy, splashR)
-          .fill({ color: 0xffffff, alpha: a * 0.4 });
+          .fill(fillStyle(d.color, a * 0.18));
+        this.rainGfx.circle(hx, hy, splashR).fill(fillStyle(0xffffff, a * 0.4));
       }
     }
   }

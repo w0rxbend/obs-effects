@@ -17,6 +17,7 @@ const C_ROSEWATER = 0xf5e0dc;
 const MAX_DT = 0.05;
 const ALPHA_THRESHOLD = 24;
 const SEGMENT_DOT_STEP = 4;
+const MAX_MESH_POINTS = 9;
 const SHAPE_URL = "assets/main/linux.svg";
 
 interface ShapeBounds {
@@ -43,6 +44,20 @@ interface ShapeNode {
   x: number;
   y: number;
   elevation: number;
+  primaryPhaseSin: number;
+  primaryPhaseCos: number;
+  secondaryPhaseSin: number;
+  secondaryPhaseCos: number;
+  ribbonPhaseSin: number;
+  ribbonPhaseCos: number;
+  swirlPhaseSin: number;
+  swirlPhaseCos: number;
+  swayPhaseSin: number;
+  swayPhaseCos: number;
+  ripplePhaseSin: number;
+  ripplePhaseCos: number;
+  liftPhaseSin: number;
+  liftPhaseCos: number;
 }
 
 interface MeshSegment {
@@ -80,6 +95,9 @@ interface FloatingMeshCluster {
 export class CatppuccinLinuxOverlayScreen extends Container {
   public static assetBundles = ["main"];
 
+  private readonly backdropGfx = new Graphics();
+  private readonly atmosphereGfx = new Graphics();
+  private readonly auraGfx = new Graphics();
   private readonly gfx = new Graphics();
 
   private readonly nodes: ShapeNode[] = [];
@@ -98,6 +116,17 @@ export class CatppuccinLinuxOverlayScreen extends Container {
     centerY: 0.5,
   };
 
+  // Pixi copies a style object into its own record on every fill()/stroke(),
+  // so a single mutable literal can serve every primitive in the frame.
+  private readonly fillScratch = { color: 0, alpha: 1 };
+  private readonly strokeScratch = { color: 0, alpha: 1, width: 1 };
+  private readonly meshPointX = new Float64Array(MAX_MESH_POINTS);
+  private readonly meshPointY = new Float64Array(MAX_MESH_POINTS);
+
+  // Style currently held by `gfx`, so repeated styles can reuse it.
+  private meshFillColor = -1;
+  private meshFillAlpha = -1;
+
   private w = 1920;
   private h = 1080;
   private time = 0;
@@ -106,15 +135,21 @@ export class CatppuccinLinuxOverlayScreen extends Container {
   private renderWidth = 1;
   private renderHeight = 1;
   private shapeReady = false;
+  private backdropDirty = true;
+  private auraDirty = true;
 
   constructor() {
     super();
+    this.addChild(this.backdropGfx);
+    this.addChild(this.atmosphereGfx);
+    this.addChild(this.auraGfx);
     this.addChild(this.gfx);
   }
 
   public async show(): Promise<void> {
     this.w = window.innerWidth || 1920;
     this.h = window.innerHeight || 1080;
+    this.backdropDirty = true;
     this.rebuildAtmosphere();
 
     if (!this.shapeReady) {
@@ -127,6 +162,7 @@ export class CatppuccinLinuxOverlayScreen extends Container {
   public resize(width: number, height: number): void {
     this.w = width;
     this.h = height;
+    this.backdropDirty = true;
     this.rebuildAtmosphere();
 
     if (this.shapeReady) {
@@ -213,6 +249,20 @@ export class CatppuccinLinuxOverlayScreen extends Container {
           x: 0,
           y: 0,
           elevation: 0,
+          primaryPhaseSin: 0,
+          primaryPhaseCos: 1,
+          secondaryPhaseSin: 0,
+          secondaryPhaseCos: 1,
+          ribbonPhaseSin: 0,
+          ribbonPhaseCos: 1,
+          swirlPhaseSin: 0,
+          swirlPhaseCos: 1,
+          swayPhaseSin: 0,
+          swayPhaseCos: 1,
+          ripplePhaseSin: 0,
+          ripplePhaseCos: 1,
+          liftPhaseSin: 0,
+          liftPhaseCos: 1,
         });
         indexByCell.set(`${row}:${col}`, index);
 
@@ -348,12 +398,54 @@ export class CatppuccinLinuxOverlayScreen extends Container {
     this.centerX = this.w * 0.5;
     this.centerY = this.h * (isPortrait ? 0.5 : 0.54);
 
-    for (const node of this.nodes) {
+    const halfWidth = Math.max(this.renderWidth * 0.5, 1);
+    const halfHeight = Math.max(this.renderHeight * 0.5, 1);
+
+    for (let index = 0; index < this.nodes.length; index++) {
+      const node = this.nodes[index];
+
       node.relX = (node.nx - this.bounds.centerX) * scale;
       node.relY = (node.ny - this.bounds.centerY) * scale;
       node.x = this.centerX + node.relX;
       node.y = this.centerY + node.relY;
+
+      this.cacheNodePhases(node, node.relX / halfWidth, node.relY / halfHeight);
     }
+
+    this.auraDirty = true;
+  }
+
+  /**
+   * The displacement field mixes seven sine waves whose only per-frame input is
+   * elapsed time; the rest of each angle (grid position plus the node's phase
+   * offsets) is fixed until the next layout. Caching the sine and cosine of that
+   * fixed part lets `updateNodes` expand `sin(phase +- time)` with the angle-sum
+   * identity, trading seven transcendental calls per node per frame for a few
+   * multiplies.
+   */
+  private cacheNodePhases(node: ShapeNode, normX: number, normY: number): void {
+    const primaryPhase = normX * 4.8 + node.phase;
+    const secondaryPhase = normY * 6.3 + node.drift;
+    const ribbonPhase = (normX + normY) * 5.6 + node.phase * 0.7;
+    const swirlPhase = (normX - normY) * 4.2 - node.drift;
+    const swayPhase = node.phase + normY * 3.4;
+    const ripplePhase = normX * 5.8;
+    const liftPhase = node.drift + normX * 3.1;
+
+    node.primaryPhaseSin = Math.sin(primaryPhase);
+    node.primaryPhaseCos = Math.cos(primaryPhase);
+    node.secondaryPhaseSin = Math.sin(secondaryPhase);
+    node.secondaryPhaseCos = Math.cos(secondaryPhase);
+    node.ribbonPhaseSin = Math.sin(ribbonPhase);
+    node.ribbonPhaseCos = Math.cos(ribbonPhase);
+    node.swirlPhaseSin = Math.sin(swirlPhase);
+    node.swirlPhaseCos = Math.cos(swirlPhase);
+    node.swayPhaseSin = Math.sin(swayPhase);
+    node.swayPhaseCos = Math.cos(swayPhase);
+    node.ripplePhaseSin = Math.sin(ripplePhase);
+    node.ripplePhaseCos = Math.cos(ripplePhase);
+    node.liftPhaseSin = Math.sin(liftPhase);
+    node.liftPhaseCos = Math.cos(liftPhase);
   }
 
   private rebuildAtmosphere(): void {
@@ -406,23 +498,44 @@ export class CatppuccinLinuxOverlayScreen extends Container {
   }
 
   private updateNodes(): void {
-    const pulse = 1 + Math.sin(this.time * 0.24) * 0.012;
-    const skew = Math.sin(this.time * 0.18) * 0.02;
-    const halfWidth = Math.max(this.renderWidth * 0.5, 1);
-    const halfHeight = Math.max(this.renderHeight * 0.5, 1);
+    const time = this.time;
+    const centerX = this.centerX;
+    const centerY = this.centerY;
+    const primaryTimeSin = Math.sin(time * 0.42);
+    const primaryTimeCos = Math.cos(time * 0.42);
+    const secondaryTimeSin = Math.sin(time * 0.28);
+    const secondaryTimeCos = Math.cos(time * 0.28);
+    const ribbonTimeSin = Math.sin(time * 0.36);
+    const ribbonTimeCos = Math.cos(time * 0.36);
+    const swirlTimeSin = Math.sin(time * 0.22);
+    const swirlTimeCos = Math.cos(time * 0.22);
+    const swayTimeSin = Math.sin(time * 0.24);
+    const swayTimeCos = Math.cos(time * 0.24);
+    const rippleTimeSin = Math.sin(time * 0.16);
+    const rippleTimeCos = Math.cos(time * 0.16);
+    const liftTimeSin = Math.sin(time * 0.21);
+    const liftTimeCos = Math.cos(time * 0.21);
+    const pulse = 1 + swayTimeSin * 0.012;
+    const skew = Math.sin(time * 0.18) * 0.02;
 
-    for (const node of this.nodes) {
-      const normX = node.relX / halfWidth;
-      const normY = node.relY / halfHeight;
+    for (let index = 0; index < this.nodes.length; index++) {
+      const node = this.nodes[index];
       const primary =
-        Math.sin(normX * 4.8 - this.time * 0.42 + node.phase) * 0.72;
+        (node.primaryPhaseSin * primaryTimeCos -
+          node.primaryPhaseCos * primaryTimeSin) *
+        0.72;
       const secondary =
-        Math.cos(normY * 6.3 - this.time * 0.28 + node.drift) * 0.44;
+        (node.secondaryPhaseCos * secondaryTimeCos +
+          node.secondaryPhaseSin * secondaryTimeSin) *
+        0.44;
       const ribbon =
-        Math.sin((normX + normY) * 5.6 - this.time * 0.36 + node.phase * 0.7) *
+        (node.ribbonPhaseSin * ribbonTimeCos -
+          node.ribbonPhaseCos * ribbonTimeSin) *
         0.32;
       const swirl =
-        Math.cos((normX - normY) * 4.2 + this.time * 0.22 - node.drift) * 0.22;
+        (node.swirlPhaseCos * swirlTimeCos -
+          node.swirlPhaseSin * swirlTimeSin) *
+        0.22;
       const swell = primary + secondary + ribbon + swirl;
       const crest = Math.max(
         0,
@@ -430,15 +543,18 @@ export class CatppuccinLinuxOverlayScreen extends Container {
       );
       const damping = 0.2 + node.interiorBias * 0.8;
 
-      const baseX = this.centerX + node.relX * pulse + node.relY * skew;
-      const baseY = this.centerY + node.relY * (1 - pulse * 0.014);
+      const baseX = centerX + node.relX * pulse + node.relY * skew;
+      const baseY = centerY + node.relY * (1 - pulse * 0.014);
       const flowX =
-        Math.cos(this.time * 0.24 + node.phase + normY * 3.4) *
+        (node.swayPhaseCos * swayTimeCos - node.swayPhaseSin * swayTimeSin) *
           (2.4 + crest * 6.8) *
           damping +
-        Math.sin(this.time * 0.16 + normX * 5.8) * 1.4 * damping;
+        (node.ripplePhaseSin * rippleTimeCos +
+          node.ripplePhaseCos * rippleTimeSin) *
+          1.4 *
+          damping;
       const flowY =
-        Math.sin(this.time * 0.21 + node.drift + normX * 3.1) *
+        (node.liftPhaseSin * liftTimeCos + node.liftPhaseCos * liftTimeSin) *
           (2.8 + crest * 7.2) *
           damping -
         crest * (1.8 + node.interiorBias * 3.4);
@@ -450,33 +566,46 @@ export class CatppuccinLinuxOverlayScreen extends Container {
   }
 
   private draw(): void {
+    if (this.backdropDirty) {
+      this.drawBackdrop();
+      this.backdropDirty = false;
+    }
+
+    if (this.auraDirty) {
+      this.drawShapeAura();
+      this.auraDirty = false;
+    }
+
+    this.drawAtmosphere();
+
     const g = this.gfx;
 
     g.clear();
-    this.drawBackdrop(g);
-    this.drawShapeAura(g);
 
     if (!this.shapeReady) {
       return;
     }
 
-    for (const segment of this.segments) {
+    for (let index = 0; index < this.segments.length; index++) {
+      const segment = this.segments[index];
+
       this.drawSegment(
-        g,
         this.nodes[segment.a],
         this.nodes[segment.b],
         segment.strength,
       );
     }
 
-    for (const node of this.nodes) {
-      this.drawNode(g, node);
+    for (let index = 0; index < this.nodes.length; index++) {
+      this.drawNode(this.nodes[index]);
     }
   }
 
-  private drawBackdrop(g: Graphics): void {
+  private drawBackdrop(): void {
+    const g = this.backdropGfx;
     const radius = Math.min(this.w, this.h);
 
+    g.clear();
     g.rect(0, 0, this.w, this.h).fill({ color: C_CRUST });
     g.circle(this.w * 0.18, this.h * 0.18, radius * 0.52).fill({
       color: C_MANTLE,
@@ -494,24 +623,33 @@ export class CatppuccinLinuxOverlayScreen extends Container {
       color: C_SURFACE1,
       alpha: 0.09,
     });
+  }
 
-    for (const mesh of this.floatingMeshes) {
-      this.drawFloatingMesh(g, mesh, radius);
+  private drawAtmosphere(): void {
+    const g = this.atmosphereGfx;
+    const radius = Math.min(this.w, this.h);
+    const time = this.time;
+    const fill = this.fillScratch;
+
+    g.clear();
+
+    for (let index = 0; index < this.floatingMeshes.length; index++) {
+      this.drawFloatingMesh(g, this.floatingMeshes[index], radius);
     }
 
-    for (const mote of this.atmosphereMotes) {
-      const yBase = (mote.yNorm * this.h - this.time * mote.rise * 6) % this.h;
+    for (let index = 0; index < this.atmosphereMotes.length; index++) {
+      const mote = this.atmosphereMotes[index];
+      const yBase = (mote.yNorm * this.h - time * mote.rise * 6) % this.h;
       const y = yBase < 0 ? yBase + this.h : yBase;
       const x =
         mote.xNorm * this.w +
-        Math.sin(this.time * mote.speed + mote.phase) * mote.sway;
+        Math.sin(time * mote.speed + mote.phase) * mote.sway;
       const twinkle =
-        0.5 + Math.sin(this.time * (mote.speed * 2.4) + mote.phase) * 0.3;
+        0.5 + Math.sin(time * (mote.speed * 2.4) + mote.phase) * 0.3;
 
-      g.circle(x, y, mote.radius * (0.78 + twinkle * 0.3)).fill({
-        color: mote.color,
-        alpha: mote.alpha * twinkle,
-      });
+      fill.color = mote.color;
+      fill.alpha = mote.alpha * twinkle;
+      g.circle(x, y, mote.radius * (0.78 + twinkle * 0.3)).fill(fill);
     }
   }
 
@@ -520,73 +658,72 @@ export class CatppuccinLinuxOverlayScreen extends Container {
     mesh: FloatingMeshCluster,
     radius: number,
   ): void {
+    const time = this.time;
     const centerX =
       this.w * mesh.xNorm +
-      Math.sin(this.time * mesh.speed + mesh.phase) * this.w * mesh.driftX;
+      Math.sin(time * mesh.speed + mesh.phase) * this.w * mesh.driftX;
     const centerY =
       this.h * mesh.yNorm +
-      Math.cos(this.time * (mesh.speed * 0.86) + mesh.phase * 0.7) *
+      Math.cos(time * (mesh.speed * 0.86) + mesh.phase * 0.7) *
         this.h *
         mesh.driftY;
     const clusterRadius =
       radius *
       mesh.radiusNorm *
-      (0.92 + Math.sin(this.time * mesh.speed * 1.9 + mesh.phase) * 0.1);
-    const rotation = this.time * mesh.spin + mesh.phase;
-    const points: { x: number; y: number }[] = [];
+      (0.92 + Math.sin(time * mesh.speed * 1.9 + mesh.phase) * 0.1);
+    const rotation = time * mesh.spin + mesh.phase;
+    const pointCount = mesh.pointCount;
+    const pointX = this.meshPointX;
+    const pointY = this.meshPointY;
+    const fill = this.fillScratch;
+    const stroke = this.strokeScratch;
 
-    for (let index = 0; index < mesh.pointCount; index++) {
-      const t = index / mesh.pointCount;
+    for (let index = 0; index < pointCount; index++) {
+      const t = index / pointCount;
       const angle = rotation + t * TAU;
       const wobble =
         0.68 +
-        Math.sin(this.time * 0.7 + mesh.phase + index * 0.9) * 0.16 +
-        Math.cos(this.time * 0.42 + index * 0.7) * 0.08;
+        Math.sin(time * 0.7 + mesh.phase + index * 0.9) * 0.16 +
+        Math.cos(time * 0.42 + index * 0.7) * 0.08;
 
-      points.push({
-        x: centerX + Math.cos(angle) * clusterRadius * wobble,
-        y: centerY + Math.sin(angle) * clusterRadius * (0.64 + wobble * 0.3),
-      });
+      pointX[index] = centerX + Math.cos(angle) * clusterRadius * wobble;
+      pointY[index] =
+        centerY + Math.sin(angle) * clusterRadius * (0.64 + wobble * 0.3);
     }
 
-    g.circle(centerX, centerY, clusterRadius * 1.2).fill({
-      color: mesh.color,
-      alpha: mesh.alpha * 0.12,
-    });
+    fill.color = mesh.color;
+    fill.alpha = mesh.alpha * 0.12;
+    g.circle(centerX, centerY, clusterRadius * 1.2).fill(fill);
 
-    for (let index = 0; index < points.length; index++) {
-      const point = points[index];
-      const next = points[(index + 1) % points.length];
-      const skip = points[(index + 2) % points.length];
+    stroke.color = mesh.color;
 
-      g.moveTo(point.x, point.y)
-        .lineTo(next.x, next.y)
-        .stroke({
-          color: mesh.color,
-          alpha: mesh.alpha * 0.7,
-          width: 1,
-        });
+    for (let index = 0; index < pointCount; index++) {
+      const next = (index + 1) % pointCount;
+      const skip = (index + 2) % pointCount;
+
+      stroke.alpha = mesh.alpha * 0.7;
+      g.moveTo(pointX[index], pointY[index])
+        .lineTo(pointX[next], pointY[next])
+        .stroke(stroke);
 
       if (index % 2 === 0) {
-        g.moveTo(point.x, point.y)
-          .lineTo(skip.x, skip.y)
-          .stroke({
-            color: mesh.color,
-            alpha: mesh.alpha * 0.28,
-            width: 1,
-          });
+        stroke.alpha = mesh.alpha * 0.28;
+        g.moveTo(pointX[index], pointY[index])
+          .lineTo(pointX[skip], pointY[skip])
+          .stroke(stroke);
       }
 
-      g.circle(point.x, point.y, 1.1).fill({
-        color: mesh.color,
-        alpha: mesh.alpha * 1.1,
-      });
+      fill.color = mesh.color;
+      fill.alpha = mesh.alpha * 1.1;
+      g.circle(pointX[index], pointY[index], 1.1).fill(fill);
     }
   }
 
-  private drawShapeAura(g: Graphics): void {
+  private drawShapeAura(): void {
+    const g = this.auraGfx;
     const auraRadius = Math.max(this.renderWidth, this.renderHeight, 180);
 
+    g.clear();
     g.circle(this.centerX, this.centerY, auraRadius * 0.42).fill({
       color: C_MAUVE,
       alpha: 0.07,
@@ -609,12 +746,8 @@ export class CatppuccinLinuxOverlayScreen extends Container {
     });
   }
 
-  private drawSegment(
-    g: Graphics,
-    a: ShapeNode,
-    b: ShapeNode,
-    strength: number,
-  ): void {
+  private drawSegment(a: ShapeNode, b: ShapeNode, strength: number): void {
+    const g = this.gfx;
     const dx = b.x - a.x;
     const dy = b.y - a.y;
     const distance = Math.sqrt(dx * dx + dy * dy);
@@ -632,14 +765,17 @@ export class CatppuccinLinuxOverlayScreen extends Container {
     for (let index = 0; index <= count; index++) {
       const t = index / count;
 
-      g.circle(a.x + dx * t, a.y + dy * t, radius).fill({
-        color,
-        alpha,
-      });
+      g.circle(a.x + dx * t, a.y + dy * t, radius);
     }
+
+    // Every dot on a segment shares one style, and Pixi triangulates each
+    // circle of a path on its own, so a single fill draws the whole chain with
+    // the same result as filling dot by dot.
+    this.fillMesh(color, alpha);
   }
 
-  private drawNode(g: Graphics, node: ShapeNode): void {
+  private drawNode(node: ShapeNode): void {
+    const g = this.gfx;
     const lift = Math.max(0, node.elevation);
     const glowRadius = 2 + node.interiorBias * 1.5 + lift * 2.2;
     const dotRadius = 0.72 + node.interiorBias * 0.38 + lift * 0.54;
@@ -650,13 +786,24 @@ export class CatppuccinLinuxOverlayScreen extends Container {
     );
     const color = lift > 0.92 ? C_ROSEWATER : lift > 0.3 ? C_MAUVE : C_LAVENDER;
 
-    g.circle(node.x, node.y, glowRadius * 1.7).fill({
-      color: C_LAVENDER,
-      alpha: 0.018 + lift * 0.03,
-    });
-    g.circle(node.x, node.y, dotRadius).fill({
-      color,
-      alpha,
-    });
+    g.circle(node.x, node.y, glowRadius * 1.7);
+    this.fillMesh(C_LAVENDER, 0.018 + lift * 0.03);
+    g.circle(node.x, node.y, dotRadius);
+    this.fillMesh(color, alpha);
+  }
+
+  private fillMesh(color: number, alpha: number): void {
+    if (color === this.meshFillColor && alpha === this.meshFillAlpha) {
+      // The context still holds this style, so a bare fill() reuses it instead
+      // of building another style record.
+      this.gfx.fill();
+      return;
+    }
+
+    this.meshFillColor = color;
+    this.meshFillAlpha = alpha;
+    this.fillScratch.color = color;
+    this.fillScratch.alpha = alpha;
+    this.gfx.fill(this.fillScratch);
   }
 }

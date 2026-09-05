@@ -164,6 +164,27 @@ interface FloatingElement {
 
 const TOXIC_BLACK = 0x11111b; // Deep black for grime/outlines
 
+const WAVY_STEPS = 100;
+
+// ── Reused draw styles ────────────────────────────────────────────────────────
+// Pixi copies the style object it is handed before storing it on the draw
+// instruction, so one mutable object per style shape keeps the draw passes from
+// allocating thousands of short-lived literals every frame.
+const fillStyle = { color: 0, alpha: 1 };
+const strokeStyle = { color: 0, alpha: 1, width: 1 };
+const roundStrokeStyle = {
+  color: 0,
+  alpha: 1,
+  width: 1,
+  cap: "round" as const,
+  join: "round" as const,
+};
+
+// Constant glow/shadow styles for the backdrop behind the text particles.
+const TEXT_GLOW_OUTER = { color: LAVENDER, alpha: 0.015 };
+const TEXT_GLOW_INNER = { color: BLUE, alpha: 0.025 };
+const TEXT_GLOW_CORE = { color: TOXIC_BLACK, alpha: 0.05 };
+
 /**
  * A completely procedural logo screen with fluid wavy lines and blobs.
  */
@@ -212,6 +233,28 @@ export class ProceduralLogoScreen extends Container {
   private floatingElements: FloatingElement[] = [];
   private textParticles: TextParticle[] = [];
 
+  // ── Per-frame scratch buffers ──────────────────────────────────────────────
+  // Sized once by allocScratchBuffers(); the draw passes write into these
+  // instead of building a new array (or object literal) per element per frame.
+  private stainX = new Float64Array(0);
+  private stainY = new Float64Array(0);
+  private stainR = new Float64Array(0);
+  private meshDotX = new Float64Array(0);
+  private meshDotY = new Float64Array(0);
+  private patternPointX = new Float64Array(0);
+  private patternPointY = new Float64Array(0);
+  private gridWobbleX = new Float64Array(0);
+  private gridWobbleY = new Float64Array(0);
+  private floatProjX = new Float64Array(0);
+  private floatProjY = new Float64Array(0);
+
+  // Graphics.poly() holds on to the array it is given until the frame is
+  // rendered, so every polygon that is on screen at once needs its own buffer.
+  private wavyPoints: number[][] = [];
+  private floatPoly: number[][] = [];
+  private toxicPoly: number[][] = [];
+  private rotatingPoly: number[][] = [];
+
   constructor() {
     super();
     // Move stains and clouds to the very back
@@ -251,6 +294,62 @@ export class ProceduralLogoScreen extends Container {
     this.initTextAtmosphere();
     this.initFloatingElements(); // Initialize new elements
     this.initTextParticles();
+
+    this.allocScratchBuffers();
+  }
+
+  /**
+   * Allocates every per-frame buffer once, sized from whatever the init passes
+   * randomly produced. Nothing here holds a GPU resource, so it is released
+   * together with the screen instance.
+   */
+  private allocScratchBuffers(): void {
+    this.stainX = new Float64Array(this.stains.length);
+    this.stainY = new Float64Array(this.stains.length);
+    this.stainR = new Float64Array(this.stains.length);
+
+    let maxMeshDots = 0;
+    for (const m of this.dotMeshes) {
+      maxMeshDots = Math.max(maxMeshDots, m.dots.length);
+    }
+    this.meshDotX = new Float64Array(maxMeshDots);
+    this.meshDotY = new Float64Array(maxMeshDots);
+
+    let maxPathPoints = 0;
+    for (const p of this.patternPaths) {
+      maxPathPoints = Math.max(maxPathPoints, p.points.length);
+    }
+    this.patternPointX = new Float64Array(maxPathPoints);
+    this.patternPointY = new Float64Array(maxPathPoints);
+
+    let maxCols = 0;
+    let maxRows = 0;
+    for (const grid of this.dotGrids) {
+      maxCols = Math.max(maxCols, grid.cols);
+      maxRows = Math.max(maxRows, grid.rows);
+    }
+    for (const grid of this.boldDotGrids) {
+      maxCols = Math.max(maxCols, grid.cols);
+      maxRows = Math.max(maxRows, grid.rows);
+    }
+    this.gridWobbleX = new Float64Array(maxCols);
+    this.gridWobbleY = new Float64Array(maxRows);
+
+    this.floatProjX = new Float64Array(this.floatingElements.length);
+    this.floatProjY = new Float64Array(this.floatingElements.length);
+
+    for (let i = 0; i < this.wavyLines.length; i++) {
+      this.wavyPoints.push(new Array<number>((WAVY_STEPS + 1) * 2).fill(0));
+    }
+    for (let i = 0; i < this.floatingElements.length; i++) {
+      this.floatPoly.push(new Array<number>(8).fill(0));
+    }
+    for (let i = 0; i < this.toxicDrops.length; i++) {
+      this.toxicPoly.push(new Array<number>(12).fill(0));
+    }
+    for (let i = 0; i < this.rotatingObjects.length; i++) {
+      this.rotatingPoly.push(new Array<number>(8).fill(0));
+    }
   }
 
   private initStains(): void {
@@ -427,19 +526,26 @@ export class ProceduralLogoScreen extends Container {
     const scrollX = (this.time * 20) % spacing;
     const scrollY = (this.time * 10) % spacing;
 
+    const punchScale = 1 + punch;
+    const size = 1.5 + punch * 2.0;
+    fillStyle.color = BLUE;
+
     for (let i = -cols / 2; i < cols / 2; i++) {
+      const x = i * spacing + scrollX;
+      const xSq = x * x;
+
       for (let j = -rows / 2; j < rows / 2; j++) {
-        const x = i * spacing + scrollX;
         const y = j * spacing + scrollY;
 
-        // Circular mask for the matrix
-        const dist = Math.sqrt(x * x + y * y);
-        if (dist > 800) continue;
+        // Circular mask for the matrix (squared compare skips the square root
+        // for the points that fall outside it)
+        const distSq = xSq + y * y;
+        if (distSq > 800 * 800) continue;
+        const dist = Math.sqrt(distSq);
 
-        const alpha = (1 - dist / 800) * 0.15 * (1 + punch);
-        const size = 1.5 + punch * 2.0;
+        fillStyle.alpha = (1 - dist / 800) * 0.15 * punchScale;
 
-        g.circle(x, y, size).fill({ color: BLUE, alpha });
+        g.circle(x, y, size).fill(fillStyle);
       }
     }
   }
@@ -450,7 +556,8 @@ export class ProceduralLogoScreen extends Container {
     const dt = ticker.deltaTime;
     const punch = this.beatDecay * 0.6;
 
-    for (const e of this.floatingElements) {
+    for (let i = 0; i < this.floatingElements.length; i++) {
+      const e = this.floatingElements[i];
       e.x += e.vx * dt;
       e.y += e.vy * dt;
       e.z += e.vz * dt;
@@ -469,36 +576,37 @@ export class ProceduralLogoScreen extends Container {
       const alpha = e.alpha * scale * (1 + punch);
 
       if (e.type === "point") {
-        g.circle(px, py, size * 0.5).fill({ color: e.color, alpha });
-      } else if (e.type === "cube") {
-        const half = size;
-        g.poly(
-          [
-            px - half,
-            py - half,
-            px + half,
-            py - half,
-            px + half,
-            py + half,
-            px - half,
-            py + half,
-          ],
-          true,
-        ).stroke({ color: e.color, alpha: alpha * 1.5, width: 1.5 });
-      } else if (e.type === "crystal") {
-        g.poly(
-          [
-            px,
-            py - size * 1.5,
-            px + size,
-            py,
-            px,
-            py + size * 1.5,
-            px - size,
-            py,
-          ],
-          true,
-        ).stroke({ color: e.color, alpha: alpha * 1.5, width: 1.5 });
+        fillStyle.color = e.color;
+        fillStyle.alpha = alpha;
+        g.circle(px, py, size * 0.5).fill(fillStyle);
+      } else {
+        const pts = this.floatPoly[i];
+
+        if (e.type === "cube") {
+          const half = size;
+          pts[0] = px - half;
+          pts[1] = py - half;
+          pts[2] = px + half;
+          pts[3] = py - half;
+          pts[4] = px + half;
+          pts[5] = py + half;
+          pts[6] = px - half;
+          pts[7] = py + half;
+        } else {
+          pts[0] = px;
+          pts[1] = py - size * 1.5;
+          pts[2] = px + size;
+          pts[3] = py;
+          pts[4] = px;
+          pts[5] = py + size * 1.5;
+          pts[6] = px - size;
+          pts[7] = py;
+        }
+
+        strokeStyle.color = e.color;
+        strokeStyle.alpha = alpha * 1.5;
+        strokeStyle.width = 1.5;
+        g.poly(pts, true).stroke(strokeStyle);
       }
     }
   }
@@ -508,30 +616,39 @@ export class ProceduralLogoScreen extends Container {
     g.clear();
     const punch = this.beatDecay * 0.3;
     const threshold = 250;
+    const thresholdSq = threshold * threshold;
+    const punchScale = 1 + punch;
+
+    const count = this.floatingElements.length;
+    const projX = this.floatProjX;
+    const projY = this.floatProjY;
+
+    // Project once up front instead of re-projecting the far element inside the
+    // pair loop
+    for (let i = 0; i < count; i++) {
+      const e = this.floatingElements[i];
+      const s = 400 / (400 + e.z);
+      projX[i] = e.x * s;
+      projY[i] = e.y * s;
+    }
+
+    strokeStyle.color = SKY;
+    strokeStyle.width = 0.6;
 
     // Connect floating elements that are points or centers
-    for (let i = 0; i < this.floatingElements.length; i++) {
-      const e1 = this.floatingElements[i];
-      const s1 = 400 / (400 + e1.z);
-      const p1x = e1.x * s1;
-      const p1y = e1.y * s1;
+    for (let i = 0; i < count; i++) {
+      const p1x = projX[i];
+      const p1y = projY[i];
 
-      for (let j = i + 1; j < this.floatingElements.length; j++) {
-        const e2 = this.floatingElements[j];
-        const s2 = 400 / (400 + e2.z);
-        const p2x = e2.x * s2;
-        const p2y = e2.y * s2;
-
-        const dx = p2x - p1x;
-        const dy = p2y - p1y;
+      for (let j = i + 1; j < count; j++) {
+        const dx = projX[j] - p1x;
+        const dy = projY[j] - p1y;
         const d2 = dx * dx + dy * dy;
 
-        if (d2 < threshold * threshold) {
+        if (d2 < thresholdSq) {
           const d = Math.sqrt(d2);
-          const alpha = (1 - d / threshold) * 0.15 * (1 + punch);
-          g.moveTo(p1x, p1y)
-            .lineTo(p2x, p2y)
-            .stroke({ color: SKY, alpha, width: 0.6 });
+          strokeStyle.alpha = (1 - d / threshold) * 0.15 * punchScale;
+          g.moveTo(p1x, p1y).lineTo(projX[j], projY[j]).stroke(strokeStyle);
         }
       }
     }
@@ -572,10 +689,18 @@ export class ProceduralLogoScreen extends Container {
     const dt = ticker.deltaTime;
     const punch = this.beatDecay * 0.5;
     const distThreshold = 140;
+    const distThresholdSq = distThreshold * distThreshold;
+    const punchScale = 1 + punch;
 
     for (const mesh of this.atmosphereMeshes) {
-      for (let i = 0; i < mesh.dots.length; i++) {
-        const p1 = mesh.dots[i];
+      const dots = mesh.dots;
+      const count = dots.length;
+
+      strokeStyle.color = mesh.color;
+      strokeStyle.width = 0.8;
+
+      for (let i = 0; i < count; i++) {
+        const p1 = dots[i];
         p1.x += p1.vx * dt;
         p1.y += p1.vy * dt;
 
@@ -584,25 +709,29 @@ export class ProceduralLogoScreen extends Container {
         if (Math.abs(p1.y) > 300) p1.vy *= -1;
 
         // Draw connections
-        for (let j = i + 1; j < mesh.dots.length; j++) {
-          const p2 = mesh.dots[j];
+        for (let j = i + 1; j < count; j++) {
+          const p2 = dots[j];
           const dx = p2.x - p1.x;
           const dy = p2.y - p1.y;
           const dist2 = dx * dx + dy * dy;
 
-          if (dist2 < distThreshold * distThreshold) {
+          if (dist2 < distThresholdSq) {
             const dist = Math.sqrt(dist2);
-            const alpha = (1 - dist / distThreshold) * mesh.alpha * (1 + punch);
-            g.moveTo(p1.x, p1.y)
-              .lineTo(p2.x, p2.y)
-              .stroke({ color: mesh.color, alpha, width: 0.8 });
+            strokeStyle.alpha =
+              (1 - dist / distThreshold) * mesh.alpha * punchScale;
+            g.moveTo(p1.x, p1.y).lineTo(p2.x, p2.y).stroke(strokeStyle);
           }
         }
-
-        // Draw Dot
-        const dotAlpha = mesh.alpha * (0.6 + punch * 0.4);
-        g.circle(p1.x, p1.y, 1.5).fill({ color: mesh.color, alpha: dotAlpha });
       }
+
+      // Draw Dots — one fill for the whole mesh: they all share the colour and
+      // alpha of the lines above, so grouping them cannot change the blend
+      for (let i = 0; i < count; i++) {
+        g.circle(dots[i].x, dots[i].y, 1.5);
+      }
+      fillStyle.color = mesh.color;
+      fillStyle.alpha = mesh.alpha * (0.6 + punch * 0.4);
+      g.fill(fillStyle);
     }
   }
 
@@ -664,9 +793,14 @@ export class ProceduralLogoScreen extends Container {
     const dt = ticker.deltaTime;
     const punch = this.beatDecay * 0.5;
     const distThreshold = 18; // Max distance for mesh lines
+    const distThresholdSq = distThreshold * distThreshold;
+
+    const particles = this.textParticles;
+    const count = particles.length;
 
     // Update positions and draw background glow/shadow
-    for (const p of this.textParticles) {
+    for (let i = 0; i < count; i++) {
+      const p = particles[i];
       const dx = p.homeX - p.x;
       const dy = p.homeY - p.y;
 
@@ -686,48 +820,49 @@ export class ProceduralLogoScreen extends Container {
       p.y += p.vy * dt;
 
       // Semi-transparent glowy background - Extremely subtle Lavender/Blue theme
-      bg.circle(p.x, p.y, 35).fill({ color: LAVENDER, alpha: 0.015 });
-      bg.circle(p.x, p.y, 22).fill({ color: BLUE, alpha: 0.025 });
-      bg.circle(p.x, p.y, 10).fill({ color: TOXIC_BLACK, alpha: 0.05 });
+      bg.circle(p.x, p.y, 35).fill(TEXT_GLOW_OUTER);
+      bg.circle(p.x, p.y, 22).fill(TEXT_GLOW_INNER);
+      bg.circle(p.x, p.y, 10).fill(TEXT_GLOW_CORE);
     }
 
+    const radiusPulse = 1 + punch * 2.5;
+    strokeStyle.color = TOXIC_BLACK;
+    strokeStyle.width = 1.2;
+
     // Draw Mesh and Dots
-    for (let i = 0; i < this.textParticles.length; i++) {
-      const p1 = this.textParticles[i];
+    for (let i = 0; i < count; i++) {
+      const p1 = particles[i];
+      const p1x = p1.x;
+      const p1y = p1.y;
 
       // Optimization: Only check a small neighborhood since particles are grid-ordered
       const searchWindow = 45;
-      const end = Math.min(i + searchWindow, this.textParticles.length);
+      const end = i + searchWindow < count ? i + searchWindow : count;
 
       for (let j = i + 1; j < end; j++) {
-        const p2 = this.textParticles[j];
-        const dx = p2.x - p1.x;
-        const dy = p2.y - p1.y;
+        const p2 = particles[j];
+        const dx = p2.x - p1x;
+        const dy = p2.y - p1y;
         const d2 = dx * dx + dy * dy;
 
-        if (d2 < distThreshold * distThreshold) {
+        if (d2 < distThresholdSq) {
           const dist = Math.sqrt(d2);
-          const lineAlpha = (1 - dist / distThreshold) * 0.45;
-          g.moveTo(p1.x, p1.y)
-            .lineTo(p2.x, p2.y)
-            .stroke({ color: TOXIC_BLACK, alpha: lineAlpha, width: 1.2 }); // Black mesh lines
+          strokeStyle.alpha = (1 - dist / distThreshold) * 0.45;
+          g.moveTo(p1x, p1y).lineTo(p2.x, p2.y).stroke(strokeStyle); // Black mesh lines
         }
       }
 
       // Stronger size pulse: dots grow significantly with the heartbeat
-      const drawRadius = p1.radius * (1 + punch * 2.5);
+      const drawRadius = p1.radius * radiusPulse;
 
       // Draw White Outline for high contrast
-      g.circle(p1.x, p1.y, drawRadius + 1.6).fill({
-        color: 0xffffff,
-        alpha: p1.alpha,
-      });
+      fillStyle.color = 0xffffff;
+      fillStyle.alpha = p1.alpha;
+      g.circle(p1x, p1y, drawRadius + 1.6).fill(fillStyle);
 
       // Draw Black Dot
-      g.circle(p1.x, p1.y, drawRadius).fill({
-        color: TOXIC_BLACK,
-        alpha: p1.alpha,
-      });
+      fillStyle.color = TOXIC_BLACK;
+      g.circle(p1x, p1y, drawRadius).fill(fillStyle);
     }
   }
 
@@ -815,39 +950,53 @@ export class ProceduralLogoScreen extends Container {
       const baseX = m.x + driftX;
       const baseY = m.y + driftY;
 
+      const cos = Math.cos(rotation);
+      const sin = Math.sin(rotation);
+      const count = m.dots.length;
+      const tx = this.meshDotX;
+      const ty = this.meshDotY;
+
       // Transform dots
-      const tDots = m.dots.map((d) => {
+      for (let i = 0; i < count; i++) {
+        const d = m.dots[i];
         const px = (d.x + Math.sin(this.time + d.x) * 5) * m.scale * punch;
         const py = (d.y + Math.cos(this.time + d.y) * 5) * m.scale * punch;
 
-        const rx = px * Math.cos(rotation) - py * Math.sin(rotation);
-        const ry = px * Math.sin(rotation) + py * Math.cos(rotation);
+        tx[i] = baseX + (px * cos - py * sin);
+        ty[i] = baseY + (px * sin + py * cos);
+      }
 
-        return { x: baseX + rx, y: baseY + ry };
-      });
+      const maxDist = 70 * m.scale;
+      const maxDistSq = maxDist * maxDist;
+
+      strokeStyle.color = m.color;
+      strokeStyle.width = 1.5;
 
       // Draw connections (mesh)
-      for (let i = 0; i < tDots.length; i++) {
-        for (let j = i + 1; j < tDots.length; j++) {
-          const dx = tDots[i].x - tDots[j].x;
-          const dy = tDots[i].y - tDots[j].y;
-          const distSq = dx * dx + dy * dy;
-          const maxDist = 70 * m.scale;
+      for (let i = 0; i < count; i++) {
+        const ix = tx[i];
+        const iy = ty[i];
 
-          if (distSq < maxDist * maxDist) {
+        for (let j = i + 1; j < count; j++) {
+          const dx = ix - tx[j];
+          const dy = iy - ty[j];
+          const distSq = dx * dx + dy * dy;
+
+          if (distSq < maxDistSq) {
             const dist = Math.sqrt(distSq);
-            const alpha = (1 - dist / maxDist) * 0.4;
-            g.moveTo(tDots[i].x, tDots[i].y)
-              .lineTo(tDots[j].x, tDots[j].y)
-              .stroke({ color: m.color, width: 1.5, alpha });
+            strokeStyle.alpha = (1 - dist / maxDist) * 0.4;
+            g.moveTo(ix, iy).lineTo(tx[j], ty[j]).stroke(strokeStyle);
           }
         }
       }
 
-      // Draw dots
-      for (const d of tDots) {
-        g.circle(d.x, d.y, 2.5).fill({ color: m.color, alpha: 0.8 });
+      // Draw dots — a single fill for the mesh, they all share colour and alpha
+      for (let i = 0; i < count; i++) {
+        g.circle(tx[i], ty[i], 2.5);
       }
+      fillStyle.color = m.color;
+      fillStyle.alpha = 0.8;
+      g.fill(fillStyle);
     }
   }
 
@@ -865,46 +1014,50 @@ export class ProceduralLogoScreen extends Container {
       const baseX = p.x + driftX;
       const baseY = p.y + driftY;
 
+      const cos = Math.cos(rotation);
+      const sin = Math.sin(rotation);
+      const wobblePhaseX = this.time * 2;
+      const wobblePhaseY = this.time * 1.5;
+      const count = p.points.length;
+      const mx = this.patternPointX;
+      const my = this.patternPointY;
+
       // Map points through morphing and rotation
-      const morphedPoints = p.points.map((pt) => {
+      for (let i = 0; i < count; i++) {
+        const pt = p.points[i];
+
         // Point-specific morphing/wobble
-        const wx = Math.sin(this.time * 2 + pt.ox) * 10;
-        const wy = Math.cos(this.time * 1.5 + pt.oy) * 10;
+        const wx = Math.sin(wobblePhaseX + pt.ox) * 10;
+        const wy = Math.cos(wobblePhaseY + pt.oy) * 10;
         const px = (pt.x + wx) * punch;
         const py = (pt.y + wy) * punch;
 
         // Apply rotation
-        const rx = px * Math.cos(rotation) - py * Math.sin(rotation);
-        const ry = px * Math.sin(rotation) + py * Math.cos(rotation);
-
-        return { x: rx, y: ry };
-      });
+        mx[i] = px * cos - py * sin;
+        my[i] = px * sin + py * cos;
+      }
 
       // Draw as a smooth quadratic curve sequence
-      g.moveTo(baseX + morphedPoints[0].x, baseY + morphedPoints[0].y);
+      g.moveTo(baseX + mx[0], baseY + my[0]);
 
-      for (let i = 1; i < morphedPoints.length - 1; i++) {
-        const xc = (morphedPoints[i].x + morphedPoints[i + 1].x) / 2;
-        const yc = (morphedPoints[i].y + morphedPoints[i + 1].y) / 2;
+      for (let i = 1; i < count - 1; i++) {
+        const xc = (mx[i] + mx[i + 1]) / 2;
+        const yc = (my[i] + my[i + 1]) / 2;
         g.quadraticCurveTo(
-          baseX + morphedPoints[i].x,
-          baseY + morphedPoints[i].y,
+          baseX + mx[i],
+          baseY + my[i],
           baseX + xc,
           baseY + yc,
         );
       }
 
       // Finish the curve
-      const last = morphedPoints[morphedPoints.length - 1];
-      g.lineTo(baseX + last.x, baseY + last.y);
+      g.lineTo(baseX + mx[count - 1], baseY + my[count - 1]);
 
-      g.stroke({
-        color: p.color,
-        width: p.width,
-        cap: "round",
-        join: "round",
-        alpha: 0.75,
-      });
+      roundStrokeStyle.color = p.color;
+      roundStrokeStyle.width = p.width;
+      roundStrokeStyle.alpha = 0.75;
+      g.stroke(roundStrokeStyle);
     }
   }
 
@@ -949,7 +1102,8 @@ export class ProceduralLogoScreen extends Container {
 
     const punch = 1 + this.beatDecay * 0.3;
 
-    for (const d of this.toxicDrops) {
+    for (let dropIndex = 0; dropIndex < this.toxicDrops.length; dropIndex++) {
+      const d = this.toxicDrops[dropIndex];
       const parent = this.stains[d.parentIndex];
       if (!parent) continue;
 
@@ -964,7 +1118,6 @@ export class ProceduralLogoScreen extends Container {
       const x = baseX + d.relX + driftX;
       const y = baseY + d.relY + driftY;
       const r = d.radius * punch;
-      const color = TOXIC_BLACK; // Always black
 
       // 1. Draw Oozing Drip (Vertical/Gravitational)
       // Increased length multiplier to 6.0 for a long, oozing look
@@ -981,30 +1134,28 @@ export class ProceduralLogoScreen extends Container {
         const sy = y + dripLen * t;
         const sr = r * (1 - t * 0.5) * (t > 0.85 ? 1.3 : 1.0); // Taper and bulge
 
-        g.circle(sx, sy, sr).fill(color);
+        g.circle(sx, sy, sr);
       }
 
       // 2. Draw Main Body
       if (d.type === "jagged") {
-        const points: { x: number; y: number }[] = [];
+        const points = this.toxicPoly[dropIndex];
         const sides = 6;
         for (let j = 0; j < sides; j++) {
           const a = (j / sides) * Math.PI * 2 + d.angle + this.time * 0.2;
           const jaggedR = r * (0.8 + Math.random() * 0.4);
-          points.push({
-            x: x + Math.cos(a) * jaggedR,
-            y: y + Math.sin(a) * jaggedR,
-          });
+          points[j * 2] = x + Math.cos(a) * jaggedR;
+          points[j * 2 + 1] = y + Math.sin(a) * jaggedR;
         }
-        g.poly(points).fill(color);
+        g.poly(points);
       } else {
         // Splat style
-        g.circle(x, y, r).fill(color);
+        g.circle(x, y, r);
         for (let j = 0; j < 3; j++) {
           const a = (j * Math.PI * 2) / 3 + d.offset;
           const px = x + Math.cos(a) * r * 0.6;
           const py = y + Math.sin(a) * r * 0.6;
-          g.circle(px, py, r * 0.8).fill(color);
+          g.circle(px, py, r * 0.8);
         }
       }
 
@@ -1016,9 +1167,13 @@ export class ProceduralLogoScreen extends Container {
           x + Math.cos(noiseA) * noiseD,
           y + Math.sin(noiseA) * noiseD,
           1.5,
-        ).fill(color);
+        );
       }
     }
+
+    // Every toxic shape is the same opaque black, so the layer can be filled in
+    // one pass instead of once per drip, blob and speck
+    if (this.toxicDrops.length > 0) g.fill(TOXIC_BLACK);
   }
 
   private animateHeartbeat(): void {
@@ -1048,12 +1203,13 @@ export class ProceduralLogoScreen extends Container {
       const alpha = b.alpha * (0.8 + 0.2 * Math.sin(this.time + b.offset));
       const size = b.size * (1 + this.beatDecay * 0.2);
 
-      g.circle(x, y, size).fill({ color: b.color, alpha });
+      fillStyle.color = b.color;
+      fillStyle.alpha = alpha;
+      g.circle(x, y, size).fill(fillStyle);
       // Highlight
-      g.circle(x - size * 0.3, y - size * 0.3, size * 0.2).fill({
-        color: 0xffffff,
-        alpha: alpha * 0.6,
-      });
+      fillStyle.color = 0xffffff;
+      fillStyle.alpha = alpha * 0.6;
+      g.circle(x - size * 0.3, y - size * 0.3, size * 0.2).fill(fillStyle);
     }
   }
 
@@ -1061,29 +1217,26 @@ export class ProceduralLogoScreen extends Container {
     const g = this.wavyGfx;
     g.clear();
 
-    for (const line of this.wavyLines) {
-      const points: { x: number; y: number }[] = [];
-      const steps = 100;
+    const beatRadius = this.beatDecay * 10;
+
+    for (let l = 0; l < this.wavyLines.length; l++) {
+      const line = this.wavyLines[l];
+      const points = this.wavyPoints[l];
       const phase = this.time * line.speed;
       const beatAmp = line.amp * (1 + this.beatDecay * 1.5);
 
-      for (let i = 0; i <= steps; i++) {
-        const angle = (i / steps) * Math.PI * 2;
+      for (let i = 0; i <= WAVY_STEPS; i++) {
+        const angle = (i / WAVY_STEPS) * Math.PI * 2;
         const radialOffset = Math.sin(angle * line.freq + phase) * beatAmp;
-        const r = line.r + radialOffset + this.beatDecay * 10;
-        points.push({
-          x: Math.cos(angle) * r,
-          y: Math.sin(angle) * r,
-        });
+        const r = line.r + radialOffset + beatRadius;
+        points[i * 2] = Math.cos(angle) * r;
+        points[i * 2 + 1] = Math.sin(angle) * r;
       }
 
-      g.poly(points).stroke({
-        color: line.color,
-        width: line.weight,
-        alpha: line.alpha,
-        cap: "round",
-        join: "round",
-      });
+      roundStrokeStyle.color = line.color;
+      roundStrokeStyle.width = line.weight;
+      roundStrokeStyle.alpha = line.alpha;
+      g.poly(points).stroke(roundStrokeStyle);
     }
   }
 
@@ -1099,24 +1252,24 @@ export class ProceduralLogoScreen extends Container {
       const aspect = Math.abs(Math.cos(rotation * 0.5));
       const radius = ring.radius * punch;
 
-      g.ellipse(0, 0, radius, radius * aspect).stroke({
-        color: ring.color,
-        width: 4 + this.beatDecay * 4,
-        alpha: 0.4 + aspect * 0.4,
-      });
+      strokeStyle.color = ring.color;
+      strokeStyle.width = 4 + this.beatDecay * 4;
+      strokeStyle.alpha = 0.4 + aspect * 0.4;
+      g.ellipse(0, 0, radius, radius * aspect).stroke(strokeStyle);
 
       // Add "nodes" or "ticks" on the ring for tech feel
       const nodeCount = 4;
+      const nodeRadius = 4 + this.beatDecay * 2;
       for (let i = 0; i < nodeCount; i++) {
         const angle = rotation + (i * Math.PI * 2) / nodeCount;
         const x = Math.cos(angle) * radius;
         const y = Math.sin(angle) * radius * aspect;
 
-        g.circle(x, y, 4 + this.beatDecay * 2).fill({
-          color: ring.color,
-          alpha: 0.8,
-        });
+        g.circle(x, y, nodeRadius);
       }
+      fillStyle.color = ring.color;
+      fillStyle.alpha = 0.8;
+      g.fill(fillStyle);
     }
   }
 
@@ -1137,50 +1290,64 @@ export class ProceduralLogoScreen extends Container {
       const y = c.y + driftY;
       const r = c.radius * punch;
 
-      cg.circle(x, y, r).fill({ color: c.color, alpha: c.alpha });
+      fillStyle.color = c.color;
+      fillStyle.alpha = c.alpha;
+      cg.circle(x, y, r).fill(fillStyle);
     }
 
     // 2. Draw central overlapping graffiti stains (sharp edges)
     const outlineWidth = 4;
+    const count = this.stains.length;
+    const sxs = this.stainX;
+    const sys = this.stainY;
+    const srs = this.stainR;
 
-    // Pass 1: Draw unified outlines for the whole cluster
-    for (const s of this.stains) {
+    // Pass 1: Draw unified outlines for the whole cluster. The drifted position
+    // is cached here so pass 2 does not have to redo the same trig.
+    for (let i = 0; i < count; i++) {
+      const s = this.stains[i];
       const x = s.x + Math.sin(this.time * 0.3 + s.radius) * 12;
       const y = s.y + Math.cos(this.time * 0.25 + s.x) * 12;
       const r = s.radius * punch;
+
+      sxs[i] = x;
+      sys[i] = y;
+      srs[i] = r;
 
       // Draw protrusions outline
       for (let j = 0; j < 3; j++) {
         const angle = (j * Math.PI * 2) / 3 + s.radius;
         const px = x + Math.cos(angle) * (r * 0.5);
         const py = y + Math.sin(angle) * (r * 0.5);
-        sg.circle(px, py, r * 0.75 + outlineWidth).fill(outlineColor);
+        sg.circle(px, py, r * 0.75 + outlineWidth);
       }
       // Main core outline
-      sg.circle(x, y, r + outlineWidth).fill(outlineColor);
+      sg.circle(x, y, r + outlineWidth);
     }
+    // The whole crust is one opaque colour, so it fills in a single pass
+    if (count > 0) sg.fill(outlineColor);
 
     // Pass 2: Draw the colored fills on top
-    for (const s of this.stains) {
-      const x = s.x + Math.sin(this.time * 0.3 + s.radius) * 12;
-      const y = s.y + Math.cos(this.time * 0.25 + s.x) * 12;
-      const r = s.radius * punch;
+    for (let i = 0; i < count; i++) {
+      const s = this.stains[i];
+      const x = sxs[i];
+      const y = sys[i];
+      const r = srs[i];
 
       // Draw protrusions fill
       for (let j = 0; j < 3; j++) {
         const angle = (j * Math.PI * 2) / 3 + s.radius;
         const px = x + Math.cos(angle) * (r * 0.5);
         const py = y + Math.sin(angle) * (r * 0.5);
-        sg.circle(px, py, r * 0.75).fill(s.color);
+        sg.circle(px, py, r * 0.75);
       }
-      // Main core fill
+      // Main core fill (same opaque colour as the protrusions, one fill)
       sg.circle(x, y, r).fill(s.color);
 
       // Inner highlight (sharp)
-      sg.circle(x - r * 0.15, y - r * 0.15, r * 0.35).fill({
-        color: 0xffffff,
-        alpha: 0.15,
-      });
+      fillStyle.color = 0xffffff;
+      fillStyle.alpha = 0.15;
+      sg.circle(x - r * 0.15, y - r * 0.15, r * 0.35).fill(fillStyle);
     }
   }
 
@@ -1235,25 +1402,44 @@ export class ProceduralLogoScreen extends Container {
       const halfW = ((grid.cols - 1) * grid.spacing) / 2;
       const halfH = ((grid.rows - 1) * grid.spacing) / 2;
 
+      const cos = Math.cos(rotation);
+      const sin = Math.sin(rotation);
+
+      // The orbit wobble only depends on the column (x) or the row (y), so it
+      // is worth a row/column of trig instead of two per dot
+      const wobbleX = this.gridWobbleX;
+      const wobbleY = this.gridWobbleY;
+      const wobblePhase = this.time * 2;
+      for (let c = 0; c < grid.cols; c++) {
+        wobbleX[c] = Math.sin(wobblePhase + c) * 3;
+      }
       for (let r = 0; r < grid.rows; r++) {
+        wobbleY[r] = Math.cos(wobblePhase + r) * 3;
+      }
+
+      for (let r = 0; r < grid.rows; r++) {
+        const ly = r * grid.spacing - halfH;
+        const py = (ly + wobbleY[r]) * punch;
+
         for (let c = 0; c < grid.cols; c++) {
           const lx = c * grid.spacing - halfW;
-          const ly = r * grid.spacing - halfH;
 
           // Orbit/Pulse each dot slightly
-          const px = (lx + Math.sin(this.time * 2 + c) * 3) * punch;
-          const py = (ly + Math.cos(this.time * 2 + r) * 3) * punch;
+          const px = (lx + wobbleX[c]) * punch;
 
           // Rotate
-          const rx = px * Math.cos(rotation) - py * Math.sin(rotation);
-          const ry = px * Math.sin(rotation) + py * Math.cos(rotation);
-
-          g.circle(baseX + rx, baseY + ry, 2).fill({
-            color: grid.color,
-            alpha: grid.alpha,
-          });
+          g.circle(
+            baseX + (px * cos - py * sin),
+            baseY + (px * sin + py * cos),
+            2,
+          );
         }
       }
+
+      // One fill per grid: every dot in it shares a colour and alpha
+      fillStyle.color = grid.color;
+      fillStyle.alpha = grid.alpha;
+      g.fill(fillStyle);
     }
   }
 
@@ -1293,34 +1479,43 @@ export class ProceduralLogoScreen extends Container {
       const halfW = ((grid.cols - 1) * grid.spacing) / 2;
       const halfH = ((grid.rows - 1) * grid.spacing) / 2;
 
+      const cos = Math.cos(rotation);
+      const sin = Math.sin(rotation);
+
+      // The orbit wobble only depends on the column (x) or the row (y)
+      const wobbleX = this.gridWobbleX;
+      const wobbleY = this.gridWobbleY;
+      const wobblePhase = this.time * 1.5;
+      for (let c = 0; c < grid.cols; c++) {
+        wobbleX[c] = Math.sin(wobblePhase + c) * 4;
+      }
       for (let r = 0; r < grid.rows; r++) {
+        wobbleY[r] = Math.cos(wobblePhase + r) * 4;
+      }
+
+      for (let r = 0; r < grid.rows; r++) {
+        const ly = r * grid.spacing - halfH;
+
+        // Orbit/Pulse each dot
+        const py = (ly + wobbleY[r]) * punch;
+
         for (let c = 0; c < grid.cols; c++) {
           const lx = c * grid.spacing - halfW;
-          const ly = r * grid.spacing - halfH;
-
-          // Orbit/Pulse each dot
-          const px = (lx + Math.sin(this.time * 1.5 + c) * 4) * punch;
-          const py = (ly + Math.cos(this.time * 1.5 + r) * 4) * punch;
+          const px = (lx + wobbleX[c]) * punch;
 
           // Rotate
-          const rx = px * Math.cos(rotation) - py * Math.sin(rotation);
-          const ry = px * Math.sin(rotation) + py * Math.cos(rotation);
-
-          const dotX = baseX + rx;
-          const dotY = baseY + ry;
+          const dotX = baseX + (px * cos - py * sin);
+          const dotY = baseY + (px * sin + py * cos);
           const radius = 3.5;
 
           // Draw Black Outline
-          g.circle(dotX, dotY, radius + 2).fill({
-            color: TOXIC_BLACK,
-            alpha: grid.alpha,
-          });
+          fillStyle.color = TOXIC_BLACK;
+          fillStyle.alpha = grid.alpha;
+          g.circle(dotX, dotY, radius + 2).fill(fillStyle);
 
           // Draw White Dot
-          g.circle(dotX, dotY, radius).fill({
-            color: grid.color,
-            alpha: grid.alpha,
-          });
+          fillStyle.color = grid.color;
+          g.circle(dotX, dotY, radius).fill(fillStyle);
         }
       }
     }
@@ -1350,7 +1545,8 @@ export class ProceduralLogoScreen extends Container {
     g.clear();
     const punch = this.beatDecay * 0.3;
 
-    for (const obj of this.rotatingObjects) {
+    for (let i = 0; i < this.rotatingObjects.length; i++) {
+      const obj = this.rotatingObjects[i];
       obj.rotation += obj.rotationSpeed * ticker.deltaTime;
 
       const dx = Math.sin(this.time * obj.driftSpeed + obj.offset) * 45;
@@ -1375,21 +1571,23 @@ export class ProceduralLogoScreen extends Container {
         const x4 = -half * cos - half * sin;
         const y4 = -half * sin + half * cos;
 
-        g.poly([
-          drawX + x1,
-          drawY + y1,
-          drawX + x2,
-          drawY + y2,
-          drawX + x3,
-          drawY + y3,
-          drawX + x4,
-          drawY + y4,
-        ]).fill({ color: obj.color, alpha: 1.0 });
+        const pts = this.rotatingPoly[i];
+        pts[0] = drawX + x1;
+        pts[1] = drawY + y1;
+        pts[2] = drawX + x2;
+        pts[3] = drawY + y2;
+        pts[4] = drawX + x3;
+        pts[5] = drawY + y3;
+        pts[6] = drawX + x4;
+        pts[7] = drawY + y4;
+
+        fillStyle.color = obj.color;
+        fillStyle.alpha = 1.0;
+        g.poly(pts).fill(fillStyle);
       } else {
-        g.circle(drawX, drawY, drawSize / 2).fill({
-          color: obj.color,
-          alpha: 1.0,
-        });
+        fillStyle.color = obj.color;
+        fillStyle.alpha = 1.0;
+        g.circle(drawX, drawY, drawSize / 2).fill(fillStyle);
       }
     }
   }

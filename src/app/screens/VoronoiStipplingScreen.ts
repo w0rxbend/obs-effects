@@ -44,9 +44,19 @@ interface Attractor {
   vy: number;
 }
 
+// Pixi copies the style object it is handed into its own record on every
+// fill()/stroke() call, so a single mutable object can be reused for all of them
+// instead of allocating a literal per shape.
+const FILL_STYLE = { color: 0, alpha: 1 };
+const STROKE_STYLE = { color: 0, width: 1, alpha: 1 };
+
+// Side of the square block of Lloyd cells that shares one candidate seed list.
+const BLOCK_CELLS = 10;
+
 export class VoronoiStipplingScreen extends Container {
   public static assetBundles: string[] = [];
 
+  private readonly bg = new Graphics();
   private readonly gfx = new Graphics();
   private w = 1920;
   private h = 1080;
@@ -58,12 +68,36 @@ export class VoronoiStipplingScreen extends Container {
   // Grid for Lloyd's algorithm approximation
   private readonly gridCols = 80;
   private readonly gridRows = 50;
+  private cellW = 0;
+  private cellH = 0;
+  private readonly cellCX = new Float64Array(this.gridCols);
+  private readonly cellCY = new Float64Array(this.gridRows);
+
+  // Per-frame Lloyd scratch, indexed by "active seed" (see applyLloydsAlgorithm)
+  private activeX = new Float64Array(0);
+  private activeY = new Float64Array(0);
+  private activeIdx = new Int32Array(0);
+  private nearSq = new Float64Array(0);
+  private sumsX = new Float32Array(0);
+  private sumsY = new Float32Array(0);
+  private counts = new Int32Array(0);
+
+  // One candidate seed list per block of cells, rebuilt each frame
+  private readonly blockCols = Math.ceil(this.gridCols / BLOCK_CELLS);
+  private readonly blockRows = Math.ceil(this.gridRows / BLOCK_CELLS);
+  private readonly candStart = new Int32Array(
+    this.blockCols * this.blockRows + 1,
+  );
+  private cand = new Int32Array(0);
 
   constructor() {
     super();
+    this.addChild(this.bg);
     this.addChild(this.gfx);
     this.initSeeds();
     this.initAttractors();
+    this.rebuildCellCentres();
+    this.drawBackground();
   }
 
   private initSeeds(): void {
@@ -71,24 +105,68 @@ export class VoronoiStipplingScreen extends Container {
     for (let i = 0; i < seedCount; i++) {
       this.seeds.push(this.createSeed(true));
     }
+    this.ensureSeedBuffers();
   }
 
   private createSeed(randomAge = false): Seed {
-    const maxAge = 35 + Math.random() * 45; // 35 to 80 seconds
-    return {
-      x: Math.random() * this.w,
-      y: Math.random() * this.h,
+    const s: Seed = {
+      x: 0,
+      y: 0,
       vx: 0,
       vy: 0,
       targetX: 0,
       targetY: 0,
       area: 0,
       color: C_SURFACE0,
-      age: randomAge ? Math.random() * maxAge : 0,
-      maxAge,
+      age: 0,
+      maxAge: 0,
       isExploding: false,
       explosionTimer: 0,
     };
+    this.resetSeed(s, randomAge);
+    return s;
+  }
+
+  /** Recycles a seed in place so the frame loop never allocates a new one. */
+  private resetSeed(s: Seed, randomAge = false): void {
+    const maxAge = 35 + Math.random() * 45; // 35 to 80 seconds
+    s.x = Math.random() * this.w;
+    s.y = Math.random() * this.h;
+    s.vx = 0;
+    s.vy = 0;
+    s.targetX = 0;
+    s.targetY = 0;
+    s.area = 0;
+    s.color = C_SURFACE0;
+    s.age = randomAge ? Math.random() * maxAge : 0;
+    s.maxAge = maxAge;
+    s.isExploding = false;
+    s.explosionTimer = 0;
+  }
+
+  private ensureSeedBuffers(): void {
+    const n = this.seeds.length;
+    if (this.activeX.length >= n) return;
+    this.activeX = new Float64Array(n);
+    this.activeY = new Float64Array(n);
+    this.activeIdx = new Int32Array(n);
+    this.nearSq = new Float64Array(n);
+    this.sumsX = new Float32Array(n);
+    this.sumsY = new Float32Array(n);
+    this.counts = new Int32Array(n);
+    this.cand = new Int32Array(this.blockCols * this.blockRows * n);
+  }
+
+  /** Caches the centre of every Lloyd cell; only changes with the viewport. */
+  private rebuildCellCentres(): void {
+    this.cellW = this.w / this.gridCols;
+    this.cellH = this.h / this.gridRows;
+    for (let gx = 0; gx < this.gridCols; gx++) {
+      this.cellCX[gx] = (gx + 0.5) * this.cellW;
+    }
+    for (let gy = 0; gy < this.gridRows; gy++) {
+      this.cellCY[gy] = (gy + 0.5) * this.cellH;
+    }
   }
 
   private initAttractors(): void {
@@ -125,7 +203,7 @@ export class VoronoiStipplingScreen extends Container {
         s.explosionTimer += dt;
         if (s.explosionTimer >= 0.6) {
           // Recycle seed
-          this.seeds[i] = this.createSeed();
+          this.resetSeed(s);
         }
         continue;
       }
@@ -182,36 +260,32 @@ export class VoronoiStipplingScreen extends Container {
   }
 
   private applyLloydsAlgorithm(): void {
-    const sumsX = new Float32Array(this.seeds.length);
-    const sumsY = new Float32Array(this.seeds.length);
-    const counts = new Int32Array(this.seeds.length);
-    const cw = this.w / this.gridCols;
-    const ch = this.h / this.gridRows;
+    const seeds = this.seeds;
+    const sumsX = this.sumsX;
+    const sumsY = this.sumsY;
+    const counts = this.counts;
+    const activeIdx = this.activeIdx;
 
-    for (let gy = 0; gy < this.gridRows; gy++) {
-      for (let gx = 0; gx < this.gridCols; gx++) {
-        const cx = (gx + 0.5) * cw;
-        const cy = (gy + 0.5) * ch;
-        let minDist = Infinity;
-        let nearestIdx = -1;
+    // Compact the seeds that take part in the tessellation into flat arrays.
+    // Keeping their relative order means the nearest-seed tie break stays the
+    // same as it was with the plain linear scan.
+    let count = 0;
+    for (let i = 0; i < seeds.length; i++) {
+      const s = seeds[i];
+      if (s.isExploding) continue;
+      this.activeX[count] = s.x;
+      this.activeY[count] = s.y;
+      activeIdx[count] = i;
+      count++;
+    }
 
-        for (let i = 0; i < this.seeds.length; i++) {
-          const s = this.seeds[i];
-          if (s.isExploding) continue;
-          const dx = cx - s.x;
-          const dy = cy - s.y;
-          const distSq = dx * dx + dy * dy;
-          if (distSq < minDist) {
-            minDist = distSq;
-            nearestIdx = i;
-          }
-        }
-        if (nearestIdx !== -1) {
-          sumsX[nearestIdx] += cx;
-          sumsY[nearestIdx] += cy;
-          counts[nearestIdx]++;
-        }
-      }
+    sumsX.fill(0, 0, count);
+    sumsY.fill(0, 0, count);
+    counts.fill(0, 0, count);
+
+    if (count > 0) {
+      this.buildCandidateLists(count);
+      this.accumulateCells();
     }
 
     const cycleSpeed = 0.15;
@@ -223,14 +297,17 @@ export class VoronoiStipplingScreen extends Container {
       ACCENTS[idx2],
       tCycle % 1,
     );
-    const maxArea = ((this.w * this.h) / this.seeds.length) * 2.8;
+    const maxArea = ((this.w * this.h) / seeds.length) * 2.8;
+    const cw = this.cellW;
+    const ch = this.cellH;
 
-    for (let i = 0; i < this.seeds.length; i++) {
-      const s = this.seeds[i];
-      if (counts[i] > 0) {
-        s.targetX = sumsX[i] / counts[i];
-        s.targetY = sumsY[i] / counts[i];
-        s.area = counts[i] * cw * ch;
+    for (let a = 0; a < count; a++) {
+      const c = counts[a];
+      if (c > 0) {
+        const s = seeds[activeIdx[a]];
+        s.targetX = sumsX[a] / c;
+        s.targetY = sumsY[a] / c;
+        s.area = c * cw * ch;
 
         const ageFactor = 1 - s.age / s.maxAge;
         const tArea = Math.min(1, s.area / maxArea);
@@ -240,6 +317,117 @@ export class VoronoiStipplingScreen extends Container {
           baseColor,
           Math.max(0.3, ageFactor),
         );
+      }
+    }
+  }
+
+  /**
+   * Narrows each block of cells down to the seeds that could possibly own one of
+   * its cells. Take `rb`, the smallest "furthest corner" distance of any seed to
+   * the block: every point in the block is within `rb` of that seed, so a seed
+   * whose nearest point of the block is further away than `rb` can never win a
+   * cell here and is dropped. Whatever survives is kept in seed order, so the
+   * scan below picks exactly the seed the full scan used to pick.
+   */
+  private buildCandidateLists(count: number): void {
+    const activeX = this.activeX;
+    const activeY = this.activeY;
+    const nearSq = this.nearSq;
+    const candStart = this.candStart;
+    const cand = this.cand;
+    const cellW = this.cellW;
+    const cellH = this.cellH;
+
+    let w = 0;
+    for (let by = 0; by < this.blockRows; by++) {
+      const y0 = by * BLOCK_CELLS * cellH;
+      const y1 = Math.min(this.gridRows, (by + 1) * BLOCK_CELLS) * cellH;
+
+      for (let bx = 0; bx < this.blockCols; bx++) {
+        const x0 = bx * BLOCK_CELLS * cellW;
+        const x1 = Math.min(this.gridCols, (bx + 1) * BLOCK_CELLS) * cellW;
+        candStart[by * this.blockCols + bx] = w;
+
+        let rb = Infinity;
+        for (let i = 0; i < count; i++) {
+          const sx = activeX[i];
+          const sy = activeY[i];
+          // Signed gaps to the two edges on each axis: positive outside the
+          // block, negative inside, so one pass yields both distances.
+          const lx = x0 - sx;
+          const rx = sx - x1;
+          const ly = y0 - sy;
+          const ry = sy - y1;
+          const fx = lx > rx ? lx : rx;
+          const fy = ly > ry ? ly : ry;
+          const nx = fx > 0 ? fx : 0;
+          const ny = fy > 0 ? fy : 0;
+          nearSq[i] = nx * nx + ny * ny;
+          const mx = lx > rx ? -rx : -lx;
+          const my = ly > ry ? -ry : -ly;
+          const farSq = mx * mx + my * my;
+          if (farSq < rb) rb = farSq;
+        }
+
+        for (let i = 0; i < count; i++) {
+          if (nearSq[i] <= rb) cand[w++] = i;
+        }
+      }
+    }
+    candStart[this.blockCols * this.blockRows] = w;
+  }
+
+  /**
+   * Assigns every Lloyd cell to its nearest seed and accumulates the centroid
+   * sums, testing only the candidates of the block the cell belongs to. Cells are
+   * still visited row by row, left to right: the sums are Float32 and addition at
+   * that precision is order sensitive, so keeping the original order keeps the
+   * totals bit for bit the same.
+   */
+  private accumulateCells(): void {
+    const activeX = this.activeX;
+    const activeY = this.activeY;
+    const candStart = this.candStart;
+    const cand = this.cand;
+    const sumsX = this.sumsX;
+    const sumsY = this.sumsY;
+    const counts = this.counts;
+    const cellCX = this.cellCX;
+    const cellCY = this.cellCY;
+
+    for (let gy = 0; gy < this.gridRows; gy++) {
+      const cy = cellCY[gy];
+      const blockRowBase = ((gy / BLOCK_CELLS) | 0) * this.blockCols;
+
+      for (let bx = 0; bx < this.blockCols; bx++) {
+        const b = blockRowBase + bx;
+        const cs = candStart[b];
+        const ce = candStart[b + 1];
+        const gx0 = bx * BLOCK_CELLS;
+        const gx1 = Math.min(this.gridCols, gx0 + BLOCK_CELLS);
+
+        for (let gx = gx0; gx < gx1; gx++) {
+          const cx = cellCX[gx];
+          let minDist = Infinity;
+          let nearestIdx = -1;
+
+          for (let k = cs; k < ce; k++) {
+            const i = cand[k];
+            const dx = cx - activeX[i];
+            const dy = cy - activeY[i];
+            const distSq = dx * dx + dy * dy;
+            if (distSq < minDist) {
+              minDist = distSq;
+              nearestIdx = i;
+            }
+          }
+
+          if (nearestIdx !== -1) {
+            sumsX[nearestIdx] += cx;
+            sumsY[nearestIdx] += cy;
+            counts[nearestIdx]++;
+          }
+        }
       }
     }
   }
@@ -284,18 +472,30 @@ export class VoronoiStipplingScreen extends Container {
     }
   }
 
+  /** The backdrop only changes on resize, so it lives on its own Graphics. */
+  private drawBackground(): void {
+    FILL_STYLE.color = C_CRUST;
+    FILL_STYLE.alpha = 1;
+    this.bg.clear();
+    this.bg.rect(0, 0, this.w, this.h).fill(FILL_STYLE);
+  }
+
   private draw(): void {
     const g = this.gfx;
     g.clear();
-    g.rect(0, 0, this.w, this.h).fill({ color: C_CRUST });
 
     for (const s of this.seeds) {
       if (s.isExploding) {
         const progress = s.explosionTimer / 0.6;
         const r = Math.sqrt(s.area / Math.PI) * (1 + progress * 2);
         const alpha = 1 - progress;
-        g.circle(s.x, s.y, r).fill({ color: C_WHITE, alpha: alpha * 0.5 });
-        g.circle(s.x, s.y, r * 0.5).stroke({ color: s.color, width: 2, alpha });
+        FILL_STYLE.color = C_WHITE;
+        FILL_STYLE.alpha = alpha * 0.5;
+        g.circle(s.x, s.y, r).fill(FILL_STYLE);
+        STROKE_STYLE.color = s.color;
+        STROKE_STYLE.width = 2;
+        STROKE_STYLE.alpha = alpha;
+        g.circle(s.x, s.y, r * 0.5).stroke(STROKE_STYLE);
         continue;
       }
 
@@ -303,32 +503,36 @@ export class VoronoiStipplingScreen extends Container {
       const r = Math.sqrt(s.area / Math.PI) * 0.95 * growFactor;
       const pulse = 1 + 0.06 * Math.sin(this.time * 4 + s.x * 0.015);
 
-      g.circle(s.x, s.y, r * pulse).fill({ color: s.color, alpha: 0.85 });
-      g.circle(s.x, s.y, r * 0.22).fill({
-        color: C_SKY,
-        alpha: 0.45 * growFactor,
-      });
+      FILL_STYLE.color = s.color;
+      FILL_STYLE.alpha = 0.85;
+      g.circle(s.x, s.y, r * pulse).fill(FILL_STYLE);
+      FILL_STYLE.color = C_SKY;
+      FILL_STYLE.alpha = 0.45 * growFactor;
+      g.circle(s.x, s.y, r * 0.22).fill(FILL_STYLE);
     }
 
     this.drawOrganismDetail(g);
   }
 
   private drawOrganismDetail(g: Graphics): void {
+    const seeds = this.seeds;
     const threshold = 180 * 180;
-    for (let i = 0; i < this.seeds.length; i++) {
-      const s1 = this.seeds[i];
+    STROKE_STYLE.color = C_TEAL;
+    STROKE_STYLE.width = 1;
+    for (let i = 0; i < seeds.length; i++) {
+      const s1 = seeds[i];
       if (s1.isExploding) continue;
-      for (let j = i + 1; j < this.seeds.length; j++) {
-        const s2 = this.seeds[j];
+      const x1 = s1.x;
+      const y1 = s1.y;
+      for (let j = i + 1; j < seeds.length; j++) {
+        const s2 = seeds[j];
         if (s2.isExploding) continue;
-        const dx = s1.x - s2.x;
-        const dy = s1.y - s2.y;
+        const dx = x1 - s2.x;
+        const dy = y1 - s2.y;
         const d2 = dx * dx + dy * dy;
         if (d2 < threshold) {
-          const alpha = (1 - d2 / threshold) * 0.15;
-          g.moveTo(s1.x, s1.y)
-            .lineTo(s2.x, s2.y)
-            .stroke({ color: C_TEAL, width: 1, alpha });
+          STROKE_STYLE.alpha = (1 - d2 / threshold) * 0.15;
+          g.moveTo(x1, y1).lineTo(s2.x, s2.y).stroke(STROKE_STYLE);
         }
       }
     }
@@ -351,5 +555,8 @@ export class VoronoiStipplingScreen extends Container {
     this.w = width;
     this.h = height;
     if (this.seeds.length === 0) this.initSeeds();
+    this.ensureSeedBuffers();
+    this.rebuildCellCentres();
+    this.drawBackground();
   }
 }

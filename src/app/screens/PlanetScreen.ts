@@ -102,6 +102,148 @@ function lerpColor(a: number, b: number, t: number): number {
   );
 }
 
+// Pixi copies the style object on the way in (see `toFillStyle`), so a single
+// shared mutable style keeps the per-frame draw loops free of object literals.
+const scratchFill = { color: 0, alpha: 1 };
+
+/** Filled circle drawn without allocating a fill-style object per call. */
+function dot(
+  g: Graphics,
+  x: number,
+  y: number,
+  r: number,
+  color: number,
+  alpha: number,
+): void {
+  scratchFill.color = color;
+  scratchFill.alpha = alpha;
+  g.circle(x, y, r).fill(scratchFill);
+}
+
+// ── Precomputed trig ──────────────────────────────────────────────────────────
+// The deep-sky art samples the same fixed ring of angles every single frame, so
+// the sines and cosines are built once here instead of thousands of times a
+// second inside the draw loops.
+
+const GAL_ELLIPSE_STEPS = 40;
+const GAL_ELLIPSE_COS = new Float64Array(GAL_ELLIPSE_STEPS);
+const GAL_ELLIPSE_SIN = new Float64Array(GAL_ELLIPSE_STEPS);
+for (let i = 0; i < GAL_ELLIPSE_STEPS; i++) {
+  const ta = (i / GAL_ELLIPSE_STEPS) * Math.PI * 2;
+  GAL_ELLIPSE_COS[i] = Math.cos(ta);
+  GAL_ELLIPSE_SIN[i] = Math.sin(ta);
+}
+
+const GAL_ARM_STEPS = 22;
+const GAL_ARM_COS = new Float64Array(GAL_ARM_STEPS);
+const GAL_ARM_SIN = new Float64Array(GAL_ARM_STEPS);
+for (let j = 0; j < GAL_ARM_STEPS; j++) {
+  const ta = (j / GAL_ARM_STEPS) * Math.PI * 2.5;
+  GAL_ARM_COS[j] = Math.cos(ta);
+  GAL_ARM_SIN[j] = Math.sin(ta);
+}
+
+const QUASAR_DISK_STEPS = 32;
+const QUASAR_DISK_COS = new Float64Array(QUASAR_DISK_STEPS);
+const QUASAR_DISK_SIN = new Float64Array(QUASAR_DISK_STEPS);
+for (let i = 0; i < QUASAR_DISK_STEPS; i++) {
+  const ta = (i / QUASAR_DISK_STEPS) * Math.PI * 2;
+  QUASAR_DISK_COS[i] = Math.cos(ta);
+  QUASAR_DISK_SIN[i] = Math.sin(ta);
+}
+
+// Accretion-arc samples run over [0, PI) measured from the arc's own start, so
+// brightness — and therefore dot radius and colour — depend on the index alone.
+const BH_ARC_STEPS = 60;
+const BH_ARC_COS = new Float64Array(BH_ARC_STEPS);
+const BH_ARC_SIN = new Float64Array(BH_ARC_STEPS);
+const BH_ARC_RADIUS = new Float64Array(BH_ARC_STEPS);
+const BH_ARC_COLOR = new Int32Array(BH_ARC_STEPS);
+for (let i = 0; i < BH_ARC_STEPS; i++) {
+  const ta = (i / BH_ARC_STEPS) * Math.PI;
+  BH_ARC_COS[i] = Math.cos(ta);
+  BH_ARC_SIN[i] = Math.sin(ta); // non-negative on [0, PI) — this is `brightness`
+  BH_ARC_RADIUS[i] = 1.0 + BH_ARC_SIN[i] * 1.5;
+  BH_ARC_COLOR[i] = lerpColor(0xf38ba8, 0xfab387, BH_ARC_SIN[i]);
+}
+
+// ── Boid spatial hash ─────────────────────────────────────────────────────────
+
+// Cell size matches the widest radius the flock loop asks about (DETECT_RANGE),
+// so the 3x3 block around a boid is guaranteed to contain every boid that can
+// influence it. Buckets are singly-linked lists through `next`, so no boid is
+// ever dropped from the grid, and the block is a superset of the exact
+// neighbour set: the extra 32px of slack absorbs the distance a boid stepped
+// earlier in the same frame has moved since it was bucketed (~5px at 60fps).
+//
+// The one case the slack cannot absorb is a boid that wraps to the opposite
+// screen edge mid-frame: it stays bucketed at its pre-wrap cell, so boids
+// stepped after it miss it for that single frame. At the wrap seam only, for
+// one frame, out of a 76-boid flock — below anything visible on screen.
+const BOID_CELL = DETECT_RANGE + 32;
+/** Boids wrap 20px outside the viewport; pad the grid so they stay in range. */
+const BOID_GRID_PAD = 48;
+
+class BoidGrid {
+  private cols = 1;
+  private rows = 1;
+  private originX = 0;
+  private originY = 0;
+  private head = new Int32Array(1);
+  private next = new Int32Array(256);
+
+  public resize(w: number, h: number): void {
+    // Screen space is centred on (0, 0), so the origin shifts by half the extent
+    this.originX = w * 0.5 + BOID_GRID_PAD;
+    this.originY = h * 0.5 + BOID_GRID_PAD;
+    this.cols = Math.max(1, Math.ceil((w + BOID_GRID_PAD * 2) / BOID_CELL));
+    this.rows = Math.max(1, Math.ceil((h + BOID_GRID_PAD * 2) / BOID_CELL));
+    this.head = new Int32Array(this.cols * this.rows);
+  }
+
+  public build(boids: readonly Boid[]): void {
+    if (this.next.length < boids.length) {
+      this.next = new Int32Array(boids.length * 2);
+    }
+    this.head.fill(-1);
+    for (let i = 0; i < boids.length; i++) {
+      const ci = this.row(boids[i].y) * this.cols + this.col(boids[i].x);
+      this.next[i] = this.head[ci];
+      this.head[ci] = i;
+    }
+  }
+
+  /** Fills `out` with the boid indices in the 3x3 block around (x, y). */
+  public query(x: number, y: number, out: Int32Array): number {
+    const cc = this.col(x);
+    const cr = this.row(y);
+    const c0 = cc > 0 ? cc - 1 : 0;
+    const c1 = cc < this.cols - 1 ? cc + 1 : this.cols - 1;
+    const r0 = cr > 0 ? cr - 1 : 0;
+    const r1 = cr < this.rows - 1 ? cr + 1 : this.rows - 1;
+    let n = 0;
+    for (let r = r0; r <= r1; r++) {
+      const rowOff = r * this.cols;
+      for (let c = c0; c <= c1; c++) {
+        for (let i = this.head[rowOff + c]; i !== -1; i = this.next[i]) {
+          out[n++] = i;
+        }
+      }
+    }
+    return n;
+  }
+
+  private col(x: number): number {
+    const c = ((x + this.originX) / BOID_CELL) | 0;
+    return c < 0 ? 0 : c > this.cols - 1 ? this.cols - 1 : c;
+  }
+
+  private row(y: number): number {
+    const r = ((y + this.originY) / BOID_CELL) | 0;
+    return r < 0 ? 0 : r > this.rows - 1 ? this.rows - 1 : r;
+  }
+}
+
 // ── Screen ────────────────────────────────────────────────────────────────────
 
 export class PlanetScreen extends Container {
@@ -141,12 +283,25 @@ export class PlanetScreen extends Container {
   private readonly lasers: Laser[] = [];
   private readonly explosions: BoidExplosion[] = [];
 
+  // Planet trails are ring buffers over a preallocated Array<{x,y}>: `trailHead`
+  // is the newest sample, `trailCount` how many are live. Avoids one object
+  // literal plus an O(n) Array#shift per planet per frame.
+  private readonly trailHead = new Int32Array(PLANET_DEFS.length);
+  private readonly trailCount = new Int32Array(PLANET_DEFS.length);
+
+  private readonly grid = new BoidGrid();
+  private neighBuf = new Int32Array(256);
+  /** Reused between frames so the boid loop never allocates a kill list. */
+  private readonly deadBoids: number[] = [];
+
   private time = 0;
   private w = 0;
   private h = 0;
   private maxOrbitR = 0;
   private cometTimer = 0;
   private reinforceTimer = 0;
+  /** Orbit rings only change when the planet ellipses are rebuilt on resize. */
+  private orbitRingsDirty = true;
 
   constructor() {
     super();
@@ -220,6 +375,7 @@ export class PlanetScreen extends Container {
     this.x = width * 0.5;
     this.y = height * 0.5;
     this.maxOrbitR = Math.min(width, height) * 0.5 * SOLAR_SCALE;
+    this.grid.resize(width, height);
     this.buildPlanets();
     this.buildAsteroidBelt(
       this.asteroids,
@@ -325,15 +481,11 @@ export class PlanetScreen extends Container {
     // Draw clusters
     for (const c of this.clusters) {
       // Faint halo
-      this.galaxyGfx
-        .circle(c.x, c.y, c.radius * 1.4)
-        .fill({ color: c.color, alpha: 0.025 });
+      dot(this.galaxyGfx, c.x, c.y, c.radius * 1.4, c.color, 0.025);
       for (const s of c.stars) {
         s.phase += dt * (0.3 + Math.random() * 0.1);
         const a = s.alpha * (0.6 + 0.4 * Math.abs(Math.sin(s.phase)));
-        this.galaxyGfx
-          .circle(c.x + s.dx, c.y + s.dy, s.size)
-          .fill({ color: c.color, alpha: a });
+        dot(this.galaxyGfx, c.x + s.dx, c.y + s.dy, s.size, c.color, a);
       }
     }
 
@@ -350,41 +502,58 @@ export class PlanetScreen extends Container {
         const ry = gal.scaleY * scale;
         const layerAlpha = gal.alpha * (0.15 + layer * 0.25);
         // Draw ellipse rotated manually via point samples
-        const steps = 40;
-        for (let i = 0; i < steps; i++) {
-          const ta = (i / steps) * Math.PI * 2;
-          const ex = rx * Math.cos(ta);
-          const ey = ry * Math.sin(ta);
+        const dotAlpha = layerAlpha * 0.4;
+        for (let i = 0; i < GAL_ELLIPSE_STEPS; i++) {
+          const ex = rx * GAL_ELLIPSE_COS[i];
+          const ey = ry * GAL_ELLIPSE_SIN[i];
           const rx2 = ex * cos - ey * sin + gal.x;
           const ry2 = ex * sin + ey * cos + gal.y;
-          this.galaxyGfx
-            .circle(rx2, ry2, 0.8)
-            .fill({ color: gal.color, alpha: layerAlpha * 0.4 });
+          dot(this.galaxyGfx, rx2, ry2, 0.8, gal.color, dotAlpha);
         }
       }
 
       // Central bright core
-      this.galaxyGfx
-        .circle(gal.x, gal.y, gal.scaleY * 0.5)
-        .fill({ color: 0xffffff, alpha: gal.alpha * 0.6 });
-      this.galaxyGfx
-        .circle(gal.x, gal.y, gal.scaleY * 1.1)
-        .fill({ color: gal.color, alpha: gal.alpha * 1.2 });
+      dot(
+        this.galaxyGfx,
+        gal.x,
+        gal.y,
+        gal.scaleY * 0.5,
+        0xffffff,
+        gal.alpha * 0.6,
+      );
+      dot(
+        this.galaxyGfx,
+        gal.x,
+        gal.y,
+        gal.scaleY * 1.1,
+        gal.color,
+        gal.alpha * 1.2,
+      );
 
       // Spiral arm dots
       for (let arm = 0; arm < gal.arms; arm++) {
-        const armOffset = (arm / gal.arms) * Math.PI * 2;
-        for (let j = 0; j < 22; j++) {
-          const t = j / 22;
-          const ta = armOffset + t * Math.PI * 2.5 + gal.rotation * 0.4;
+        // Every sample on an arm shares this base angle, so its sin/cos are
+        // hoisted and combined with the table entries via the angle-sum rule
+        const base = (arm / gal.arms) * Math.PI * 2 + gal.rotation * 0.4;
+        const baseCos = Math.cos(base);
+        const baseSin = Math.sin(base);
+        for (let j = 0; j < GAL_ARM_STEPS; j++) {
+          const t = j / GAL_ARM_STEPS;
+          const taCos = baseCos * GAL_ARM_COS[j] - baseSin * GAL_ARM_SIN[j];
+          const taSin = baseSin * GAL_ARM_COS[j] + baseCos * GAL_ARM_SIN[j];
           const r = t * gal.scaleX;
-          const ex = r * Math.cos(ta) * 0.9;
-          const ey = r * Math.sin(ta) * 0.35;
+          const ex = r * taCos * 0.9;
+          const ey = r * taSin * 0.35;
           const rx2 = ex * cos - ey * sin + gal.x;
           const ry2 = ex * sin + ey * cos + gal.y;
-          this.galaxyGfx
-            .circle(rx2, ry2, 0.7 + t * 1.0)
-            .fill({ color: gal.color, alpha: gal.alpha * (1 - t * 0.6) * 1.5 });
+          dot(
+            this.galaxyGfx,
+            rx2,
+            ry2,
+            0.7 + t * 1.0,
+            gal.color,
+            gal.alpha * (1 - t * 0.6) * 1.5,
+          );
         }
       }
     }
@@ -412,11 +581,9 @@ export class PlanetScreen extends Container {
       s.twinklePhase += s.twinkleSpeed * dt;
       const tw = 0.35 + 0.65 * Math.abs(Math.sin(s.twinklePhase));
       const a = s.alpha * tw;
-      this.starGfx.circle(s.x, s.y, s.size).fill({ color: s.color, alpha: a });
+      dot(this.starGfx, s.x, s.y, s.size, s.color, a);
       if (s.size > 1.2) {
-        this.starGfx
-          .circle(s.x, s.y, s.size * 2.8)
-          .fill({ color: s.color, alpha: a * 0.1 });
+        dot(this.starGfx, s.x, s.y, s.size * 2.8, s.color, a * 0.1);
       }
     }
   }
@@ -424,6 +591,13 @@ export class PlanetScreen extends Container {
   // ── Orbit rings (dashed) ──────────────────────────────────────────────────
 
   private drawOrbitRings(): void {
+    // The rings are pure geometry derived from the planet ellipses, which only
+    // change on resize. Re-stroking ~180 dashes per planet every frame was by
+    // far the heaviest layer in the scene, so the Graphics is left untouched
+    // (and therefore not re-tessellated) until `buildPlanets` marks it dirty.
+    if (!this.orbitRingsDirty) return;
+    this.orbitRingsDirty = false;
+
     this.orbitRingGfx.clear();
     if (this.maxOrbitR === 0) return;
     for (const p of this.planets) {
@@ -448,6 +622,9 @@ export class PlanetScreen extends Container {
 
   private buildPlanets(): void {
     this.planets.length = 0;
+    this.trailHead.fill(0);
+    this.trailCount.fill(0);
+    this.orbitRingsDirty = true;
     if (this.maxOrbitR === 0) return;
     for (const def of PLANET_DEFS) {
       const a = def.semiMajorFrac * this.maxOrbitR;
@@ -460,6 +637,9 @@ export class PlanetScreen extends Container {
         size: m.size,
         color: m.color,
       }));
+      // Trail samples are allocated once here and then overwritten in place
+      const trail: Array<{ x: number; y: number }> = new Array(def.trailLen);
+      for (let i = 0; i < def.trailLen; i++) trail[i] = { x: 0, y: 0 };
       this.planets.push({
         a,
         b,
@@ -475,7 +655,7 @@ export class PlanetScreen extends Container {
         ringColor: def.ringColor,
         pulsePhase: Math.random() * Math.PI * 2,
         moons,
-        trail: [],
+        trail,
         trailLen: def.trailLen,
         px: 0,
         py: 0,
@@ -488,7 +668,8 @@ export class PlanetScreen extends Container {
     this.trailGfx.clear();
     this.planetGfx.clear();
 
-    for (const p of this.planets) {
+    for (let pi = 0; pi < this.planets.length; pi++) {
+      const p = this.planets[pi];
       p.meanAnomaly += p.meanMotion * dt;
       p.pulsePhase += dt * 0.7;
 
@@ -498,16 +679,38 @@ export class PlanetScreen extends Container {
       p.px = rp.x;
       p.py = rp.y;
 
-      // trail
-      p.trail.push({ x: p.px, y: p.py });
-      if (p.trail.length > p.trailLen) p.trail.shift();
+      // trail — advance the ring buffer and overwrite the retired sample
+      let count = this.trailCount[pi];
+      let head: number;
+      if (count < p.trailLen) {
+        head = count;
+        count++;
+      } else {
+        head = this.trailHead[pi] + 1;
+        if (head === p.trailLen) head = 0;
+      }
+      this.trailHead[pi] = head;
+      this.trailCount[pi] = count;
+      const newest = p.trail[head];
+      newest.x = p.px;
+      newest.y = p.py;
 
-      for (let i = 1; i < p.trail.length; i++) {
-        const tf = i / p.trail.length;
-        const tp = p.trail[i];
-        this.trailGfx
-          .circle(tp.x, tp.y, p.size * tf * 0.32)
-          .fill({ color: p.color, alpha: tf * tf * 0.22 });
+      // walk oldest -> newest so the fade matches the old push/shift ordering
+      const oldest =
+        count < p.trailLen ? 0 : head + 1 === p.trailLen ? 0 : head + 1;
+      for (let i = 1; i < count; i++) {
+        const tf = i / count;
+        let ti = oldest + i;
+        if (ti >= p.trailLen) ti -= p.trailLen;
+        const tp = p.trail[ti];
+        dot(
+          this.trailGfx,
+          tp.x,
+          tp.y,
+          p.size * tf * 0.32,
+          p.color,
+          tf * tf * 0.22,
+        );
       }
 
       // atmosphere
@@ -650,11 +853,21 @@ export class PlanetScreen extends Container {
     for (const a of belt) {
       a.meanAnomaly += a.meanMotion * dt;
       const ta = keplerTrueAnomaly(a.meanAnomaly, a.e);
-      const pos = orbitPos(a.a, a.e, ta);
-      const rp = rotate(pos.x + a.offsetR, pos.y, a.inc);
-      this.asteroidGfx
-        .circle(rp.x, rp.y, a.size)
-        .fill({ color: a.color, alpha: a.alpha });
+      // orbitPos() and rotate() each return a fresh {x, y}; inlined here because
+      // the three belts together push 200 bodies through this loop every frame
+      const r = (a.a * (1 - a.e * a.e)) / (1 + a.e * Math.cos(ta));
+      const ox = r * Math.cos(ta) + a.offsetR;
+      const oy = r * Math.sin(ta);
+      const ic = Math.cos(a.inc);
+      const is = Math.sin(a.inc);
+      dot(
+        this.asteroidGfx,
+        ox * ic - oy * is,
+        ox * is + oy * ic,
+        a.size,
+        a.color,
+        a.alpha,
+      );
     }
   }
 
@@ -814,32 +1027,21 @@ export class PlanetScreen extends Container {
       const dCos = Math.cos(q.diskAngle),
         dSin = Math.sin(q.diskAngle);
       const dr = q.size * 2.2;
-      const steps = 32;
-      for (let i = 0; i < steps; i++) {
-        const ta = (i / steps) * Math.PI * 2;
-        const ex = dr * Math.cos(ta);
-        const ey = dr * 0.28 * Math.sin(ta);
+      const diskAlpha = 0.35 * flicker * q.alpha;
+      for (let i = 0; i < QUASAR_DISK_STEPS; i++) {
+        const ex = dr * QUASAR_DISK_COS[i];
+        const ey = dr * 0.28 * QUASAR_DISK_SIN[i];
         const rx = ex * dCos - ey * dSin + q.x;
         const ry = ex * dSin + ey * dCos + q.y;
-        this.quasarGfx
-          .circle(rx, ry, 0.7)
-          .fill({ color: q.color, alpha: 0.35 * flicker * q.alpha });
+        dot(this.quasarGfx, rx, ry, 0.7, q.color, diskAlpha);
       }
 
       // Glow layers
-      this.quasarGfx
-        .circle(q.x, q.y, q.size * 4)
-        .fill({ color: q.color, alpha: 0.06 * flicker });
-      this.quasarGfx
-        .circle(q.x, q.y, q.size * 2)
-        .fill({ color: q.color, alpha: 0.15 * flicker });
+      dot(this.quasarGfx, q.x, q.y, q.size * 4, q.color, 0.06 * flicker);
+      dot(this.quasarGfx, q.x, q.y, q.size * 2, q.color, 0.15 * flicker);
       // Core blazar point
-      this.quasarGfx
-        .circle(q.x, q.y, q.size)
-        .fill({ color: q.coreColor, alpha: q.alpha * flicker });
-      this.quasarGfx
-        .circle(q.x, q.y, q.size * 0.4)
-        .fill({ color: 0xffffff, alpha: flicker });
+      dot(this.quasarGfx, q.x, q.y, q.size, q.coreColor, q.alpha * flicker);
+      dot(this.quasarGfx, q.x, q.y, q.size * 0.4, 0xffffff, flicker);
     }
   }
 
@@ -910,17 +1112,18 @@ export class PlanetScreen extends Container {
       for (let j = 1; j < c.trailPoints.length; j++) {
         const tf = j / c.trailPoints.length;
         const tp = c.trailPoints[j];
-        this.cometGfx
-          .circle(tp.x, tp.y, c.size * tf * 0.55)
-          .fill({ color: c.color, alpha: tf * tf * a * 0.5 });
+        dot(
+          this.cometGfx,
+          tp.x,
+          tp.y,
+          c.size * tf * 0.55,
+          c.color,
+          tf * tf * a * 0.5,
+        );
       }
-      this.cometGfx
-        .circle(c.x, c.y, c.size * 3.0)
-        .fill({ color: c.color, alpha: a * 0.18 });
-      this.cometGfx.circle(c.x, c.y, c.size).fill({ color: c.color, alpha: a });
-      this.cometGfx
-        .circle(c.x, c.y, c.size * 0.4)
-        .fill({ color: 0xffffff, alpha: a * 0.85 });
+      dot(this.cometGfx, c.x, c.y, c.size * 3.0, c.color, a * 0.18);
+      dot(this.cometGfx, c.x, c.y, c.size, c.color, a);
+      dot(this.cometGfx, c.x, c.y, c.size * 0.4, 0xffffff, a * 0.85);
     }
   }
 
@@ -967,20 +1170,25 @@ export class PlanetScreen extends Container {
       const arcOff = arc * Math.PI + bh.accretionPhase;
       const diskRX = r * 3.2,
         diskRY = r * 0.55;
-      const steps = 60;
-      for (let i = 0; i < steps; i++) {
-        const ta = arcOff + (i / steps) * Math.PI;
-        const ex = Math.cos(ta) * diskRX;
-        const ey = Math.sin(ta) * diskRY;
-        const brightness = Math.abs(Math.sin(ta - arcOff));
-        const col = lerpColor(0xf38ba8, 0xfab387, brightness);
+      // Sample angles are arcOff plus a fixed offset, so the per-sample sin/cos,
+      // brightness, dot radius and colour all come from the precomputed tables
+      const offCos = Math.cos(arcOff);
+      const offSin = Math.sin(arcOff);
+      for (let i = 0; i < BH_ARC_STEPS; i++) {
+        const ex = (offCos * BH_ARC_COS[i] - offSin * BH_ARC_SIN[i]) * diskRX;
+        const ey = (offSin * BH_ARC_COS[i] + offCos * BH_ARC_SIN[i]) * diskRY;
         const a =
-          brightness *
+          BH_ARC_SIN[i] *
           0.7 *
           (0.6 + 0.4 * Math.sin(bh.accretionPhase * 3 + i * 0.3));
-        this.blackHoleGfx
-          .circle(bh.x + ex, bh.y + ey, 1.0 + brightness * 1.5)
-          .fill({ color: col, alpha: a });
+        dot(
+          this.blackHoleGfx,
+          bh.x + ex,
+          bh.y + ey,
+          BH_ARC_RADIUS[i],
+          BH_ARC_COLOR[i],
+          a,
+        );
       }
     }
 
@@ -994,9 +1202,7 @@ export class PlanetScreen extends Container {
         const ja = bh.accretionPhase * 0.05;
         const jx = bh.x + Math.sin(ja) * spread;
         const jy = bh.y + jDir * jLen;
-        this.blackHoleGfx
-          .circle(jx, jy, 0.7)
-          .fill({ color: 0xcba6f7, alpha: (1 - t) * 0.4 });
+        dot(this.blackHoleGfx, jx, jy, 0.7, 0xcba6f7, (1 - t) * 0.4);
       }
     }
 
@@ -1009,13 +1215,14 @@ export class PlanetScreen extends Container {
         continue;
       }
       const fl = r * 1.6 * (1 - f.life / 0.5);
-      this.blackHoleGfx
-        .circle(
-          bh.x + Math.cos(f.angle) * fl,
-          bh.y + Math.sin(f.angle) * fl,
-          2.5,
-        )
-        .fill({ color: f.color, alpha: (f.life / 0.5) * 0.9 });
+      dot(
+        this.blackHoleGfx,
+        bh.x + Math.cos(f.angle) * fl,
+        bh.y + Math.sin(f.angle) * fl,
+        2.5,
+        f.color,
+        (f.life / 0.5) * 0.9,
+      );
     }
 
     // Singularity — pure black disc erasing everything underneath
@@ -1056,10 +1263,10 @@ export class PlanetScreen extends Container {
     if (this.w === 0) return;
     const hw = this.w * 0.5,
       hh = this.h * 0.5;
+    // spawn near admiral if available, else fall back to quadrant
+    const redAdm = this.admirals.find((a) => a.team === TEAM_RED);
+    const blueAdm = this.admirals.find((a) => a.team === TEAM_BLUE);
     for (let i = 0; i < BOIDS_PER_TEAM; i++) {
-      // spawn near admiral if available, else fall back to quadrant
-      const redAdm = this.admirals.find((a) => a.team === TEAM_RED);
-      const blueAdm = this.admirals.find((a) => a.team === TEAM_BLUE);
       const ra = Math.random() * Math.PI * 2;
       const rd = Math.random() * ADMIRAL_SPAWN_RADIUS;
       this.boids.push(
@@ -1105,7 +1312,23 @@ export class PlanetScreen extends Container {
     const hw = this.w * 0.5,
       hh = this.h * 0.5;
 
-    const dead: number[] = [];
+    const dead = this.deadBoids;
+    dead.length = 0;
+
+    // Neighbour lookups go through a spatial hash instead of scanning every
+    // other boid. Distances are compared squared so the inner loop never calls
+    // Math.hypot, which is an order of magnitude slower than a plain multiply.
+    if (this.neighBuf.length < this.boids.length) {
+      this.neighBuf = new Int32Array(this.boids.length * 2);
+    }
+    const neigh = this.neighBuf;
+    this.grid.build(this.boids);
+
+    const sepR2 = SEP_RADIUS * SEP_RADIUS;
+    const aliR2 = ALI_RADIUS * ALI_RADIUS;
+    const cohR2 = COH_RADIUS * COH_RADIUS;
+    const detectR2 = DETECT_RANGE * DETECT_RANGE;
+    const fireR2 = FIRE_RANGE * FIRE_RANGE;
 
     for (let i = 0; i < this.boids.length; i++) {
       const b = this.boids[i];
@@ -1113,7 +1336,7 @@ export class PlanetScreen extends Container {
 
       // ── find nearest enemy and compute flock forces ──────────────────────
       let nearestEnemy: Boid | null = null;
-      let nearestEnemyDist = Infinity;
+      let nearestEnemyD2 = Infinity;
       let sepX = 0,
         sepY = 0,
         sepN = 0;
@@ -1124,36 +1347,37 @@ export class PlanetScreen extends Container {
         cohY = 0,
         cohN = 0;
 
-      for (let j = 0; j < this.boids.length; j++) {
+      const nCount = this.grid.query(b.x, b.y, neigh);
+      for (let n = 0; n < nCount; n++) {
+        const j = neigh[n];
         if (i === j) continue;
         const o = this.boids[j];
         const dx = b.x - o.x,
           dy = b.y - o.y;
-        const d = Math.hypot(dx, dy) || 0.001;
+        const d2 = dx * dx + dy * dy;
 
         if (o.team !== b.team) {
-          if (d < nearestEnemyDist) {
-            nearestEnemyDist = d;
+          if (d2 < nearestEnemyD2) {
+            nearestEnemyD2 = d2;
             nearestEnemy = o;
           }
-        } else {
-          // separation
-          if (d < SEP_RADIUS) {
-            sepX += dx / d;
-            sepY += dy / d;
-            sepN++;
-          }
+        } else if (d2 < cohR2) {
+          // cohesion — widest radius, so it gates the tighter two
+          cohX += o.x;
+          cohY += o.y;
+          cohN++;
           // alignment
-          if (d < ALI_RADIUS) {
+          if (d2 < aliR2) {
             aliVX += o.vx;
             aliVY += o.vy;
             aliN++;
           }
-          // cohesion
-          if (d < COH_RADIUS) {
-            cohX += o.x;
-            cohY += o.y;
-            cohN++;
+          // separation
+          if (d2 < sepR2) {
+            const d = Math.sqrt(d2) || 0.001;
+            sepX += dx / d;
+            sepY += dy / d;
+            sepN++;
           }
         }
       }
@@ -1162,11 +1386,11 @@ export class PlanetScreen extends Container {
       let desVX = b.vx,
         desVY = b.vy;
 
-      if (nearestEnemy !== null && nearestEnemyDist < DETECT_RANGE) {
+      if (nearestEnemy !== null && nearestEnemyD2 < detectR2) {
         // attack: steer toward nearest enemy (with some separation preserved)
         const ex = nearestEnemy.x - b.x,
           ey = nearestEnemy.y - b.y;
-        const el = Math.hypot(ex, ey) || 1;
+        const el = Math.sqrt(nearestEnemyD2) || 1;
         desVX = (ex / el) * BOID_MAX_SPEED;
         desVY = (ey / el) * BOID_MAX_SPEED;
         // still apply separation from teammates
@@ -1175,7 +1399,7 @@ export class PlanetScreen extends Container {
           desVY += (sepY / sepN) * 55;
         }
         // fire
-        if (nearestEnemyDist < FIRE_RANGE && b.shootTimer <= 0) {
+        if (nearestEnemyD2 < fireR2 && b.shootTimer <= 0) {
           b.shootTimer = SHOOT_INTERVAL;
           const ldir = el;
           this.lasers.push({
@@ -1213,7 +1437,7 @@ export class PlanetScreen extends Container {
         const bh = this.blackHole;
         const gdx = bh.x - b.x,
           gdy = bh.y - b.y;
-        const gdist = Math.hypot(gdx, gdy) || 1;
+        const gdist = Math.sqrt(gdx * gdx + gdy * gdy) || 1;
 
         if (gdist < BH_SWALLOW_R) {
           bh.swallowFlashes.push({
@@ -1262,14 +1486,14 @@ export class PlanetScreen extends Container {
       const steerScale = 1 - bhPullWeight;
       const steerX = (desVX - b.vx) * steerScale,
         steerY = (desVY - b.vy) * steerScale;
-      const steerMag = Math.hypot(steerX, steerY) || 1;
+      const steerMag = Math.sqrt(steerX * steerX + steerY * steerY) || 1;
       const clampedF = Math.min(steerMag, BOID_MAX_FORCE * dt);
       b.vx += (steerX / steerMag) * clampedF;
       b.vy += (steerY / steerMag) * clampedF;
 
       // clamp to higher limit near BH so boids can actually spiral in fast
       const maxSpd = BOID_MAX_SPEED * (1 + bhPullWeight * 1.5);
-      const spd = Math.hypot(b.vx, b.vy) || 1;
+      const spd = Math.sqrt(b.vx * b.vx + b.vy * b.vy) || 1;
       if (spd > maxSpd) {
         b.vx = (b.vx / spd) * maxSpd;
         b.vy = (b.vy / spd) * maxSpd;
@@ -1350,7 +1574,8 @@ export class PlanetScreen extends Container {
         if (b.team === l.team) continue;
         const dx = b.x - l.x,
           dy = b.y - l.y;
-        if (Math.hypot(dx, dy) < b.size * 1.6) {
+        const hitR = b.size * 1.6;
+        if (dx * dx + dy * dy < hitR * hitR) {
           b.health--;
           this.spawnImpactFlash(l.x, l.y, TEAM_COLOR[l.team]);
           this.lasers.splice(i, 1);
@@ -1425,9 +1650,7 @@ export class PlanetScreen extends Container {
         const sx = e.x + s.vx * prog * 0.7;
         const sy = e.y + s.vy * prog * 0.7;
         const a = (1 - prog) * 0.95;
-        this.explosionGfx
-          .circle(sx, sy, s.size * (1 - prog * 0.6))
-          .fill({ color: s.color, alpha: a });
+        dot(this.explosionGfx, sx, sy, s.size * (1 - prog * 0.6), s.color, a);
       }
       // central flash ring
       if (prog < 0.4) {
@@ -1512,7 +1735,7 @@ export class PlanetScreen extends Container {
         const bh = this.blackHole;
         const dx = bh.x - adm.x,
           dy = bh.y - adm.y;
-        const d = Math.hypot(dx, dy) || 1;
+        const d = Math.sqrt(dx * dx + dy * dy) || 1;
         const f = BH_GRAVITY / (d * d + 200);
         adm.vx += (dx / d) * f * dt;
         adm.vy += (dy / d) * f * dt;
@@ -1525,13 +1748,18 @@ export class PlanetScreen extends Container {
 
       // ── shoot at nearest enemy boid ───────────────────────────────────────
       if (adm.shootTimer <= 0) {
-        let nearestDist = DETECT_RANGE * 1.4;
+        // squared distances keep this scan off Math.hypot; only the winner
+        // needs a square root, for the firing direction
+        const admRange = DETECT_RANGE * 1.4;
+        let nearestD2 = admRange * admRange;
         let nearestEnemy: Boid | null = null;
         for (const b of this.boids) {
           if (b.team === adm.team) continue;
-          const d = Math.hypot(b.x - adm.x, b.y - adm.y);
-          if (d < nearestDist) {
-            nearestDist = d;
+          const bdx = b.x - adm.x,
+            bdy = b.y - adm.y;
+          const d2 = bdx * bdx + bdy * bdy;
+          if (d2 < nearestD2) {
+            nearestD2 = d2;
             nearestEnemy = b;
           }
         }
@@ -1539,7 +1767,7 @@ export class PlanetScreen extends Container {
           adm.shootTimer = ADMIRAL_SHOOT_INTERVAL;
           const dx = nearestEnemy.x - adm.x,
             dy = nearestEnemy.y - adm.y;
-          const d = Math.hypot(dx, dy) || 1;
+          const d = Math.sqrt(nearestD2) || 1;
           // admiral fires a burst of 3 lasers with slight spread
           for (let s = -1; s <= 1; s++) {
             const spread = s * 0.08;
@@ -1562,7 +1790,13 @@ export class PlanetScreen extends Container {
     }
 
     // remove dead admirals and respawn after delay
-    const deadIdx = this.admirals.findIndex((a) => a.health <= 0);
+    let deadIdx = -1;
+    for (let i = 0; i < this.admirals.length; i++) {
+      if (this.admirals[i].health <= 0) {
+        deadIdx = i;
+        break;
+      }
+    }
     if (deadIdx !== -1) {
       const dead = this.admirals[deadIdx];
       this.spawnExplosion(dead.x, dead.y, TEAM_COLOR[dead.team]);

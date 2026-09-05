@@ -17,6 +17,15 @@ const WAVE_AMP = 45;
 const TEXT_LIFT = 160;
 const FOCAL_LENGTH = 2200; // Flatter perspective to reduce side-sway
 
+// The mesh is deliberately wider and taller than the viewport so the perspective
+// sway never exposes an edge. Anything fully outside this margin draws no pixels,
+// so it is skipped before it costs a Graphics instruction.
+const CULL_MARGIN = 4;
+const CLIP_LEFT = 1;
+const CLIP_RIGHT = 2;
+const CLIP_TOP = 4;
+const CLIP_BOTTOM = 8;
+
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 interface Point3D {
@@ -52,6 +61,22 @@ export class LuminescentTopographyScreen extends Container {
 
   private readonly points: Point3D[] = [];
   private readonly particles: BackgroundParticle[] = [];
+
+  // Pre-allocated per-frame scratch (no allocation inside update/draw).
+  //
+  // The wave is separable: every point in a column shares the same x term and
+  // every point in a row shares the same y term, so the four sin/cos values per
+  // point collapse to COLS + ROWS table entries per frame.
+  private readonly waveSinX = new Float64Array(COLS);
+  private readonly waveSinX2 = new Float64Array(COLS);
+  private readonly waveCosY = new Float64Array(ROWS);
+  private readonly waveSinY2 = new Float64Array(ROWS);
+  // Cohen–Sutherland style outside-bits, one per mesh point (see CULL_MARGIN).
+  private readonly clipCodes = new Uint8Array(ROWS * COLS);
+  // Pixi copies these into its own style object on every fill()/stroke(), so one
+  // reusable instance per kind replaces ~20k throwaway literals per frame.
+  private readonly scratchFill = { color: 0, alpha: 1 };
+  private readonly scratchStroke = { color: 0, alpha: 1, width: 1 };
 
   private elapsed = 0;
   private w = 1920;
@@ -217,35 +242,78 @@ export class LuminescentTopographyScreen extends Container {
     // Global swell makes central movement more pronounced
     const globalSwell = Math.sin(time * 0.8) * 15;
 
-    for (const p of this.points) {
-      const noise =
-        Math.sin(p.x * WAVE_FREQ + time) *
-        Math.cos(p.y * WAVE_FREQ + time * 0.7);
-      const noise2 =
-        Math.sin(p.x * WAVE_FREQ * 0.6 - time * 0.4) *
-        Math.sin(p.y * WAVE_FREQ * 0.5 + time * 0.2);
+    const points = this.points;
+    const { waveSinX, waveSinX2, waveCosY, waveSinY2, clipCodes } = this;
 
-      const baseZ = (noise + noise2 * 0.5) * WAVE_AMP + globalSwell;
-      const liftZ = p.lift * TEXT_LIFT;
-      p.z = baseZ + liftZ;
+    // Row 0 carries every distinct x, column 0 every distinct y.
+    for (let c = 0; c < COLS; c++) {
+      const x = points[c].x;
+      waveSinX[c] = Math.sin(x * WAVE_FREQ + time);
+      waveSinX2[c] = Math.sin(x * WAVE_FREQ * 0.6 - time * 0.4);
+    }
+    for (let r = 0; r < ROWS; r++) {
+      const y = points[r * COLS].y;
+      waveCosY[r] = Math.cos(y * WAVE_FREQ + time * 0.7);
+      waveSinY2[r] = Math.sin(y * WAVE_FREQ * 0.5 + time * 0.2);
+    }
 
-      const perspective = FOCAL_LENGTH / (FOCAL_LENGTH + p.z);
-      p.screenX = p.x * perspective;
-      p.screenY = p.y * perspective;
+    const clipX = this.w / 2 + CULL_MARGIN;
+    const clipY = this.h / 2 + CULL_MARGIN;
+
+    for (let r = 0; r < ROWS; r++) {
+      const cosY = waveCosY[r];
+      const sinY2 = waveSinY2[r];
+      const rowStart = r * COLS;
+
+      for (let c = 0; c < COLS; c++) {
+        const i = rowStart + c;
+        const p = points[i];
+
+        const noise = waveSinX[c] * cosY;
+        const noise2 = waveSinX2[c] * sinY2;
+
+        const baseZ = (noise + noise2 * 0.5) * WAVE_AMP + globalSwell;
+        const liftZ = p.lift * TEXT_LIFT;
+        p.z = baseZ + liftZ;
+
+        const perspective = FOCAL_LENGTH / (FOCAL_LENGTH + p.z);
+        const screenX = p.x * perspective;
+        const screenY = p.y * perspective;
+        p.screenX = screenX;
+        p.screenY = screenY;
+
+        let code = 0;
+        if (screenX < -clipX) code = CLIP_LEFT;
+        else if (screenX > clipX) code = CLIP_RIGHT;
+        if (screenY < -clipY) code |= CLIP_TOP;
+        else if (screenY > clipY) code |= CLIP_BOTTOM;
+        clipCodes[i] = code;
+      }
     }
   }
 
   private updateParticles(dt: number, time: number): void {
     const globalSwell = Math.sin(time * 0.8) * 15;
 
-    for (const p of this.particles) {
+    // Hoisted out of the loop: these are the same for every particle.
+    const timeY = time * 0.7;
+    const time2X = time * 0.4;
+    const time2Y = time * 0.2;
+    const halfW = this.w / 2;
+    const halfH = this.h / 2;
+
+    const particles = this.particles;
+
+    for (let i = 0; i < particles.length; i++) {
+      const p = particles[i];
+
       if (p.isTextParticle) {
         const noise =
           Math.sin(p.homeX * WAVE_FREQ + time) *
-          Math.cos(p.homeY * WAVE_FREQ + time * 0.7);
+          Math.cos(p.homeY * WAVE_FREQ + timeY);
         const noise2 =
-          Math.sin(p.homeX * WAVE_FREQ * 0.6 - time * 0.4) *
-          Math.sin(p.homeY * WAVE_FREQ * 0.5 + time * 0.2);
+          Math.sin(p.homeX * WAVE_FREQ * 0.6 - time2X) *
+          Math.sin(p.homeY * WAVE_FREQ * 0.5 + time2Y);
 
         const baseZ = (noise + noise2 * 0.5) * WAVE_AMP + globalSwell;
         const liftZ = p.lift * TEXT_LIFT;
@@ -259,14 +327,14 @@ export class LuminescentTopographyScreen extends Container {
         p.homeX += p.vx * dt * 0.01;
         p.homeY += p.vy * dt * 0.01;
 
-        if (p.homeX > this.w / 2) p.homeX = -this.w / 2;
-        if (p.homeX < -this.w / 2) p.homeX = this.w / 2;
-        if (p.homeY > this.h / 2) p.homeY = -this.h / 2;
-        if (p.homeY < -this.h / 2) p.homeY = this.h / 2;
+        if (p.homeX > halfW) p.homeX = -halfW;
+        if (p.homeX < -halfW) p.homeX = halfW;
+        if (p.homeY > halfH) p.homeY = -halfH;
+        if (p.homeY < -halfH) p.homeY = halfH;
 
         const noise =
           Math.sin(p.homeX * WAVE_FREQ + time) *
-          Math.cos(p.homeY * WAVE_FREQ + time * 0.7);
+          Math.cos(p.homeY * WAVE_FREQ + timeY);
         const z = noise * WAVE_AMP + globalSwell;
         const perspective = FOCAL_LENGTH / (FOCAL_LENGTH + z);
 
@@ -277,48 +345,60 @@ export class LuminescentTopographyScreen extends Container {
   }
 
   private drawMesh(): void {
-    this.meshGfx.clear();
+    const gfx = this.meshGfx;
+    const points = this.points;
+    const clipCodes = this.clipCodes;
+
+    gfx.clear();
 
     for (let r = 0; r < ROWS; r++) {
-      for (let c = 0; c < COLS; c++) {
-        const i = r * COLS + c;
-        const p = this.points[i];
+      const rowStart = r * COLS;
 
-        if (c < COLS - 1) {
-          const pRight = this.points[i + 1];
-          this.drawEdge(p, pRight);
+      for (let c = 0; c < COLS; c++) {
+        const i = rowStart + c;
+        const code = clipCodes[i];
+        const p = points[i];
+
+        // Sharing an outside bit means the whole segment sits beyond that edge
+        // of the viewport, so it can never contribute a pixel.
+        if (c < COLS - 1 && (code & clipCodes[i + 1]) === 0) {
+          this.drawEdge(p, points[i + 1]);
         }
 
-        if (r < ROWS - 1) {
-          const pDown = this.points[i + COLS];
-          this.drawEdge(p, pDown);
+        if (r < ROWS - 1 && (code & clipCodes[i + COLS]) === 0) {
+          this.drawEdge(p, points[i + COLS]);
         }
       }
     }
 
-    for (const p of this.points) {
-      const color = this.getColorForZ(p.z);
-      const alpha = 0.2 + ((p.z + WAVE_AMP) / (WAVE_AMP + TEXT_LIFT)) * 0.6;
-      this.meshGfx.circle(p.screenX, p.screenY, 1.2).fill({ color, alpha });
+    const fill = this.scratchFill;
+    for (let i = 0; i < points.length; i++) {
+      if (clipCodes[i] !== 0) continue;
+
+      const p = points[i];
+      fill.color = this.getColorForZ(p.z);
+      fill.alpha = 0.2 + ((p.z + WAVE_AMP) / (WAVE_AMP + TEXT_LIFT)) * 0.6;
+      gfx.circle(p.screenX, p.screenY, 1.2).fill(fill);
     }
   }
 
   private drawEdge(p1: Point3D, p2: Point3D): void {
     const avgZ = (p1.z + p2.z) / 2;
-    const color = this.getColorForZ(avgZ);
 
-    const dist = Math.sqrt(
-      Math.pow(p1.screenX - p2.screenX, 2) +
-        Math.pow(p1.screenY - p2.screenY, 2),
-    );
+    const dx = p1.screenX - p2.screenX;
+    const dy = p1.screenY - p2.screenY;
+    const dist = Math.sqrt(dx * dx + dy * dy);
     const tension = Math.max(0.1, 1 - (dist - GRID_SPACING) / GRID_SPACING);
 
-    const alpha = 0.05 + ((avgZ + WAVE_AMP) / (WAVE_AMP + TEXT_LIFT)) * 0.35;
+    const stroke = this.scratchStroke;
+    stroke.color = this.getColorForZ(avgZ);
+    stroke.alpha = 0.05 + ((avgZ + WAVE_AMP) / (WAVE_AMP + TEXT_LIFT)) * 0.35;
+    stroke.width = 0.4 * tension;
 
     this.meshGfx
       .moveTo(p1.screenX, p1.screenY)
       .lineTo(p2.screenX, p2.screenY)
-      .stroke({ color, alpha, width: 0.4 * tension });
+      .stroke(stroke);
   }
 
   private getColorForZ(z: number): number {
@@ -331,20 +411,32 @@ export class LuminescentTopographyScreen extends Container {
   }
 
   private drawParticles(): void {
-    this.particlesGfx.clear();
-    for (const p of this.particles) {
-      this.particlesGfx
-        .circle(p.x, p.y, p.size)
-        .fill({ color: p.color, alpha: p.alpha });
+    const gfx = this.particlesGfx;
+    const particles = this.particles;
+    const fill = this.scratchFill;
+    const stroke = this.scratchStroke;
 
-      for (const targetIdx of p.connected) {
-        const target = this.particles[targetIdx];
-        if (target && !p.isTextParticle) {
-          this.particlesGfx
-            .moveTo(p.x, p.y)
-            .lineTo(target.x, target.y)
-            .stroke({ color: p.color, alpha: p.alpha * 0.3, width: 0.5 });
-        }
+    gfx.clear();
+
+    for (let i = 0; i < particles.length; i++) {
+      const p = particles[i];
+
+      fill.color = p.color;
+      fill.alpha = p.alpha;
+      gfx.circle(p.x, p.y, p.size).fill(fill);
+
+      // Text particles are created without connections and never gain any.
+      if (p.isTextParticle) continue;
+
+      const connected = p.connected;
+      for (let j = 0; j < connected.length; j++) {
+        const target = particles[connected[j]];
+        if (!target) continue;
+
+        stroke.color = p.color;
+        stroke.alpha = p.alpha * 0.3;
+        stroke.width = 0.5;
+        gfx.moveTo(p.x, p.y).lineTo(target.x, target.y).stroke(stroke);
       }
     }
   }

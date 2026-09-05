@@ -168,6 +168,19 @@ const BUBBLE_COUNT = 80;
 const PARTICLE_COUNT = 55;
 const PLANKTON_PER_SWARM = 38;
 const PLANKTON_SWARM_COUNT = 6;
+const SAND_RIPPLE_COUNT = 5;
+
+// Vertical water gradient, deepest band first
+const GRADIENT_BANDS = [
+  DEEP,
+  0x0c1430,
+  0x0d1e40,
+  0x0f2850,
+  MID,
+  0x123260,
+  SURFACE,
+  0x1e5580,
+];
 
 interface Crab {
   nx: number;
@@ -209,10 +222,14 @@ export class AquariumScreen extends Container {
   public static assetBundles = ["main"];
 
   // Layers back → front
-  private readonly bgGfx = new Graphics();
+  private readonly bgGfx = new Graphics(); // static water gradient
+  private readonly bgFxGfx = new Graphics(); // whale silhouette + centre shafts
   private readonly lightRayGfx = new Graphics();
   private readonly causticGfx = new Graphics();
-  private readonly sandGfx = new Graphics();
+  private readonly sandGfx = new Graphics(); // static terrain body, rocks, caves
+  private readonly sandFxGfx = new Graphics(); // swaying algae, stalactites, cave glow
+  private readonly rippleGfx: Graphics[] = []; // one static curve per ripple
+  private readonly pebbleGfx = new Graphics(); // static scattered pebbles
   private readonly decoGfx = new Graphics(); // rocks, starfish, shells, anchor, chest
   private readonly plantsGfx = new Graphics(); // all plants
   private readonly crabGfx = new Graphics();
@@ -273,12 +290,24 @@ export class AquariumScreen extends Container {
   private w = 0;
   private h = 0;
 
+  // Layers whose geometry only depends on the stage size are re-emitted when
+  // this flag is set instead of on every frame.
+  private staticDirty = true;
+
   constructor() {
     super();
     this.addChild(this.bgGfx);
+    this.addChild(this.bgFxGfx);
     this.addChild(this.lightRayGfx);
     this.addChild(this.causticGfx);
     this.addChild(this.sandGfx);
+    this.addChild(this.sandFxGfx);
+    for (let r = 0; r < SAND_RIPPLE_COUNT; r++) {
+      const g = new Graphics();
+      this.rippleGfx.push(g);
+      this.addChild(g);
+    }
+    this.addChild(this.pebbleGfx);
     this.addChild(this.decoGfx);
     this.addChild(this.plantsGfx);
     this.addChild(this.crabGfx);
@@ -302,16 +331,19 @@ export class AquariumScreen extends Container {
     this.spawnPlankton();
     this.spawnBubbles();
     this.spawnParticles();
+    this.staticDirty = true;
   }
 
   public update(ticker: Ticker): void {
     const dt = ticker.deltaMS * 0.001;
     this.time += dt;
 
+    if (this.staticDirty) this.redrawStaticLayers();
+
     this.drawBackground();
     this.drawLightRays(dt);
     this.drawCaustics(dt);
-    this.drawSand();
+    this.drawSandFx();
     this.drawDecos();
     this.drawPlants(dt);
     this.updateCrabs(dt);
@@ -327,28 +359,42 @@ export class AquariumScreen extends Container {
     this.h = height;
     this.x = 0;
     this.y = 0;
+    this.staticDirty = true;
+  }
+
+  /**
+   * Re-emits every layer whose geometry is a pure function of the stage size:
+   * the water gradient, the terrain body with its rocks and caves, the sand
+   * ripple curves and the scattered pebbles. None of that art moves, so it is
+   * tessellated once here rather than on every frame.
+   */
+  private redrawStaticLayers(): void {
+    if (this.w === 0) return;
+    this.drawGradient();
+    // The sea floor needs the terrain control points, which spawnTerrain()
+    // only creates in show() — that is, after the first resize().
+    if (this.terrainPts.length === 0) return;
+    this.staticDirty = false;
+    this.drawSandStatic();
+    this.drawSandRipples();
+    this.drawPebbles();
   }
 
   // ── Background + caustics ──────────────────────────────────────────────────
 
-  private drawBackground(): void {
+  private drawGradient(): void {
     this.bgGfx.clear();
-    const steps = 8;
-    const colors = [
-      DEEP,
-      0x0c1430,
-      0x0d1e40,
-      0x0f2850,
-      MID,
-      0x123260,
-      SURFACE,
-      0x1e5580,
-    ];
+    const steps = GRADIENT_BANDS.length;
     for (let i = 0; i < steps; i++) {
       this.bgGfx
         .rect(0, (i / steps) * this.h, this.w, this.h / steps)
-        .fill({ color: colors[i], alpha: 1 });
+        .fill({ color: GRADIENT_BANDS[i], alpha: 1 });
     }
+  }
+
+  private drawBackground(): void {
+    this.bgFxGfx.clear();
+    if (this.w === 0) return;
 
     // ── Distant whale silhouette ──────────────────────────────────────────────
     // Drifts slowly left-to-right across the deep background, looping
@@ -361,7 +407,7 @@ export class AquariumScreen extends Container {
     const tw = Math.sin(this.time * 0.22) * 14 * wsc; // tail fluke sway
 
     // Body
-    this.bgGfx
+    this.bgFxGfx
       .moveTo(wx + 320 * wsc, wy)
       .bezierCurveTo(
         wx + 280 * wsc,
@@ -390,7 +436,7 @@ export class AquariumScreen extends Container {
       .fill({ color: 0x0a1828, alpha: wAlpha });
 
     // Tail flukes
-    this.bgGfx
+    this.bgFxGfx
       .moveTo(wx + 320 * wsc, wy)
       .bezierCurveTo(
         wx + 360 * wsc,
@@ -409,7 +455,7 @@ export class AquariumScreen extends Container {
         wy,
       )
       .fill({ color: 0x0a1828, alpha: wAlpha });
-    this.bgGfx
+    this.bgFxGfx
       .moveTo(wx + 320 * wsc, wy)
       .bezierCurveTo(
         wx + 360 * wsc,
@@ -430,7 +476,7 @@ export class AquariumScreen extends Container {
       .fill({ color: 0x0a1828, alpha: wAlpha });
 
     // Pectoral fin
-    this.bgGfx
+    this.bgFxGfx
       .moveTo(wx + 140 * wsc, wy + 20 * wsc)
       .bezierCurveTo(
         wx + 120 * wsc,
@@ -451,7 +497,7 @@ export class AquariumScreen extends Container {
       .fill({ color: 0x0a1828, alpha: wAlpha * 0.8 });
 
     // Light sheen on back
-    this.bgGfx
+    this.bgFxGfx
       .moveTo(wx + 60 * wsc, wy - 50 * wsc)
       .bezierCurveTo(
         wx + 150 * wsc,
@@ -467,7 +513,7 @@ export class AquariumScreen extends Container {
     for (let r = 0; r < 5; r++) {
       const angle = (r - 2) * 0.22;
       const alpha = 0.03 + 0.018 * Math.sin(this.time * 0.3 + r);
-      this.bgGfx
+      this.bgFxGfx
         .moveTo(cx, 0)
         .lineTo(cx + Math.sin(angle) * this.h * 1.2, this.h)
         .stroke({ color: CAUSTIC, alpha, width: 55 + r * 28 });
@@ -603,45 +649,47 @@ export class AquariumScreen extends Container {
 
   // ── Sand floor ─────────────────────────────────────────────────────────────
 
-  private drawSand(): void {
-    const g = this.sandGfx;
-    g.clear();
-    if (this.w === 0 || this.terrainPts.length === 0) return;
+  /** Trace the terrain surface curve into `g`, shifted down by `offsetY`. */
+  private traceSurface(g: Graphics, offsetY: number): void {
     const W = this.w,
       H = this.h;
     const pts = this.terrainPts;
+    g.moveTo(0, pts[0].ny * H + offsetY);
+    for (let i = 1; i < pts.length; i++) {
+      const p0 = pts[i - 1],
+        p1 = pts[i];
+      const mx = (p0.nx + p1.nx) * 0.5 * W;
+      g.bezierCurveTo(
+        mx,
+        p0.ny * H + offsetY,
+        mx,
+        p1.ny * H + offsetY,
+        p1.nx * W,
+        p1.ny * H + offsetY,
+      );
+    }
+  }
 
-    // Helper: trace the terrain curve into Graphics path
-    const traceSurface = (offsetY = 0) => {
-      g.moveTo(0, pts[0].ny * H + offsetY);
-      for (let i = 1; i < pts.length; i++) {
-        const p0 = pts[i - 1],
-          p1 = pts[i];
-        const mx = (p0.nx + p1.nx) * 0.5 * W;
-        g.bezierCurveTo(
-          mx,
-          p0.ny * H + offsetY,
-          mx,
-          p1.ny * H + offsetY,
-          p1.nx * W,
-          p1.ny * H + offsetY,
-        );
-      }
-    };
+  /** Terrain body, rock masses and cave mouths — fixed once per stage size. */
+  private drawSandStatic(): void {
+    const g = this.sandGfx;
+    g.clear();
+    const W = this.w,
+      H = this.h;
 
     // Layer 1: deep substrate (dark rock base)
-    traceSurface(H * 0.015);
+    this.traceSurface(g, H * 0.015);
     g.lineTo(W, H).lineTo(0, H).closePath().fill({ color: 0x3a2f22, alpha: 1 });
 
     // Layer 2: mid sand body
-    traceSurface(H * 0.007);
+    this.traceSurface(g, H * 0.007);
     g.lineTo(W, H)
       .lineTo(0, H)
       .closePath()
       .fill({ color: 0xc8a96e, alpha: 0.9 });
 
     // Layer 3: top sand surface (lightest)
-    traceSurface(0);
+    this.traceSurface(g, 0);
     g.lineTo(W, H).lineTo(0, H).closePath().fill({ color: SAND, alpha: 0.7 });
 
     // ── Rock formations ──────────────────────────────────────────────
@@ -703,23 +751,6 @@ export class AquariumScreen extends Container {
           ry - 44,
         )
         .stroke({ color: 0x90a4ae, alpha: 0.4, width: 2.5 });
-
-      // Algae fringe on top
-      for (let a = 0; a < 5; a++) {
-        const ax = rx - rw * 0.3 + a * rw * 0.15;
-        const ay = ry - 55 + Math.sin(a * 1.7) * 8;
-        const sw = Math.sin(this.time * 0.8 + a * 1.2) * 4;
-        g.moveTo(ax, ay)
-          .bezierCurveTo(
-            ax + sw,
-            ay - 12,
-            ax + sw + 1,
-            ay - 20,
-            ax + sw,
-            ay - 26,
-          )
-          .stroke({ color: 0x27ae60, alpha: 0.75, width: 1.8, cap: "round" });
-      }
     }
 
     // ── Cave openings ─────────────────────────────────────────────────
@@ -769,6 +800,72 @@ export class AquariumScreen extends Container {
           cy,
         )
         .fill({ color: 0x546e7a, alpha: 0.8 });
+    }
+  }
+
+  /**
+   * A sand ripple is the terrain curve translated straight down, so each one
+   * is stroked once here and the swell is animated by moving its layer in y
+   * rather than by re-tracing twenty bezier segments per ripple per frame.
+   */
+  private drawSandRipples(): void {
+    for (let r = 0; r < SAND_RIPPLE_COUNT; r++) {
+      const g = this.rippleGfx[r];
+      g.clear();
+      this.traceSurface(g, 9 + r * 11);
+      g.stroke({ color: 0xc8b88a, alpha: 0.22 - r * 0.03, width: 1.6 });
+    }
+  }
+
+  /** Scattered pebbles resting on the sea floor. */
+  private drawPebbles(): void {
+    const g = this.pebbleGfx;
+    g.clear();
+    for (let i = 0; i < 40; i++) {
+      const pnx = ((i * 137.508) % 100) / 100;
+      const ty = this.getTerrainY(pnx);
+      const px = pnx * this.w;
+      const py = ty + 4 + ((i * 11.3) % 1) * 28;
+      const pr = 1.5 + ((i * 7.71) % 1) * 4.5;
+      g.ellipse(px, py, pr, pr * 0.58).fill({ color: 0xb8a88a, alpha: 0.5 });
+    }
+  }
+
+  /** The parts of the sea floor that genuinely move every frame. */
+  private drawSandFx(): void {
+    const g = this.sandFxGfx;
+    g.clear();
+    if (this.w === 0 || this.terrainPts.length === 0) return;
+    const W = this.w;
+
+    // ── Algae fringe on top of the rock formations ────────────────────
+    for (const rock of this.terrainRocks) {
+      const rx = rock.nx * W;
+      const ry = this.getTerrainY(rock.nx);
+      const rw = rock.width * W;
+
+      for (let a = 0; a < 5; a++) {
+        const ax = rx - rw * 0.3 + a * rw * 0.15;
+        const ay = ry - 55 + Math.sin(a * 1.7) * 8;
+        const sw = Math.sin(this.time * 0.8 + a * 1.2) * 4;
+        g.moveTo(ax, ay)
+          .bezierCurveTo(
+            ax + sw,
+            ay - 12,
+            ax + sw + 1,
+            ay - 20,
+            ax + sw,
+            ay - 26,
+          )
+          .stroke({ color: 0x27ae60, alpha: 0.75, width: 1.8, cap: "round" });
+      }
+    }
+
+    // ── Cave stalactites + inner glow ─────────────────────────────────
+    for (const cave of this.terrainCaves) {
+      const cx = cave.nx * W;
+      const cy = this.getTerrainY(cave.nx);
+      const cw = cave.width * W;
 
       // Stalactites hanging from overhang
       for (let s = 0; s < 5; s++) {
@@ -782,7 +879,8 @@ export class AquariumScreen extends Container {
           .fill({ color: 0x78909c, alpha: 0.75 });
       }
 
-      // Subtle glow from inside cave
+      // Subtle glow from inside cave — stays on this layer so it keeps
+      // covering the stalactites, exactly as it did in the single-layer draw
       g.ellipse(cx, cy + 16, cw * 0.28, 20).fill({
         color: 0x1a3a5c,
         alpha: 0.35,
@@ -790,21 +888,8 @@ export class AquariumScreen extends Container {
     }
 
     // ── Sand ripples along surface ────────────────────────────────────
-    for (let r = 0; r < 5; r++) {
-      const yOff = 9 + r * 11;
-      const wave = Math.sin(this.time * 0.38 + r * 1.3) * 3;
-      traceSurface(yOff + wave);
-      g.stroke({ color: 0xc8b88a, alpha: 0.22 - r * 0.03, width: 1.6 });
-    }
-
-    // ── Scattered pebbles ──────────────────────────────────────────────
-    for (let i = 0; i < 40; i++) {
-      const pnx = ((i * 137.508) % 100) / 100;
-      const ty = this.getTerrainY(pnx);
-      const px = pnx * W;
-      const py = ty + 4 + ((i * 11.3) % 1) * 28;
-      const pr = 1.5 + ((i * 7.71) % 1) * 4.5;
-      g.ellipse(px, py, pr, pr * 0.58).fill({ color: 0xb8a88a, alpha: 0.5 });
+    for (let r = 0; r < SAND_RIPPLE_COUNT; r++) {
+      this.rippleGfx[r].y = Math.sin(this.time * 0.38 + r * 1.3) * 3;
     }
   }
 
@@ -895,6 +980,7 @@ export class AquariumScreen extends Container {
   private drawPlants(dt: number): void {
     this.plantsGfx.clear();
     if (this.w === 0) return;
+    const hScale = this.h / 1080;
 
     for (const p of this.plants) {
       p.phase += p.speed * dt;
@@ -903,7 +989,7 @@ export class AquariumScreen extends Container {
 
       switch (p.type) {
         case PlantType.KELP:
-          drawKelp(this.plantsGfx, wx, wy, p.phase, p.height * (this.h / 1080));
+          drawKelp(this.plantsGfx, wx, wy, p.phase, p.height * hScale);
           break;
         case PlantType.SEA_FAN:
           drawSeaFan(
@@ -911,7 +997,7 @@ export class AquariumScreen extends Container {
             wx,
             wy,
             p.phase,
-            p.height * (this.h / 1080),
+            p.height * hScale,
             p.color,
           );
           break;
@@ -922,39 +1008,19 @@ export class AquariumScreen extends Container {
             wy,
             p.phase,
             14,
-            p.height * (this.h / 1080),
+            p.height * hScale,
             p.color,
             p.color2,
           );
           break;
         case PlantType.BUBBLE_ALGAE:
-          drawBubbleAlgae(
-            this.plantsGfx,
-            wx,
-            wy,
-            p.phase,
-            p.height * (this.h / 1080),
-          );
+          drawBubbleAlgae(this.plantsGfx, wx, wy, p.phase, p.height * hScale);
           break;
         case PlantType.SEA_GRASS:
-          drawSeaGrass(
-            this.plantsGfx,
-            wx,
-            wy,
-            p.phase,
-            9,
-            p.height * (this.h / 1080),
-          );
+          drawSeaGrass(this.plantsGfx, wx, wy, p.phase, 9, p.height * hScale);
           break;
         case PlantType.FERN:
-          drawFern(
-            this.plantsGfx,
-            wx,
-            wy,
-            p.phase,
-            p.height * (this.h / 1080),
-            p.color,
-          );
+          drawFern(this.plantsGfx, wx, wy, p.phase, p.height * hScale, p.color);
           break;
       }
     }
@@ -1571,7 +1637,6 @@ export class AquariumScreen extends Container {
       if (a.vx > 0.5) a.facingRight = true;
       if (a.vx < -0.5) a.facingRight = false;
 
-      a.position.set(a.x, a.y);
       a.redraw();
     }
   }
